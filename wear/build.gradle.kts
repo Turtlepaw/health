@@ -5,15 +5,15 @@ plugins {
 }
 
 android {
-    namespace = "com.turtlepaw.sunlight"
+    namespace = "com.turtlepaw.health"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.turtlepaw.sunlight"
+        applicationId = "com.turtlepaw.health"
         minSdk = 30
         targetSdk = 33
-        versionCode = 7
-        versionName = "1.1"
+        versionCode = 1
+        versionName = "1.0"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -77,6 +77,9 @@ dependencies {
     implementation(libs.vico.core)
     implementation(libs.compose.shimmer)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.accompanist.permissions)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.health.services.client)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
