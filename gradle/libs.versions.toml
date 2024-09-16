@@ -43,6 +43,7 @@ accompanist-permissions = { module = "com.google.accompanist:accompanist-permiss
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.ref = "composeShimmer" }
 # For Jetpack Compose.
+material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
 # For `compose`. Creates a `ChartStyle` based on an M3 Material Theme.
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }

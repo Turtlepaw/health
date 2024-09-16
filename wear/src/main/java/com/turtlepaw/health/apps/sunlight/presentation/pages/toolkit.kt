@@ -4,14 +4,9 @@ import android.app.ActivityManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -25,14 +20,11 @@ import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.CardDefaults
 import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.scrollAway
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.apps.sunlight.presentation.GoalCompleteActivity
-import com.turtlepaw.health.components.ItemsListWithModifier
+import com.turtlepaw.health.components.Page
 import com.turtlepaw.health.database.SunlightDay
 import com.turtlepaw.health.services.LightLoggerService
 import com.turtlepaw.health.services.LightWorker
@@ -62,32 +54,7 @@ fun ClockworkToolkit(
 //        )
         val lightWorker = isServiceRunning(LightWorker::class.java, context)
         val isSampling = isServiceRunning(LightLoggerService::class.java, context)
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colors.background),
-            contentAlignment = Alignment.Center,
-        ) {
-            TimeText(
-                modifier = Modifier.scrollAway(scalingLazyListState)
-            )
-            PositionIndicator(
-                scalingLazyListState = scalingLazyListState
-            )
-            ScrollableDefaults.flingBehavior()
-            rememberRotaryHapticHandler(scrollableState)
-            ItemsListWithModifier(
-                modifier = Modifier
-                    .rotary(
-                        scrollBehavior(scrollableState = scalingLazyListState),
-                        focusRequester = focusRequester
-                    ),
-                scrollableState = scalingLazyListState,
-                verticalAlignment = Arrangement.spacedBy(
-                    space = 4.dp,
-                    alignment = Alignment.Top,
-                )
-            ) {
+    Page {
                 item {
                     Text(
                         text = "Toolkit",
@@ -170,7 +137,6 @@ fun ClockworkToolkit(
                     )
                 }
             }
-        }
 }
 
 @SuppressWarnings("deprecation")

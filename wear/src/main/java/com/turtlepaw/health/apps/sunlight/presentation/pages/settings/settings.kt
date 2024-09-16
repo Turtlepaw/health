@@ -7,12 +7,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,25 +27,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Switch
 import androidx.wear.compose.material.SwitchDefaults
 import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.ToggleChip
 import androidx.wear.compose.material.ToggleChipDefaults
-import androidx.wear.compose.material.scrollAway
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.sunlight.presentation.Routes
-import com.turtlepaw.health.components.ItemsListWithModifier
+import com.turtlepaw.health.components.Page
 import com.turtlepaw.health.utils.Settings
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
@@ -64,34 +55,7 @@ fun WearSettings(
     setGoalNotifications: (state: Boolean) -> Unit,
     setBatterySaver: (state: Boolean) -> Unit
 ){
-        val focusRequester = rememberActiveFocusRequester()
-        val scalingLazyListState = rememberScalingLazyListState()
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colors.background),
-            contentAlignment = Alignment.Center,
-        ) {
-            TimeText(
-                modifier = Modifier.scrollAway(scalingLazyListState)
-            )
-            PositionIndicator(
-                scalingLazyListState = scalingLazyListState
-            )
-            ScrollableDefaults.flingBehavior()
-            rememberRotaryHapticHandler(scrollableState)
-            ItemsListWithModifier(
-                modifier = Modifier
-                    .rotary(
-                        scrollBehavior(scrollableState = scalingLazyListState),
-                        focusRequester = focusRequester
-                    ),
-                scrollableState = scalingLazyListState,
-                verticalAlignment = Arrangement.spacedBy(
-                    space = 4.dp,
-                    alignment = Alignment.Top,
-                )
-            ) {
+    Page {
                 item {
                     Text(
                         text = "Settings",
@@ -309,7 +273,6 @@ fun WearSettings(
                     )
                 }
             }
-        }
     }
 
 fun Context.getActivity(): ComponentActivity? = when (this) {

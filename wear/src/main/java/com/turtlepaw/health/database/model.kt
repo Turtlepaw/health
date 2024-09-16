@@ -21,3 +21,15 @@ data class SleepDay(
     val type: BedtimeSensor,
     val value: Int
 )
+
+@Entity(tableName = "services")
+data class Service(
+    @PrimaryKey val name: String,  // "sleep", "sunlight", etc.
+    val isEnabled: Boolean
+)
+
+enum class ServiceType(val serviceName: String) {
+    SLEEP("sleep"),
+    SUNLIGHT("sunlight"),
+    // Add more services here
+}

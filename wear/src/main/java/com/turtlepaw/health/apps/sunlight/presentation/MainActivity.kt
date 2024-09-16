@@ -17,6 +17,8 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Lan
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,7 +48,9 @@ import com.turtlepaw.health.apps.sunlight.presentation.pages.WearHome
 import com.turtlepaw.health.apps.sunlight.presentation.pages.settings.WearNotices
 import com.turtlepaw.health.apps.sunlight.presentation.pages.settings.WearSettings
 import com.turtlepaw.health.apps.sunlight.presentation.theme.SunlightTheme
+import com.turtlepaw.health.components.Introduction
 import com.turtlepaw.health.database.AppDatabase
+import com.turtlepaw.health.database.ServiceType
 import com.turtlepaw.health.database.SunlightDay
 import com.turtlepaw.health.services.SensorReceiver
 import com.turtlepaw.health.services.scheduleResetWorker
@@ -62,7 +66,8 @@ enum class Routes(private val route: String) {
     HISTORY("/history"),
     CLOCKWORK("/clockwork-toolkit"),
     NOTICES("/notices"),
-    STATS("/stats");
+    STATS("/stats"),
+    INTRO("/intro");
 
     fun getRoute(query: String? = null): String {
         return if (query != null) {
@@ -210,6 +215,12 @@ fun WearPages(
             Log.d("SunlightLifecycle", "Lifecycle state updated: $state (${state.name})")
             //sunlightToday = database.sunlightDao().getDay(LocalDate.now())?.value ?: 0
             sunlightHistory = database.sunlightDao().getHistory()
+
+            val service = database.serviceDao().getService(ServiceType.SUNLIGHT.serviceName)
+            if (service?.isEnabled == false) {
+                navController.navigate(Routes.INTRO.getRoute())
+            }
+
             loading = false
         }
 
@@ -340,6 +351,19 @@ fun WearPages(
                 History(
                     sunlightHistory
                 )
+            }
+            composable(Routes.INTRO.getRoute()) {
+                Introduction(
+                    appName = "Sunlight",
+                    description = "Track your daily sunlight",
+                    features = listOf(
+                        Triple(
+                            Icons.Rounded.Lan,
+                            "Connect with other health data",
+                            "Connect your sunlight with your sleep and more."
+                        )
+                    )
+                ) { }
             }
         }
     }

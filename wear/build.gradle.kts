@@ -88,6 +88,9 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
+    // Icons
+    implementation(libs.material.icons.extended)
+
     // Room
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)

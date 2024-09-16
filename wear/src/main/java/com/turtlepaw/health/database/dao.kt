@@ -1,9 +1,11 @@
 package com.turtlepaw.health.database
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -44,3 +46,23 @@ interface SleepDao {
     suspend fun getToday(): List<SleepDay>
 }
 
+@Dao
+interface ServiceDao {
+    @Query("SELECT * FROM services WHERE name = :serviceName")
+    suspend fun getService(serviceName: String): Service?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertService(service: Service)
+
+    @Update
+    suspend fun updateService(service: Service)
+
+    @Query("UPDATE services SET isEnabled = :isEnabled WHERE name = :serviceName")
+    suspend fun updateServiceStatus(serviceName: String, isEnabled: Boolean)
+
+    @Query("SELECT * FROM services WHERE isEnabled = 1")
+    suspend fun getEnabledServices(): List<Service>
+
+    @Delete
+    suspend fun deleteService(service: Service)
+}
