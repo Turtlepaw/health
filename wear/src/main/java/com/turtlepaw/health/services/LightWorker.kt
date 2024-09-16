@@ -26,16 +26,12 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.edit
 import androidx.core.graphics.drawable.IconCompat
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import com.turtlepaw.health.apps.health.complication.MainComplicationService
-import com.turtlepaw.health.apps.health.presentation.dataStore
+import com.turtlepaw.health.database.AppDatabase
+import com.turtlepaw.health.database.SunlightDay
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
-import com.turtlepaw.health.utils.SunlightViewModel
-import com.turtlepaw.health.utils.SunlightViewModelFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -47,11 +43,10 @@ import kotlin.properties.Delegates
 
 
 @Keep
-class LightWorker : Service(), SensorEventListener, ViewModelStoreOwner {
+class LightWorker : Service(), SensorEventListener {
     private var sensorManager: SensorManager? = null
     private var lightSensor: Sensor? = null
-    private lateinit var sunlightViewModel: SunlightViewModel
-    override val viewModelStore = ViewModelStore()
+    private lateinit var database: AppDatabase
     private var timeInLight: Int = 0
     private var lastUpdated: LocalTime = LocalTime.now()
     private var threshold: Int? = null
@@ -173,10 +168,7 @@ class LightWorker : Service(), SensorEventListener, ViewModelStoreOwner {
             .setContentText("Listening for changes in light from your device").build()
 
         startForeground(1, notification)
-        sunlightViewModel = ViewModelProvider(
-            this,
-            SunlightViewModelFactory(dataStore)
-        ).get(SunlightViewModel::class.java)
+        database = AppDatabase.getDatabase(this)
 
         Toast.makeText(this, "Tracking", Toast.LENGTH_LONG).show()
 
@@ -310,6 +302,18 @@ class LightWorker : Service(), SensorEventListener, ViewModelStoreOwner {
         }
     }
 
+    private fun saveMinutes(value: Int) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val dao = database.sunlightDao()
+            dao.insertDay(
+                SunlightDay(
+                    timestamp = LocalDate.now(),
+                    value = value
+                )
+            )
+        }
+    }
+
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type == Sensor.TYPE_LIGHT) {
             val luminance = event.values[0]
@@ -321,10 +325,17 @@ class LightWorker : Service(), SensorEventListener, ViewModelStoreOwner {
                 // Backwards compatible
                 if (timeInLight >= 60000) {
                     CoroutineScope(Dispatchers.Default).launch {
-                        sunlightViewModel.add(LocalDate.now(), (timeInLight / 1000 / 60).toInt())
-                        if (minutes == 0) {
-                            minutes = sunlightViewModel.getDay(LocalDate.now())?.second ?: 0
+                        minutes = if (minutes == 0) {
+                            (database.sunlightDao().getDay(LocalDate.now())?.value
+                                ?: 0) + (timeInLight / 1000 / 60)
+                        } else {
+                            minutes + (timeInLight / 1000 / 60).toInt()
                         }
+
+                        saveMinutes(
+                            minutes
+                        )
+
                         minutes += (timeInLight / 1000 / 60).toInt()
                         timeInLight = 0
 

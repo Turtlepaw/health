@@ -57,7 +57,7 @@
             </intent-filter>
         </receiver>
         <service
-            android:name=".apps.health.complication.MainComplicationService"
+            android:name=".apps.sunlight.complication.MainComplicationService"
             android:exported="true"
             android:label="@string/complication_label"
             android:icon="@drawable/sunlight"
@@ -74,7 +74,7 @@
                 android:value="300" />
         </service>
         <service
-            android:name=".apps.health.tile.MainTileService"
+            android:name=".apps.sunlight.tile.MainTileService"
             android:exported="true"
             android:label="@string/tile_label"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">

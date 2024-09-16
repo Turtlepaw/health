@@ -75,7 +75,7 @@ enum class Settings(private val key: String, private val default: Any?) {
 
 enum class SettingsBasics(private val key: String, private val mode: Int?) {
     HISTORY_STORAGE_BASE("bedtime_history", null),
-    SHARED_PREFERENCES("SleepToolsSettings", Context.MODE_PRIVATE);
+    SHARED_PREFERENCES("HealthSettings", Context.MODE_PRIVATE);
 
     fun getKey(): String {
         return key

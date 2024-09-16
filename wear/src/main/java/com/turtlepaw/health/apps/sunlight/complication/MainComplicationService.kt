@@ -2,13 +2,11 @@ package com.turtlepaw.health.apps.sunlight.complication
 
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.util.Log
 import androidx.core.math.MathUtils
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.GoalProgressComplicationData
@@ -24,31 +22,27 @@ import androidx.wear.watchface.complications.data.SmallImageType
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 import com.turtlepaw.health.R
-import com.turtlepaw.health.apps.sunlight.presentation.dataStore
+import com.turtlepaw.health.apps.sunlight.presentation.MainActivity
+import com.turtlepaw.health.database.AppDatabase
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
-import com.turtlepaw.health.utils.SunlightViewModel
-import com.turtlepaw.health.utils.SunlightViewModelFactory
 import java.time.LocalDate
 
 
-class MainComplicationService : SuspendingComplicationDataSourceService(), ViewModelStoreOwner {
-    override val viewModelStore = ViewModelStore()
+class MainComplicationService : SuspendingComplicationDataSourceService() {
+    lateinit var appDatabase: AppDatabase
     private val supportedComplicationTypes = arrayOf(
         ComplicationType.SHORT_TEXT,
         ComplicationType.LONG_TEXT,
         ComplicationType.RANGED_VALUE
     )
 
-    override fun getPreviewData(type: ComplicationType): ComplicationData? {
-        if (type !in supportedComplicationTypes) {
-            return null
-        }
+    override fun getPreviewData(type: ComplicationType): ComplicationData {
         return createComplicationData(
             30,
             30,
             "30m",
-            "Sleep Prediction",
+            "Sunlight Today",
             type,
             this
         )
@@ -59,10 +53,10 @@ class MainComplicationService : SuspendingComplicationDataSourceService(), ViewM
             SettingsBasics.SHARED_PREFERENCES.getKey(),
             SettingsBasics.SHARED_PREFERENCES.getMode()
         )
-        val sunlightViewModel = ViewModelProvider(this, SunlightViewModelFactory(dataStore)).get(
-            SunlightViewModel::class.java)
-        val today = sunlightViewModel.getDay(LocalDate.now())?.second ?: 0
+        appDatabase = AppDatabase.getDatabase(this)
+        val today = appDatabase.sunlightDao().getDay(LocalDate.now())?.value ?: 0
         val goal = sharedPreferences.getInt(Settings.GOAL.getKey(), Settings.GOAL.getDefaultAsInt())
+        Log.d("SunComplication", "Rendering complication as $today")
         return createComplicationData(
             today,
             goal,
@@ -162,12 +156,19 @@ class MainComplicationService : SuspendingComplicationDataSourceService(), ViewM
     }
 
     private fun createActivityIntent(context: Context): PendingIntent {
-        val intent = packageManager.getLaunchIntentForPackage(packageName)
+        // Create an Intent for the specific activity you want to launch
+        val intent = Intent(context, MainActivity::class.java).apply {
+            // Optionally add extras or flags to the intent
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        Log.d("ComplicationService", "Creating PendingIntent for MainActivity")
+
         return PendingIntent.getActivity(
             context,
-            0,
+            0, // Request code
             intent,
-            PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
 }

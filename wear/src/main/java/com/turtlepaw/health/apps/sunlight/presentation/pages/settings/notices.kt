@@ -21,14 +21,11 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.scrollAway
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
-import com.turtlepaw.health.apps.sunlight.presentation.theme.SunlightTheme
 import com.turtlepaw.health.components.ItemsListWithModifier
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
 @Composable
 fun WearNotices(){
-    SunlightTheme {
         val focusRequester = rememberActiveFocusRequester()
         val scalingLazyListState = rememberScalingLazyListState()
         Box(
@@ -43,12 +40,13 @@ fun WearNotices(){
             PositionIndicator(
                 scalingLazyListState = scalingLazyListState
             )
+            ScrollableDefaults.flingBehavior()
+            rememberRotaryHapticHandler(scrollableState)
             ItemsListWithModifier(
                 modifier = Modifier
-                    .rotaryWithScroll(
-                        reverseDirection = false,
-                        focusRequester = focusRequester,
-                        scrollableState = scalingLazyListState,
+                    .rotary(
+                        scrollBehavior(scrollableState = scalingLazyListState),
+                        focusRequester = focusRequester
                     ),
                 scrollableState = scalingLazyListState,
                 verticalAlignment = Arrangement.spacedBy(
@@ -90,7 +88,6 @@ fun WearNotices(){
                 }
             }
         }
-    }
 }
 
 @Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)

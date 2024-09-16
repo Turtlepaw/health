@@ -14,7 +14,7 @@ import com.turtlepaw.health.utils.SettingsBasics
 class SunlightContentProvider : ContentProvider() {
 
     companion object {
-        const val AUTHORITY = "com.turtlepaw.sunlight.provider"
+        const val AUTHORITY = "com.turtlepaw.health.provider"
         val CONTENT_URI: Uri = Uri.parse("content://$AUTHORITY/settings")
     }
 

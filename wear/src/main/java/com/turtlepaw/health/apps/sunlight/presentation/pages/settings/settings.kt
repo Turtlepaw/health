@@ -47,10 +47,8 @@ import androidx.wear.compose.material.ToggleChipDefaults
 import androidx.wear.compose.material.scrollAway
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.sunlight.presentation.Routes
-import com.turtlepaw.health.apps.sunlight.presentation.theme.SunlightTheme
 import com.turtlepaw.health.components.ItemsListWithModifier
 import com.turtlepaw.health.utils.Settings
 
@@ -66,7 +64,6 @@ fun WearSettings(
     setGoalNotifications: (state: Boolean) -> Unit,
     setBatterySaver: (state: Boolean) -> Unit
 ){
-    SunlightTheme {
         val focusRequester = rememberActiveFocusRequester()
         val scalingLazyListState = rememberScalingLazyListState()
         Box(
@@ -81,12 +78,13 @@ fun WearSettings(
             PositionIndicator(
                 scalingLazyListState = scalingLazyListState
             )
+            ScrollableDefaults.flingBehavior()
+            rememberRotaryHapticHandler(scrollableState)
             ItemsListWithModifier(
                 modifier = Modifier
-                    .rotaryWithScroll(
-                        reverseDirection = false,
-                        focusRequester = focusRequester,
-                        scrollableState = scalingLazyListState,
+                    .rotary(
+                        scrollBehavior(scrollableState = scalingLazyListState),
+                        focusRequester = focusRequester
                     ),
                 scrollableState = scalingLazyListState,
                 verticalAlignment = Arrangement.spacedBy(
@@ -285,7 +283,7 @@ fun WearSettings(
                                 checked = goalNotifications,
                                 enabled = true,
                                 modifier = Modifier.semantics {
-                                    this.contentDescription =
+                                    contentDescription =
                                         if (goalNotifications) "On" else "Off"
                                 },
                                 colors = SwitchDefaults.colors(
@@ -313,7 +311,6 @@ fun WearSettings(
             }
         }
     }
-}
 
 fun Context.getActivity(): ComponentActivity? = when (this) {
     is ComponentActivity -> this

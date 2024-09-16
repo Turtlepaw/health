@@ -6,8 +6,8 @@ import android.util.Log
 import androidx.annotation.Keep
 import com.turtlepaw.health.apps.sleep.common.BaseReceiver
 import com.turtlepaw.health.apps.sleep.presentation.dataStore
+import com.turtlepaw.health.apps.sleep.utils.BedtimeViewModel
 import com.turtlepaw.sleeptools.utils.BedtimeSensor
-import com.turtlepaw.sleeptools.utils.BedtimeViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

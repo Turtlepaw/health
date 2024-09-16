@@ -1,4 +1,4 @@
-package com.turtlepaw.sleeptools.utils
+package com.turtlepaw.health.apps.sleep.utils
 
 import android.util.Log
 import androidx.datastore.core.DataStore
@@ -7,7 +7,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.turtlepaw.sleeptools.utils.BedtimeViewModel.PreferencesKeys.BEDTIME_HISTORY_KEY
+import com.turtlepaw.health.apps.sleep.utils.BedtimeViewModel.PreferencesKeys.BEDTIME_HISTORY_KEY
+import com.turtlepaw.sleeptools.utils.BedtimeSensor
 import kotlinx.coroutines.flow.first
 import java.time.LocalDateTime
 import java.time.format.DateTimeParseException
@@ -28,7 +29,7 @@ class BedtimeViewModel(private val dataStore: DataStore<Preferences>) : ViewMode
     suspend fun delete(date: LocalDateTime) {
         dataStore.edit { preferences ->
             val bedtimeHistory = (preferences[BEDTIME_HISTORY_KEY] ?: mutableSetOf()).toMutableSet()
-            Log.d("Cleaner", "Found ${bedtimeHistory.filter { it.startsWith(date.toString()) }} ($bedtimeHistory | ${date.toString()})")
+            Log.d("Cleaner", "Found ${bedtimeHistory.filter { it.startsWith(date.toString()) }} ($bedtimeHistory | $date)")
             bedtimeHistory.removeIf { it.startsWith(date.toString()) } // Remove entries with matching date string
             preferences[BEDTIME_HISTORY_KEY] = bedtimeHistory
         }

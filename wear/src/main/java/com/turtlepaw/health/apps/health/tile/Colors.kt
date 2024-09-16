@@ -2,7 +2,7 @@ package com.turtlepaw.health.apps.health.tile
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import com.turtlepaw.health.apps.health.presentation.theme.Colors
+import com.turtlepaw.health.apps.sunlight.presentation.theme.Colors
 
 object TileColors {
     val PrimaryColor = Colors.primary.toArgb()

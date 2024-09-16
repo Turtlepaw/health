@@ -14,14 +14,11 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -40,6 +37,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import com.turtlepaw.health.apps.sunlight.SunlightViewModel
 import com.turtlepaw.health.apps.sunlight.presentation.pages.ClockworkToolkit
 import com.turtlepaw.health.apps.sunlight.presentation.pages.History
 import com.turtlepaw.health.apps.sunlight.presentation.pages.StatePicker
@@ -48,14 +46,12 @@ import com.turtlepaw.health.apps.sunlight.presentation.pages.WearHome
 import com.turtlepaw.health.apps.sunlight.presentation.pages.settings.WearNotices
 import com.turtlepaw.health.apps.sunlight.presentation.pages.settings.WearSettings
 import com.turtlepaw.health.apps.sunlight.presentation.theme.SunlightTheme
+import com.turtlepaw.health.database.AppDatabase
+import com.turtlepaw.health.database.SunlightDay
 import com.turtlepaw.health.services.SensorReceiver
 import com.turtlepaw.health.services.scheduleResetWorker
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
-import com.turtlepaw.health.utils.SunlightViewModel
-import com.turtlepaw.health.utils.SunlightViewModelFactory
-import kotlinx.coroutines.delay
-import java.time.LocalDate
 
 
 enum class Routes(private val route: String) {
@@ -69,7 +65,7 @@ enum class Routes(private val route: String) {
     STATS("/stats");
 
     fun getRoute(query: String? = null): String {
-        return if(query != null){
+        return if (query != null) {
             "$route/$query"
         } else route
     }
@@ -79,8 +75,9 @@ enum class Routes(private val route: String) {
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = SettingsBasics.HISTORY_STORAGE_BASE.getKey())
 
 class MainActivity : ComponentActivity(), SensorEventListener {
-    private lateinit var sunlightViewModelFactory: MutableState<SunlightViewModelFactory>
-    private lateinit var sunlightViewModel: MutableState<SunlightViewModel>
+    private lateinit var sunlightViewModel: SunlightViewModel
+
+    private lateinit var database: AppDatabase
     private var sensorManager: SensorManager? = null
     private var lightSensor: Sensor? = null
     private var sunlightLx = mutableFloatStateOf(0f)
@@ -97,15 +94,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             SettingsBasics.SHARED_PREFERENCES.getMode()
         )
 
-        // Initialize your BedtimeViewModelFactory here
-        sunlightViewModelFactory = mutableStateOf(
-            SunlightViewModelFactory(dataStore)
-        )
-
-        // Use the factory to create the BedtimeViewModel
-        sunlightViewModel = mutableStateOf(
-            ViewModelProvider(this, sunlightViewModelFactory.value)[SunlightViewModel::class.java]
-        )
+        database = AppDatabase.getDatabase(this)
 
         // Initialize Sensor Manager
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager?
@@ -126,11 +115,14 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         receiver.startAlarm(this)
 
         setContent {
+            sunlightViewModel = ViewModelProvider(this).get(SunlightViewModel::class.java)
+
             WearPages(
                 sharedPreferences,
-                sunlightViewModel.value,
+                database,
                 this,
-                sunlightLx.floatValue
+                sunlightLx.floatValue,
+                sunlightViewModel
             )
         }
     }
@@ -175,21 +167,30 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 @Composable
 fun WearPages(
     sharedPreferences: SharedPreferences,
-    sunlightViewModel: SunlightViewModel,
+    database: AppDatabase,
     context: Context,
-    sunlightLx: Float
-){
+    sunlightLx: Float,
+    sunlightViewModel: SunlightViewModel
+) {
     SunlightTheme {
         // Creates a navigation controller for our pages
         val navController = rememberSwipeDismissableNavController()
         // Goal - the user's sun daily sun goal
-        val goalInt = sharedPreferences.getInt(Settings.GOAL.getKey(), Settings.GOAL.getDefaultAsInt())
-        val thresholdInt = sharedPreferences.getInt(Settings.SUN_THRESHOLD.getKey(), Settings.SUN_THRESHOLD.getDefaultAsInt())
+        val goalInt =
+            sharedPreferences.getInt(Settings.GOAL.getKey(), Settings.GOAL.getDefaultAsInt())
+        val thresholdInt = sharedPreferences.getInt(
+            Settings.SUN_THRESHOLD.getKey(),
+            Settings.SUN_THRESHOLD.getDefaultAsInt()
+        )
         var goal by remember { mutableIntStateOf(goalInt) }
         var threshold by remember { mutableIntStateOf(thresholdInt) }
         // Sunlight
-        var sunlightHistory by remember { mutableStateOf<Set<Pair<LocalDate, Int>?>>(emptySet()) }
-        var sunlightToday by remember { mutableIntStateOf(0) }
+        var sunlightHistory by remember {
+            mutableStateOf<
+                    List<SunlightDay>>(emptyList())
+        }
+        //var sunlightToday by //by remember { mutableIntStateOf(0) }
+        val sunlightToday by sunlightViewModel.sunlightData.collectAsState()
         // Battery Saver
         val goalNotificatinsRaw = sharedPreferences.getBoolean(
             Settings.GOAL_NOTIFICATIONS.getKey(),
@@ -207,34 +208,34 @@ fun WearPages(
         // Suspended functions
         LaunchedEffect(state) {
             Log.d("SunlightLifecycle", "Lifecycle state updated: $state (${state.name})")
-            sunlightHistory = sunlightViewModel.getAllHistory()
-            sunlightToday = sunlightViewModel.getDay(LocalDate.now())?.second ?: 0
+            //sunlightToday = database.sunlightDao().getDay(LocalDate.now())?.value ?: 0
+            sunlightHistory = database.sunlightDao().getHistory()
             loading = false
         }
 
-        LaunchedEffect(key1 = sunlightViewModel) {
-            val handler = Handler(Looper.getMainLooper())
-            // Use a coroutine to run the code on the main thread
-            while (true) {
-                // Delay until the next minute
-                delay(15_000 - (System.currentTimeMillis() % 15_000))
-
-                // Update the current sunlight
-                val today = sunlightViewModel.getDay(LocalDate.now())
-
-                // Re-compose the composable
-                handler.post {
-                    if(today != null) sunlightToday = today.second
-                }
-            }
-        }
+        /*        LaunchedEffect(Unit) {
+                    val handler = Handler(Looper.getMainLooper())
+                    // Use a coroutine to run the code on the main thread
+        //            while (true) {
+        //                // Delay until the next minute
+        //                delay(15_000 - (System.currentTimeMillis() % 15_000))
+        //
+        //                // Update the current sunlight
+        //                val today = database.sunlightDao().getDay(LocalDate.now())
+        //
+        //                // Re-compose the composable
+        //                handler.post {
+        //                    if (today?.value != null) sunlightToday = today.value
+        //                }
+        //            }
+                }*/
 
         SwipeDismissableNavHost(
             navController = navController,
             startDestination = Routes.HOME.getRoute()
         ) {
             composable(Routes.HOME.getRoute()) {
-                if(loading){
+                if (loading) {
                     TimeText()
                     CircularProgressIndicator()
                 } else {
@@ -265,16 +266,16 @@ fun WearPages(
                         editor.putBoolean(Settings.GOAL_NOTIFICATIONS.getKey(), it)
                         editor.apply()
                     }
-                ){ value ->
+                ) { value ->
                     isBatterySaver = value
                     val editor = sharedPreferences.edit()
                     editor.putBoolean(Settings.BATTERY_SAVER.getKey(), value)
                     editor.apply()
                 }
             }
-            composable(Routes.GOAL_PICKER.getRoute()){
+            composable(Routes.GOAL_PICKER.getRoute()) {
                 StatePicker(
-                    List(60){
+                    List(60) {
                         it.plus(1)
                     },
                     unitOfMeasurement = "m",
@@ -292,10 +293,10 @@ fun WearPages(
                     navController.popBackStack()
                 }
             }
-            composable(Routes.SUN_PICKER.getRoute()){
+            composable(Routes.SUN_PICKER.getRoute()) {
                 StatePicker(
-                    List(10){
-                       it.times(1000).plus(1000)
+                    List(10) {
+                        it.times(1000).plus(1000)
                     },
                     unitOfMeasurement = "lx",
                     threshold,
@@ -320,7 +321,7 @@ fun WearPages(
 //                    loading
 //                )
 //            }
-            composable(Routes.CLOCKWORK.getRoute()){
+            composable(Routes.CLOCKWORK.getRoute()) {
                 ClockworkToolkit(
                     light = sunlightLx,
                     context = context,
@@ -332,11 +333,10 @@ fun WearPages(
                     sunlightHistory
                 )
             }
-            composable(Routes.NOTICES.getRoute()){
+            composable(Routes.NOTICES.getRoute()) {
                 WearNotices()
             }
             composable(Routes.HISTORY.getRoute()) {
-                Log.d("History", sunlightHistory.toString())
                 History(
                     sunlightHistory
                 )

@@ -31,14 +31,12 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.scrollAway
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.turtlepaw.health.apps.sunlight.presentation.GoalCompleteActivity
-import com.turtlepaw.health.apps.sunlight.presentation.theme.SunlightTheme
+import com.turtlepaw.health.components.ItemsListWithModifier
+import com.turtlepaw.health.database.SunlightDay
 import com.turtlepaw.health.services.LightLoggerService
 import com.turtlepaw.health.services.LightWorker
 import com.turtlepaw.health.services.SensorReceiver
-import com.turtlepaw.health.components.ItemsListWithModifier
-import java.time.LocalDate
 
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
@@ -46,9 +44,8 @@ import java.time.LocalDate
 fun ClockworkToolkit(
     light: Float,
     context: Context,
-    history: Set<Pair<LocalDate, Int>?>
+    history: List<SunlightDay>
 ) {
-    SunlightTheme {
         val focusRequester = rememberActiveFocusRequester()
         val scalingLazyListState = rememberScalingLazyListState()
         val sensorWorker = PendingIntent.getBroadcast(
@@ -77,12 +74,13 @@ fun ClockworkToolkit(
             PositionIndicator(
                 scalingLazyListState = scalingLazyListState
             )
+            ScrollableDefaults.flingBehavior()
+            rememberRotaryHapticHandler(scrollableState)
             ItemsListWithModifier(
                 modifier = Modifier
-                    .rotaryWithScroll(
-                        reverseDirection = false,
-                        focusRequester = focusRequester,
-                        scrollableState = scalingLazyListState,
+                    .rotary(
+                        scrollBehavior(scrollableState = scalingLazyListState),
+                        focusRequester = focusRequester
                     ),
                 scrollableState = scalingLazyListState,
                 verticalAlignment = Arrangement.spacedBy(
@@ -173,7 +171,6 @@ fun ClockworkToolkit(
                 }
             }
         }
-    }
 }
 
 @SuppressWarnings("deprecation")
@@ -193,6 +190,6 @@ fun ToolkitPreview() {
     ClockworkToolkit(
         light = 2000f,
         context = LocalContext.current,
-        history = emptySet()
+        history = emptyList()
     )
 }

@@ -28,10 +28,9 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.scrollAway
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.turtlepaw.health.R
-import com.turtlepaw.health.apps.sunlight.presentation.theme.SunlightTheme
 import com.turtlepaw.health.components.ItemsListWithModifier
+import com.turtlepaw.health.database.SunlightDay
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
@@ -39,9 +38,8 @@ import java.time.temporal.TemporalAdjusters
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
 @Composable
 fun Stats(
-    history: Set<Pair<LocalDate, Int>?>
+    history: List<SunlightDay>
 ) {
-    SunlightTheme {
         val focusRequester = rememberActiveFocusRequester()
         val scalingLazyListState = rememberScalingLazyListState()
         Box(
@@ -56,12 +54,13 @@ fun Stats(
             PositionIndicator(
                 scalingLazyListState = scalingLazyListState
             )
+            ScrollableDefaults.flingBehavior()
+            rememberRotaryHapticHandler(scrollableState)
             ItemsListWithModifier(
                 modifier = Modifier
-                    .rotaryWithScroll(
-                        reverseDirection = false,
-                        focusRequester = focusRequester,
-                        scrollableState = scalingLazyListState,
+                    .rotary(
+                        scrollBehavior(scrollableState = scalingLazyListState),
+                        focusRequester = focusRequester
                     ),
                 scrollableState = scalingLazyListState,
                 verticalAlignment = Arrangement.spacedBy(
@@ -110,8 +109,8 @@ fun Stats(
 
 // Filter the history list to include only the items from this week and sum the second elements
                         val sumThisWeek = history.filterNotNull()
-                            .filter { it.first in startOfWeek..endOfWeek }
-                            .sumOf { it.second }
+                            .filter { it.timestamp in startOfWeek..endOfWeek }
+                            .sumOf { it.value }
 
                         Text(
                             text = "Weekly",
@@ -138,8 +137,8 @@ fun Stats(
 // Filter the history list to include only the items from this month and sum the second elements
                         val sumThisMonth = history
                             .filterNotNull()
-                            .filter { it.first in startOfMonth..endOfMonth }
-                            .sumOf { it.second }
+                            .filter { it.timestamp in startOfMonth..endOfMonth }
+                            .sumOf { it.value }
 
                         Text(
                             text = "Monthly",
@@ -157,8 +156,8 @@ fun Stats(
                         ),
                     ) {
                         val sumThisYear = history.filterNotNull()
-                            .filter { it.first.year == today.year }
-                            .sumOf { it.second }
+                            .filter { it.timestamp.year == today.year }
+                            .sumOf { it.value }
 
                         Text(
                             text = "Yearly",
@@ -169,13 +168,12 @@ fun Stats(
                 }
             }
         }
-    }
 }
 
 @Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
 @Composable
 fun StatsPreview() {
     Stats(
-        history = emptySet()
+        history = emptyList()
     )
 }

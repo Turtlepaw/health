@@ -1,13 +1,11 @@
 package com.turtlepaw.health.apps.sunlight.tile
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders.argb
 import androidx.wear.protolayout.DimensionBuilders.dp
@@ -34,14 +32,13 @@ import com.google.android.horologist.compose.tools.LayoutRootPreview
 import com.google.android.horologist.compose.tools.buildDeviceParameters
 import com.google.android.horologist.tiles.SuspendingTileService
 import com.turtlepaw.health.R
-import com.turtlepaw.health.apps.health.presentation.dataStore
 import com.turtlepaw.health.apps.health.tile.FontStyle
 import com.turtlepaw.health.apps.health.tile.MainTileService
 import com.turtlepaw.health.apps.health.tile.TileColors
+import com.turtlepaw.health.apps.sunlight.presentation.MainActivity
+import com.turtlepaw.health.database.AppDatabase
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
-import com.turtlepaw.health.utils.SunlightViewModel
-import com.turtlepaw.health.utils.SunlightViewModelFactory
 import com.turtlepaw.health.utils.TimeManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -68,8 +65,8 @@ enum class Images(private val id: String) {
  * Skeleton for a tile with no images.
  */
 @OptIn(ExperimentalHorologistApi::class)
-class MainTileService : SuspendingTileService(), ViewModelStoreOwner {
-    override val viewModelStore = ViewModelStore()
+class MainTileService : SuspendingTileService() {
+    lateinit var appDatabase: AppDatabase
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
@@ -98,19 +95,23 @@ class MainTileService : SuspendingTileService(), ViewModelStoreOwner {
     ): TileBuilders.Tile {
         val lastClickableId = requestParams.currentState.lastClickableId
         if (lastClickableId == LAUNCH_APP_ID) {
-            Log.d("Tile", "Launching main activity...")
-            startActivity(packageManager.getLaunchIntentForPackage(packageName))
+            Log.d("SunlightTile", "Launching main activity (sunlight)...")
+            startActivity(
+                Intent(this, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+            )
         }
         
         val sharedPreferences = getSharedPreferences(
             SettingsBasics.SHARED_PREFERENCES.getKey(),
             SettingsBasics.SHARED_PREFERENCES.getMode()
         )
-        val sunlightViewModel = ViewModelProvider(this, SunlightViewModelFactory(dataStore)).get(
-            SunlightViewModel::class.java)
+
         // Get preferences
+        appDatabase = AppDatabase.getDatabase(this)
         val goal = sharedPreferences.getInt(Settings.GOAL.getKey(), Settings.GOAL.getDefaultAsInt())
-        val today = sunlightViewModel.getDay(LocalDate.now())?.second ?: 0
+        val today = appDatabase.sunlightDao().getDay(LocalDate.now())?.value ?: 0
 
         val singleTileTimeline = TimelineBuilders.Timeline.Builder().addTimelineEntry(
             TimelineBuilders.TimelineEntry.Builder().setLayout(
@@ -175,7 +176,7 @@ private fun noDataLayout(
     return EdgeContentLayout.Builder(deviceParameters)
         .setPrimaryLabelTextContent(
             Text.Builder(context, "Sunlight")
-                .setTypography(6.toInt())
+                .setTypography(Typography.TYPOGRAPHY_TITLE3)
                 .setColor(argb(TileColors.LightText))
                 .build()
         )
@@ -244,7 +245,7 @@ private fun tileLayout(
         )
         .setPrimaryLabelTextContent(
             Text.Builder(context, "Sunlight")
-                .setTypography(6.toInt())
+                .setTypography(Typography.TYPOGRAPHY_TITLE3)
                 .setColor(argb(TileColors.LightText))
                 .build()
         )
@@ -329,7 +330,7 @@ private fun tileLayout(
 @Composable
 fun TilePreview() {
     val timeManager = TimeManager()
-    val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0));
+    val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0))
     val sleepQuality = timeManager.calculateSleepQuality(timeDifference)
 
     LayoutRootPreview(root = tileLayout(
@@ -348,7 +349,7 @@ fun TilePreview() {
 @Composable
 fun NoDataPreview() {
     val timeManager = TimeManager()
-    val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0));
+    val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0))
     val sleepQuality = timeManager.calculateSleepQuality(timeDifference)
 
     LayoutRootPreview(root = noDataLayout(

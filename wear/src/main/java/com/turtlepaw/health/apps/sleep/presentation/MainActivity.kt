@@ -48,12 +48,12 @@ import com.turtlepaw.health.apps.sleep.presentation.pages.settings.WearBedtimeSe
 import com.turtlepaw.health.apps.sleep.presentation.pages.settings.WearSettings
 import com.turtlepaw.health.apps.sleep.services.RegisterForPassiveDataWorker
 import com.turtlepaw.health.apps.sleep.services.enqueueHealthWorker
+import com.turtlepaw.health.apps.sleep.utils.BedtimeViewModel
+import com.turtlepaw.health.apps.sleep.utils.BedtimeViewModelFactory
 import com.turtlepaw.sleeptools.presentation.theme.SleepTheme
 import com.turtlepaw.sleeptools.utils.AlarmType
 import com.turtlepaw.sleeptools.utils.AlarmsManager
 import com.turtlepaw.sleeptools.utils.BedtimeSensor
-import com.turtlepaw.sleeptools.utils.BedtimeViewModel
-import com.turtlepaw.sleeptools.utils.BedtimeViewModelFactory
 import com.turtlepaw.sleeptools.utils.Settings
 import com.turtlepaw.sleeptools.utils.SettingsBasics
 import com.turtlepaw.sleeptools.utils.TimeManager

@@ -30,8 +30,8 @@ import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import com.turtlepaw.health.apps.sleep.utils.BedtimeViewModel
 import com.turtlepaw.health.components.Page
-import com.turtlepaw.sleeptools.utils.BedtimeViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
