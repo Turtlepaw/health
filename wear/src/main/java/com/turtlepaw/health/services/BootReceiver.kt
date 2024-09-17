@@ -22,10 +22,10 @@ class SensorReceiver : BroadcastReceiver() {
         val action = intent.action
         Log.d(tag, "Received boot and got action $action")
         // Start your alarm here
-        startAlarm(context)
+        startService(context)
     }
 
-    fun startAlarm(context: Context) {
+    fun startService(context: Context) {
         Log.d(tag, "Sunlight alarm start confirmed")
 
         // Save battery (experimental)

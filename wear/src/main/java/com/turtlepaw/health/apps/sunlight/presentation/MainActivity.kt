@@ -18,6 +18,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BeachAccess
 import androidx.compose.material.icons.rounded.Lan
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +28,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.datastore.core.DataStore
@@ -50,12 +52,15 @@ import com.turtlepaw.health.apps.sunlight.presentation.pages.settings.WearSettin
 import com.turtlepaw.health.apps.sunlight.presentation.theme.SunlightTheme
 import com.turtlepaw.health.components.Introduction
 import com.turtlepaw.health.database.AppDatabase
+import com.turtlepaw.health.database.Service
 import com.turtlepaw.health.database.ServiceType
 import com.turtlepaw.health.database.SunlightDay
+import com.turtlepaw.health.services.LightWorker
 import com.turtlepaw.health.services.SensorReceiver
 import com.turtlepaw.health.services.scheduleResetWorker
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
+import kotlinx.coroutines.launch
 
 
 enum class Routes(private val route: String) {
@@ -117,7 +122,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         val receiver = SensorReceiver()
         // Start the alarm
         Log.d(tag, "Starting sunlight alarm")
-        receiver.startAlarm(this)
+        receiver.startService(this)
 
         setContent {
             sunlightViewModel = ViewModelProvider(this).get(SunlightViewModel::class.java)
@@ -217,8 +222,15 @@ fun WearPages(
             sunlightHistory = database.sunlightDao().getHistory()
 
             val service = database.serviceDao().getService(ServiceType.SUNLIGHT.serviceName)
-            if (service?.isEnabled == false) {
-                navController.navigate(Routes.INTRO.getRoute())
+            if (service?.isEnabled != true) {
+                navController.navigate(Routes.INTRO.getRoute()) {
+                    // Clear the back stack
+                    popUpTo(Routes.HOME.getRoute()) {
+                        inclusive = true // Remove the home screen from the back stack
+                    }
+                    launchSingleTop =
+                        true // Avoid creating a new instance if already in the back stack
+                }
             }
 
             loading = false
@@ -353,17 +365,42 @@ fun WearPages(
                 )
             }
             composable(Routes.INTRO.getRoute()) {
+                val coroutineScope = rememberCoroutineScope()
                 Introduction(
                     appName = "Sunlight",
-                    description = "Track your daily sunlight",
+                    description = "Track your daily sunlight and see connections with your sleep.",
                     features = listOf(
                         Triple(
+                            Icons.Rounded.BeachAccess,
+                            "Monitor sunlight",
+                            "See how much sunlight you get daily."
+                        ),
+                        Triple(
                             Icons.Rounded.Lan,
-                            "Connect with other health data",
+                            "Connect with other data",
                             "Connect your sunlight with your sleep and more."
                         )
                     )
-                ) { }
+                ) {
+                    coroutineScope.launch {
+                        database.serviceDao().insertService(
+                            Service(
+                                name = ServiceType.SUNLIGHT.serviceName,
+                                isEnabled = true
+                            )
+                        )
+
+                        context.startForegroundService(Intent(context, LightWorker::class.java))
+                        navController.navigate(Routes.HOME.getRoute()) {
+                            // Clear the back stack
+                            popUpTo(Routes.INTRO.getRoute()) {
+                                inclusive = true // Remove the start destination from the back stack
+                            }
+                            launchSingleTop =
+                                true // Optional: Avoid creating a new instance if already in the back stack
+                        }
+                    }
+                }
             }
         }
     }

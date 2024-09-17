@@ -102,7 +102,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         val receiver = SensorReceiver()
         // Start the alarm
         Log.d(tag, "Starting sunlight alarm")
-        receiver.startAlarm(this)
+        receiver.startService(this)
 
         setContent {
             WearPages(

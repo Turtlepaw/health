@@ -29,12 +29,16 @@ import androidx.core.graphics.drawable.IconCompat
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import com.turtlepaw.health.apps.health.complication.MainComplicationService
 import com.turtlepaw.health.database.AppDatabase
+import com.turtlepaw.health.database.ServiceType
 import com.turtlepaw.health.database.SunlightDay
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
@@ -61,6 +65,8 @@ class LightWorker : Service(), SensorEventListener {
     private val shutdownReceiver = ShutdownReceiver()
     private val wakeupReceiver = WakeupReceiver()
     private val goalReceiver = GoalReceiver()
+
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     // Shared Preferences Listener
     inner class ThresholdReceiver : BroadcastReceiver() {
@@ -231,33 +237,52 @@ class LightWorker : Service(), SensorEventListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "Waiting for light changes")
-        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager?
-        lightSensor = sensorManager!!.getDefaultSensor(Sensor.TYPE_LIGHT)
-        sharedPreferences = getSharedPreferences(
-            SettingsBasics.SHARED_PREFERENCES.getKey(),
-            SettingsBasics.SHARED_PREFERENCES.getMode()
-        )
-        sharedPreferences.edit {
-            putBoolean(Settings.STATUS.getKey(), true)
-        }
-        threshold = sharedPreferences.getInt(
-            Settings.SUN_THRESHOLD.getKey(),
-            Settings.SUN_THRESHOLD.getDefaultAsInt()
-        )
-        goal = sharedPreferences.getInt(
-            Settings.GOAL.getKey(),
-            Settings.GOAL.getDefaultAsInt()
-        )
+        coroutineScope.launch {
+            delay(1000)
+            val service = database.serviceDao().getService(ServiceType.SUNLIGHT.serviceName)
+            if (service?.isEnabled != true) {
+                Log.d("LightWorker", "Service is not enabled, stopping")
+                withContext(Dispatchers.Main) {
+                    unregisterReceiver(goalReceiver)
+                    unregisterReceiver(wakeupReceiver)
+                    unregisterReceiver(shutdownReceiver)
+                    unregisterReceiver(thresholdReceiver)
+                    stopSelf() // Stop the service if the condition is met
+                }
+                return@launch // Exit coroutine scope if service should be stopped
+            }
+
+            sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager?
+            lightSensor = sensorManager!!.getDefaultSensor(Sensor.TYPE_LIGHT)
+            sharedPreferences = getSharedPreferences(
+                SettingsBasics.SHARED_PREFERENCES.getKey(),
+                SettingsBasics.SHARED_PREFERENCES.getMode()
+            )
+            withContext(Dispatchers.IO) {
+                sharedPreferences.edit {
+                    putBoolean(Settings.STATUS.getKey(), true)
+                }
+                threshold = sharedPreferences.getInt(
+                    Settings.SUN_THRESHOLD.getKey(),
+                    Settings.SUN_THRESHOLD.getDefaultAsInt()
+                )
+                goal = sharedPreferences.getInt(
+                    Settings.GOAL.getKey(),
+                    Settings.GOAL.getDefaultAsInt()
+                )
+            }
 //        val factory = SunlightViewModelFactory(this.dataStore)
 //        sunlightViewModel = ViewModelProvider(
 //            applicationContext as ViewModelStoreOwner,
 //            factory
 //        )[SunlightViewModel::class.java]
-        sensorManager!!.registerListener(
-            this, lightSensor,
-            SensorManager.SENSOR_DELAY_NORMAL
-        )
+            sensorManager!!.registerListener(
+                this@LightWorker, lightSensor,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+        }
         return START_STICKY
+
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -372,16 +397,6 @@ class LightWorker : Service(), SensorEventListener {
         }
     }
 
-
-    override fun onDestroy() {
-        super.onDestroy()
-        /* IF YOU WANT THIS SERVICE KILLED WITH THE APP THEN UNCOMMENT THE FOLLOWING LINE */
-        //handler.removeCallbacks(runnable);
-//        sensorManager!!.unregisterListener(this)
-//        stopSelf()
-        Toast.makeText(this, "Service stopped", Toast.LENGTH_LONG).show()
-        // Clean up the sensor and service
-    }
 
     companion object {
         private const val TAG = "LightWorker"
