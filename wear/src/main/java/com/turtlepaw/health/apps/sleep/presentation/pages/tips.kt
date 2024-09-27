@@ -34,6 +34,8 @@ import androidx.wear.compose.material.TitleCard
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.components.Page
+import com.turtlepaw.health.database.BedtimeSensor
+import com.turtlepaw.health.database.SleepDay
 import com.turtlepaw.sleeptools.utils.TimeManager
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -48,11 +50,10 @@ fun Tips(
     sunlight: Int,
     bedtimeGoal: LocalTime?,
     timeManager: TimeManager,
-    lastBedtime: LocalTime?,
-    lastSleepTime: LocalDateTime?,
+    lastEntry: SleepDay?,
     goBack: () -> Unit
 ) {
-        val formatter = timeManager.getTimeFormatter(false)
+    timeManager.getTimeFormatter(false)
         val formatterWithDetails = timeManager.getTimeFormatter()
         var sunlightInstallState by remember { mutableStateOf<Boolean?>(null) }
         DisposableEffect(Unit) {
@@ -185,10 +186,10 @@ fun Tips(
                             textAlign = TextAlign.Start
                             //color = Color(0xFF939AA3)
                         )
-                        if (lastBedtime != null && lastSleepTime != null) {
+                        if (lastEntry?.bedtime != null && lastEntry?.asleepAt != null) {
                             val difference = timeManager.calculateTimeDifference(
-                                lastBedtime,
-                                lastSleepTime.toLocalTime()
+                                lastEntry.bedtime.toLocalTime(),
+                                lastEntry.asleepAt.toLocalTime()
                             )
                             Spacer(modifier = Modifier.padding(10.dp))
                             Text(
@@ -214,8 +215,12 @@ fun TipsPreview() {
         sunlight = 0,
         bedtimeGoal = LocalTime.now(),
         timeManager = TimeManager(),
-        LocalTime.of(22, 0),
-        LocalDateTime.now()
+        lastEntry = SleepDay(
+            type = BedtimeSensor.BEDTIME,
+            wakeup = LocalDateTime.now().withHour(9),
+            bedtime = LocalDateTime.now().minusDays(1).withHour(22),
+            asleepAt = LocalDateTime.now().withHour(1)
+        )
     ) {
 
     }

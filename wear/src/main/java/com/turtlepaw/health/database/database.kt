@@ -6,12 +6,16 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [SleepDay::class, SunlightDay::class, Service::class], version = 1)
+@Database(
+    entities = [SleepDay::class, SunlightDay::class, Service::class, Reflection::class],
+    version = 1
+)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun sunlightDao(): SunlightDao
     abstract fun sleepDao(): SleepDao
     abstract fun serviceDao(): ServiceDao
+    abstract fun reflectionDao(): ReflectionDao
 
     companion object {
         @Volatile

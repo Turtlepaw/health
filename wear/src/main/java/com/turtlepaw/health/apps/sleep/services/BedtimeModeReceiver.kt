@@ -7,14 +7,11 @@ import android.provider.Settings
 import android.util.Log
 import androidx.annotation.Keep
 import com.turtlepaw.health.apps.sleep.common.BaseReceiver
-import com.turtlepaw.health.apps.sleep.presentation.dataStore
-import com.turtlepaw.health.apps.sleep.utils.BedtimeViewModel
-import com.turtlepaw.sleeptools.utils.BedtimeSensor
+import com.turtlepaw.health.database.BedtimeSensor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
 
 @Keep
 class BedtimeModeReceiver: BaseReceiver() {
@@ -34,7 +31,6 @@ class BedtimeModeReceiver: BaseReceiver() {
 
     private suspend fun runReceiver(context: Context) {
         Log.d(tag, "Retrieving new bedtime state...")
-        val bedtimeViewModel = BedtimeViewModel(context.applicationContext.dataStore)
         // The following code is from home assistant:
         // https://github.com/home-assistant/android/blob/c6ddca8fdc34d2e7741ec82c04b7d8b8d01d3995/wear/src/main/java/io/homeassistant/companion/android/sensors/BedtimeModeSensorManager.kt#L52
         val state = try {
@@ -46,7 +42,7 @@ class BedtimeModeReceiver: BaseReceiver() {
 
         if(state){
             Log.d(tag, "Bedtime mode is on, adding entry")
-            bedtimeViewModel.save(LocalDateTime.now(), sensorType)
+            saveEntry(context, sensorType)
         } else Log.d(tag, "Bedtime mode is off, not adding entry")
     }
 }

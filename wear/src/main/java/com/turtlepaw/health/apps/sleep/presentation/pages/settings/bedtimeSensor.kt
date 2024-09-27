@@ -19,8 +19,7 @@ import androidx.wear.compose.material.ToggleChip
 import androidx.wear.compose.material.ToggleChipDefaults
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.components.Page
-import com.turtlepaw.sleeptools.presentation.theme.SleepTheme
-import com.turtlepaw.sleeptools.utils.BedtimeSensor
+import com.turtlepaw.health.database.BedtimeSensor
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
 @Composable

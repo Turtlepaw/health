@@ -15,7 +15,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,7 +26,6 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
@@ -40,7 +38,6 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.turtlepaw.health.apps.sleep.presentation.pages.TimePicker
 import com.turtlepaw.health.apps.sleep.presentation.pages.Tips
 import com.turtlepaw.health.apps.sleep.presentation.pages.WearHome
-import com.turtlepaw.health.apps.sleep.presentation.pages.history.Item
 import com.turtlepaw.health.apps.sleep.presentation.pages.history.WearHistory
 import com.turtlepaw.health.apps.sleep.presentation.pages.history.WearHistoryDelete
 import com.turtlepaw.health.apps.sleep.presentation.pages.settings.WearBedtimeSensorSetting
@@ -48,14 +45,14 @@ import com.turtlepaw.health.apps.sleep.presentation.pages.settings.WearBedtimeSe
 import com.turtlepaw.health.apps.sleep.presentation.pages.settings.WearSettings
 import com.turtlepaw.health.apps.sleep.services.RegisterForPassiveDataWorker
 import com.turtlepaw.health.apps.sleep.services.enqueueHealthWorker
-import com.turtlepaw.health.apps.sleep.utils.BedtimeViewModel
-import com.turtlepaw.health.apps.sleep.utils.BedtimeViewModelFactory
+import com.turtlepaw.health.apps.sleep.utils.Settings
+import com.turtlepaw.health.apps.sleep.utils.SettingsBasics
+import com.turtlepaw.health.database.AppDatabase
+import com.turtlepaw.health.database.BedtimeSensor
+import com.turtlepaw.health.database.SleepDay
 import com.turtlepaw.sleeptools.presentation.theme.SleepTheme
 import com.turtlepaw.sleeptools.utils.AlarmType
 import com.turtlepaw.sleeptools.utils.AlarmsManager
-import com.turtlepaw.sleeptools.utils.BedtimeSensor
-import com.turtlepaw.sleeptools.utils.Settings
-import com.turtlepaw.sleeptools.utils.SettingsBasics
 import com.turtlepaw.sleeptools.utils.TimeManager
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -84,8 +81,7 @@ enum class Routes(private val route: String) {
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = SettingsBasics.HISTORY_STORAGE_BASE.getKey())
 
 class MainActivity : ComponentActivity() {
-    private lateinit var bedtimeViewModelFactory: MutableState<BedtimeViewModelFactory>
-    private lateinit var bedtimeViewModel: MutableState<BedtimeViewModel>
+    private lateinit var database: AppDatabase
     private val tag = "MainSleepActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -99,15 +95,7 @@ class MainActivity : ComponentActivity() {
             SettingsBasics.SHARED_PREFERENCES.getMode()
         )
 
-        // Initialize your BedtimeViewModelFactory here
-        bedtimeViewModelFactory = mutableStateOf(
-            BedtimeViewModelFactory(dataStore)
-        )
-
-        // Use the factory to create the BedtimeViewModel
-        bedtimeViewModel = mutableStateOf(
-            ViewModelProvider(this, bedtimeViewModelFactory.value)[BedtimeViewModel::class.java]
-        )
+        database = AppDatabase.getDatabase(this)
 
         WorkManager.getInstance(this).enqueueHealthWorker(
             this
@@ -117,7 +105,7 @@ class MainActivity : ComponentActivity() {
             SleepTheme {
                 WearPages(
                     sharedPreferences,
-                    bedtimeViewModel.value,
+                    database,
                     this
                 )
             }
@@ -129,7 +117,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun WearPages(
     sharedPreferences: SharedPreferences,
-    bedtimeViewModel: BedtimeViewModel,
+    database: AppDatabase,
     context: Context
 ){
         // Creates a navigation controller for our pages
@@ -160,7 +148,7 @@ fun WearPages(
         // Uses Settings.Globals to get bedtime mode
         var bedtimeGoal by remember { mutableStateOf<LocalTime?>(null) }
         // History
-        var history by remember { mutableStateOf<Set<Pair<LocalDateTime, BedtimeSensor>?>>(emptySet()) }
+    var history by remember { mutableStateOf<List<SleepDay>>(emptyList()) }
         var loading by remember { mutableStateOf(true) }
         // Parses the wake time and decides if it should use
         // user defined or system defined
@@ -175,11 +163,11 @@ fun WearPages(
         val coroutineScope = rememberCoroutineScope()
         val lifecycleOwner = LocalLifecycleOwner.current
         val state by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
-        LaunchedEffect(key1 = bedtimeViewModel, key2 = state) {
+    LaunchedEffect(key1 = state) {
             Log.d("LaunchedEffectSleep", "Updating (${state})")
             loading = true
             // Get all history
-            history = bedtimeViewModel.getHistory()
+        history = database.sleepDao().getHistory()
             // Calculate sleep quality
             bedtimeGoal = timeManager.calculateAvgBedtime(history)
             loading = false
@@ -357,18 +345,18 @@ fun WearPages(
             }
             composable(Routes.DELETE_HISTORY.getRoute("{id}")) {
                 WearHistoryDelete(
-                    bedtimeViewModel,
-                    item = if(it.arguments?.getString("id")!! == "ALL") Item.StringItem("ALL") else Item.LocalDateTimeItem(
-                        LocalDateTime.parse(it.arguments?.getString("id")!!)
-                    ),
+                    database,
+                    it.arguments?.getString("id")!!,
                     navigation = navController,
                     onDelete = { time ->
-                        val mutated = history.toMutableSet()
-                        if(time is Item.LocalDateTimeItem){
+                        val mutated = history.toMutableList()
+                        if (time != "ALL") {
                             mutated.removeIf { date ->
-                                date?.first?.isEqual(time.value) ?: false
+                                date?.bedtime?.isEqual(
+                                    LocalDateTime.parse(time)
+                                ) == true
                             }
-                        } else if(time is Item.StringItem){
+                        } else {
                             mutated.clear()
                         }
 
@@ -412,8 +400,7 @@ fun WearPages(
                     sunlight,
                     bedtimeGoal,
                     timeManager,
-                    history.lastOrNull()?.first?.toLocalTime(),
-                    lastSleepTime
+                    history.lastOrNull()
                 ){
                     navController.popBackStack()
                 }

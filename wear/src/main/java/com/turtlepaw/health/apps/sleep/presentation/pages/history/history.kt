@@ -47,8 +47,8 @@ import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
 import com.patrykandpatrick.vico.core.entry.entryOf
 import com.turtlepaw.health.apps.sleep.presentation.Routes
 import com.turtlepaw.health.components.Page
-import com.turtlepaw.sleeptools.presentation.theme.SleepTheme
-import com.turtlepaw.sleeptools.utils.BedtimeSensor
+import com.turtlepaw.health.database.BedtimeSensor
+import com.turtlepaw.health.database.SleepDay
 import com.turtlepaw.sleeptools.utils.TimeManager
 import java.time.DayOfWeek
 import java.time.Duration
@@ -64,7 +64,7 @@ import kotlin.random.Random
 @Composable
 fun WearHistory(
     navigate: NavHostController,
-    history: Set<Pair<LocalDateTime, BedtimeSensor>?>,
+    history: List<SleepDay>,
     loading: Boolean,
     goal: LocalTime?
 ) {
@@ -85,7 +85,6 @@ fun WearHistory(
                     val daysOfWeek = listOf("S", "M", "T", "W", "T", "F", "S")
                     val bottomAxisValueFormatter =
                         AxisValueFormatter<AxisPosition.Horizontal.Bottom> { x, _ -> daysOfWeek[x.toInt() % daysOfWeek.size] }
-                    val maxValue = 1f
 
                     val today = LocalDate.now()
                     val startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
@@ -97,10 +96,14 @@ fun WearHistory(
 
                     val rawData = List(7) { index ->
                         val currentDate = startOfWeek.plusDays(index.toLong())
-                        val bedtimeData = thisWeekData.find { it.first.toLocalDate() == currentDate }
+                        val bedtimeData = thisWeekData.find {
+                            (it.asleepAt ?: it.bedtime).toLocalDate() == currentDate
+                        }
 
                         if (bedtimeData != null) {
-                            val bedtimeDifference = Duration.between(bedtimeData.first.toLocalTime(), goal)
+                            val bedtimeDifference = Duration.between(
+                                (bedtimeData.asleepAt ?: bedtimeData.bedtime).toLocalTime(), goal
+                            )
                             val totalMinutesInDay = 24 * 60
                             val percent = bedtimeDifference.toMinutes().toDouble() / totalMinutesInDay
 
@@ -191,7 +194,7 @@ fun WearHistory(
                     }
                     items(history.filterNotNull().toList().asReversed()) { time ->
                         Chip(
-                            onClick = { navigate.navigate(Routes.DELETE_HISTORY.getRoute(time.first.toString())) },
+                            onClick = { navigate.navigate(Routes.DELETE_HISTORY.getRoute(time.bedtime.toString())) },
                             colors = ChipDefaults.chipColors(
                                 backgroundColor = MaterialTheme.colors.secondary
                             ),
@@ -202,7 +205,7 @@ fun WearHistory(
                                 verticalAlignment = Alignment.CenterVertically, // Add this line to align text vertically
                             ) {
                                 Icon(
-                                    imageVector = if(time.second == BedtimeSensor.BEDTIME) Icons.Rounded.Bedtime else Icons.Rounded.Bolt,
+                                    imageVector = if (time.type == BedtimeSensor.BEDTIME) Icons.Rounded.Bedtime else Icons.Rounded.Bolt,
                                     contentDescription = "History",
                                     tint = Color(0xFFE4C6FF),
                                     modifier = Modifier
@@ -215,14 +218,14 @@ fun WearHistory(
                                     modifier = Modifier.fillMaxWidth() // Adjust the modifier as needed
                                 ) {
                                     Text(
-                                        text = dayFormatter.format(time.first),
+                                        text = dayFormatter.format(time?.asleepAt ?: time.bedtime),
                                         fontSize = 22.sp,
                                         fontWeight = FontWeight.W500,
                                         color = MaterialTheme.colors.onSecondary
                                     )
                                     Text(
                                         fontSize = 22.sp,
-                                        text = timeFormatter.format(time.first),
+                                        text = timeFormatter.format(time?.asleepAt ?: time.bedtime),
                                         fontWeight = FontWeight.W500,
                                         color = MaterialTheme.colors.onSecondary
                                     )
@@ -279,8 +282,8 @@ private val thresholdLineLabelPadding =
 private val thresholdLineLabelMargins = dimensionsOf(thresholdLineLabelMarginValue)
  */
 
-fun getRandomTime(amount: Int): MutableSet<Pair<LocalDateTime, BedtimeSensor>> {
-    val randomTimes = mutableSetOf<Pair<LocalDateTime, BedtimeSensor>>()
+fun getRandomTime(amount: Int): MutableList<SleepDay> {
+    val randomTimes = mutableListOf<SleepDay>()
 
     repeat(amount) {
         val hour = Random.nextInt(0, 24)
@@ -289,9 +292,11 @@ fun getRandomTime(amount: Int): MutableSet<Pair<LocalDateTime, BedtimeSensor>> {
 
         val randomTime = LocalDateTime.of(LocalDate.now(), LocalTime.of(hour, minute, second))
         randomTimes.add(
-            Pair(
-                randomTime,
-                BedtimeSensor.BEDTIME
+            SleepDay(
+                asleepAt = randomTime,
+                bedtime = randomTime,
+                wakeup = randomTime.plusHours(5),
+                type = BedtimeSensor.BEDTIME
             )
         )
     }
@@ -342,7 +347,14 @@ fun HistoryPreview() {
                 sunday.plusDays(3),
                 LocalTime.of(0, 0)
             )
-        ).map { Pair(it, BedtimeSensor.BEDTIME) }.toSet(),
+        ).map {
+            SleepDay(
+                bedtime = it,
+                asleepAt = it,
+                wakeup = it.plusHours(5),
+                type = BedtimeSensor.BEDTIME
+            )
+        }.toList(),
         loading = false,
         goal = LocalTime.of(0, 15) // 1:15AM
     )

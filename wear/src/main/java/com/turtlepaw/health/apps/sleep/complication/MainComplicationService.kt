@@ -18,10 +18,10 @@ import androidx.wear.watchface.complications.data.SmallImageType
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 import com.turtlepaw.health.R
+import com.turtlepaw.health.apps.sleep.utils.Settings
+import com.turtlepaw.health.apps.sleep.utils.SettingsBasics
 import com.turtlepaw.sleeptools.tile.DEFAULT_GOAL
 import com.turtlepaw.sleeptools.utils.AlarmsManager
-import com.turtlepaw.sleeptools.utils.Settings
-import com.turtlepaw.sleeptools.utils.SettingsBasics
 import com.turtlepaw.sleeptools.utils.TimeDifference
 import com.turtlepaw.sleeptools.utils.TimeManager
 
@@ -59,7 +59,7 @@ class MainComplicationService : SuspendingComplicationDataSourceService() {
         val useAlarm = sharedPreferences.getBoolean(Settings.ALARM.getKey(), Settings.ALARM.getDefaultAsBoolean())
         val wakeTimeString = sharedPreferences.getString(Settings.WAKE_TIME.getKey(), Settings.WAKE_TIME.getDefault())
         // Get next alarm
-        val nextAlarm = alarmManager.fetchAlarms(this);
+        val nextAlarm = alarmManager.fetchAlarms(this)
         // Calculate wake time
         // between alarm and wake time
         val wakeTime = timeManager.getWakeTime(
@@ -67,11 +67,11 @@ class MainComplicationService : SuspendingComplicationDataSourceService() {
             nextAlarm,
             wakeTimeString,
             Settings.WAKE_TIME.getDefaultAsLocalTime()
-        );
+        )
         // Calculate time difference
         val sleepTime = timeManager.calculateTimeDifference(wakeTime.first)
         // Calculate sleep quality from time diff
-        val sleepQuality = timeManager.calculateSleepQuality(sleepTime)
+        timeManager.calculateSleepQuality(sleepTime)
 
         return createComplicationData(
             sleepTime,

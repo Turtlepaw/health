@@ -36,14 +36,39 @@ interface SleepDao {
     @Insert
     suspend fun insertDay(day: SleepDay)
 
-    @Query("UPDATE sleep_day SET wakeup = :wakeup WHERE id = :id")
-    suspend fun updateWakeup(id: Int, wakeup: LocalDateTime)
+    @Query("UPDATE sleep_day SET wakeup = :wakeup WHERE bedtime = :bedtime")
+    suspend fun updateWakeup(bedtime: LocalDateTime, wakeup: LocalDateTime)
 
-    @Query("UPDATE sleep_day SET asleepAt = :asleepAt WHERE id = :id")
-    suspend fun updateAsleepAt(id: Int, asleepAt: LocalDateTime)
+    @Query("UPDATE sleep_day SET asleepAt = :asleepAt WHERE bedtime = :bedtime")
+    suspend fun updateAsleepAt(bedtime: LocalDateTime, asleepAt: LocalDateTime)
 
     @Query("SELECT * FROM sleep_day WHERE date(bedtime) = date('now')")
     suspend fun getToday(): List<SleepDay>
+
+    @Query("SELECT * FROM sleep_day WHERE substr(bedtime, 1, 10) = :day LIMIT 1")
+    suspend fun getDay(day: String): SleepDay?
+
+    @Query("SELECT * FROM sleep_day ORDER BY bedtime DESC")
+    suspend fun getHistory(): List<SleepDay>
+
+    @Query("DELETE FROM sleep_day")
+    suspend fun deleteAll()
+}
+
+@Dao
+interface ReflectionDao {
+    @Insert
+    suspend fun insertReflection(day: Reflection)
+
+    // get latest
+    @Query("SELECT * FROM reflection ORDER BY date DESC LIMIT 1")
+    suspend fun getLatest(): Reflection?
+
+    @Query("SELECT * FROM reflection ORDER BY date DESC")
+    suspend fun getHistory(): List<Reflection>
+
+    @Query("DELETE FROM reflection")
+    suspend fun deleteAll()
 }
 
 @Dao

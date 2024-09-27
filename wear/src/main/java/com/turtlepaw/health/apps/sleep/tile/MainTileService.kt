@@ -30,9 +30,9 @@ import com.google.android.horologist.compose.tools.LayoutRootPreview
 import com.google.android.horologist.compose.tools.buildDeviceParameters
 import com.google.android.horologist.tiles.SuspendingTileService
 import com.turtlepaw.health.R
+import com.turtlepaw.health.apps.sleep.utils.Settings
+import com.turtlepaw.health.apps.sleep.utils.SettingsBasics
 import com.turtlepaw.sleeptools.utils.AlarmsManager
-import com.turtlepaw.sleeptools.utils.Settings
-import com.turtlepaw.sleeptools.utils.SettingsBasics
 import com.turtlepaw.sleeptools.utils.SleepQuality
 import com.turtlepaw.sleeptools.utils.TimeDifference
 import com.turtlepaw.sleeptools.utils.TimeManager

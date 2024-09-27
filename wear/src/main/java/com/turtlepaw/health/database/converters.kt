@@ -38,4 +38,14 @@ class Converters {
     fun toBedtimeSensor(value: String?): BedtimeSensor? {
         return value?.let { BedtimeSensor.valueOf(it) }
     }
+
+    @TypeConverter
+    fun fromReflectionType(value: ReflectionType?): String? {
+        return value?.name
+    }
+
+    @TypeConverter
+    fun toReflectionType(value: String?): ReflectionType? {
+        return value?.let { ReflectionType.valueOf(it) }
+    }
 }

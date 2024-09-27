@@ -47,9 +47,9 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.apps.sleep.presentation.Routes
 import com.turtlepaw.health.apps.sleep.services.NotificationWorker
+import com.turtlepaw.health.apps.sleep.utils.Settings
 import com.turtlepaw.health.components.Page
 import com.turtlepaw.sleeptools.utils.AlarmType
-import com.turtlepaw.sleeptools.utils.Settings
 import java.time.Duration
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter

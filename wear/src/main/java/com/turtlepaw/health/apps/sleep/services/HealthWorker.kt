@@ -18,8 +18,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import com.turtlepaw.sleeptools.utils.Settings
-import com.turtlepaw.sleeptools.utils.SettingsBasics
+import com.turtlepaw.health.apps.sleep.utils.Settings
+import com.turtlepaw.health.apps.sleep.utils.SettingsBasics
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import java.time.LocalDateTime

@@ -1,6 +1,7 @@
 package com.turtlepaw.sleeptools.utils
 
 import android.util.Log
+import com.turtlepaw.health.database.SleepDay
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -109,11 +110,11 @@ class TimeManager {
         }
     }
 
-    fun calculateAvgBedtime(bedtimes: Set<Pair<LocalDateTime, BedtimeSensor>?>): LocalTime? {
+    fun calculateAvgBedtime(bedtimes: List<SleepDay>): LocalTime? {
         if(bedtimes.isEmpty()) return null
         val lastBedtimes = bedtimes.take(7)
         val totalSeconds = lastBedtimes.filterNotNull().sumOf {
-            it.first.toLocalTime().toSecondOfDay()
+            (it.asleepAt ?: it.bedtime).toLocalTime().toSecondOfDay()
         }
         val averageSeconds = totalSeconds / bedtimes.size
 

@@ -7,8 +7,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import androidx.annotation.Keep
 import androidx.core.content.edit
-import com.turtlepaw.sleeptools.utils.Settings
-import com.turtlepaw.sleeptools.utils.SettingsBasics
+import com.turtlepaw.health.apps.sleep.utils.Settings
+import com.turtlepaw.health.apps.sleep.utils.SettingsBasics
 
 @Keep
 class Receiver: BroadcastReceiver() {

@@ -14,12 +14,18 @@ data class SunlightDay(
 
 @Entity(tableName = "sleep_day")
 data class SleepDay(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val bedtime: LocalDateTime,
-    val asleepAt: LocalDateTime,
-    val wakeup: LocalDateTime,
+    // val id: Int = 0,
+    @PrimaryKey val bedtime: LocalDateTime,
+    val asleepAt: LocalDateTime?,
+    val wakeup: LocalDateTime?,
     val type: BedtimeSensor,
-    val value: Int
+    //val value: Int
+)
+
+@Entity(tableName = "reflection")
+data class Reflection(
+    @PrimaryKey val date: LocalDateTime,
+    val value: ReflectionType
 )
 
 @Entity(tableName = "services")
@@ -32,4 +38,14 @@ enum class ServiceType(val serviceName: String) {
     SLEEP("sleep"),
     SUNLIGHT("sunlight"),
     // Add more services here
+}
+
+enum class ReflectionType(val displayName: String) {
+    Calm("Calm"),
+    Stressed("Stressed"),
+    Excited("Excited"),
+    Content("Content"),
+    Worried("Worried"),
+    Frustrated("Frustrated"),
+    Sad("Sad"),
 }

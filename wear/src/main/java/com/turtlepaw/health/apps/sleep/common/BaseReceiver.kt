@@ -6,9 +6,12 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.annotation.Keep
-import com.turtlepaw.sleeptools.utils.BedtimeSensor
-import com.turtlepaw.sleeptools.utils.Settings
-import com.turtlepaw.sleeptools.utils.SettingsBasics
+import com.turtlepaw.health.apps.sleep.utils.Settings
+import com.turtlepaw.health.apps.sleep.utils.SettingsBasics
+import com.turtlepaw.health.database.AppDatabase
+import com.turtlepaw.health.database.BedtimeSensor
+import com.turtlepaw.health.database.SleepDay
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeParseException
 
@@ -90,5 +93,18 @@ abstract class BaseReceiver: BroadcastReceiver() {
             Log.d(tag, "Updating sensor")
             true
         }
+    }
+
+    suspend fun saveEntry(context: Context, bedtimeSensor: BedtimeSensor) {
+        val database = AppDatabase.getDatabase(context)
+
+        database.sleepDao().insertDay(
+            SleepDay(
+                bedtime = LocalDateTime.now(),
+                type = bedtimeSensor,
+                wakeup = null,
+                asleepAt = null
+            )
+        )
     }
 }

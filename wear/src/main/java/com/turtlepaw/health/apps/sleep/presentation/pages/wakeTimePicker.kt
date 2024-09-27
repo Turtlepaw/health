@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.composables.TimePickerWith12HourClock
-import com.turtlepaw.sleeptools.utils.Settings
+import com.turtlepaw.health.apps.sleep.utils.Settings
 import java.time.LocalTime
 
 @Composable

@@ -1,14 +1,11 @@
-package com.turtlepaw.sleeptools.utils
+package com.turtlepaw.health.apps.sleep.utils
 
 import android.content.Context
 import android.util.Log
+import com.turtlepaw.health.database.BedtimeSensor
+import com.turtlepaw.sleeptools.utils.TimeManager
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-
-enum class BedtimeSensor {
-    BEDTIME,
-    CHARGING
-}
 
 enum class Settings(private val key: String, private val default: Any?) {
     WAKE_TIME("wake_time", LocalTime.of(10, 30)),
@@ -113,7 +110,7 @@ fun verifySensor(context: Context, sensor: BedtimeSensor): Boolean {
 
     val timeManager = TimeManager()
     val bedtimeStringSensor = sharedPreferences.getString(Settings.BEDTIME_SENSOR.getKey(), Settings.BEDTIME_SENSOR.getDefault())
-    val bedtimeSensor = if(bedtimeStringSensor == "BEDTIME") BedtimeSensor.BEDTIME else BedtimeSensor.CHARGING;
+    if(bedtimeStringSensor == "BEDTIME") BedtimeSensor.BEDTIME else BedtimeSensor.CHARGING
     Log.d("VerifySensor", "Sensor set to $bedtimeStringSensor (requires $sensor, result: ${bedtimeStringSensor != sensor.toString()})")
     if(bedtimeStringSensor != sensor.toString()) return false
 

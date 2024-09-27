@@ -5,13 +5,10 @@ import android.content.Intent
 import android.util.Log
 import androidx.annotation.Keep
 import com.turtlepaw.health.apps.sleep.common.BaseReceiver
-import com.turtlepaw.health.apps.sleep.presentation.dataStore
-import com.turtlepaw.health.apps.sleep.utils.BedtimeViewModel
-import com.turtlepaw.sleeptools.utils.BedtimeSensor
+import com.turtlepaw.health.database.BedtimeSensor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
 
 @Keep
 class ChargingReceiver: BaseReceiver() {
@@ -30,10 +27,9 @@ class ChargingReceiver: BaseReceiver() {
 
     private suspend fun runReceiver(context: Context) {
         Log.d(tag, "Retrieving new charging state...")
-        val bedtimeViewModel = BedtimeViewModel(context.applicationContext.dataStore)
         // This will only trigger when the watch is
         // plugged in, so we don't need to check
         Log.d(tag, "Saving new entry...")
-        bedtimeViewModel.save(LocalDateTime.now(), sensorType)
+        saveEntry(context, sensorType)
     }
 }

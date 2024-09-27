@@ -8,7 +8,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.turtlepaw.health.apps.sleep.utils.BedtimeViewModel.PreferencesKeys.BEDTIME_HISTORY_KEY
-import com.turtlepaw.sleeptools.utils.BedtimeSensor
+import com.turtlepaw.health.database.BedtimeSensor
 import kotlinx.coroutines.flow.first
 import java.time.LocalDateTime
 import java.time.format.DateTimeParseException
