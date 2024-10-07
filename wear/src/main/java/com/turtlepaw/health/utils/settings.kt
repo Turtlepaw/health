@@ -1,6 +1,7 @@
 package com.turtlepaw.health.utils
 
 import android.content.Context
+import android.content.SharedPreferences
 import java.time.LocalTime
 
 enum class Settings(private val key: String, private val default: Any?) {
@@ -10,13 +11,28 @@ enum class Settings(private val key: String, private val default: Any?) {
     WAKEUP("wakeup", LocalTime.of(5, 0)),
     BATTERY_SAVER("battery_saver", true),
     GOAL_NOTIFICATIONS("goal_notify", false),
-    STATUS("status", false);
+    STATUS("status", false),
+    DEFAULT_DEVICE("default_device", null),
+    INTRODUCTION_COMPLETE("introduction_complete", false);
 
     fun getKey(): String {
         return key
     }
 
     fun getDefault(): String {
+        return when (default) {
+            is String -> {
+                default
+            }
+
+            else -> {
+                default.toString()
+            }
+        }
+    }
+
+    fun getDefaultOrNull(): String? {
+        if (default == null) return null
         return when (default) {
             is String -> {
                 default
@@ -70,6 +86,10 @@ enum class Settings(private val key: String, private val default: Any?) {
                 0
             }
         }
+    }
+
+    fun getStringWith(sharedPreferences: SharedPreferences): String {
+        return sharedPreferences.getString(key, (default ?: "").toString()).toString()
     }
 }
 

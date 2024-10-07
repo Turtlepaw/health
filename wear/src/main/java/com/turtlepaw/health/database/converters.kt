@@ -1,6 +1,10 @@
 package com.turtlepaw.health.database
 
 import androidx.room.TypeConverter
+import com.google.common.reflect.TypeToken
+import com.google.gson.Gson
+import com.turtlepaw.heart_connection.Metric
+import com.turtlepaw.heart_connection.Metrics
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -47,5 +51,39 @@ class Converters {
     @TypeConverter
     fun toReflectionType(value: String?): ReflectionType? {
         return value?.let { ReflectionType.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun fromMap(value: Map<String, Boolean>): String {
+        return Gson().toJson(value)
+    }
+
+    @TypeConverter
+    fun toMap(value: String): Map<String, Boolean> {
+        val mapType = object : TypeToken<Map<String, Boolean>>() {}.type
+        return Gson().fromJson(value, mapType)
+    }
+
+    @TypeConverter
+    fun fromMetricList(metrics: List<Metric>?): String {
+        return metrics?.joinToString(separator = ",") { it.id.toString() } ?: ""
+    }
+
+    @TypeConverter
+    fun toMetricList(data: String): List<Metric> {
+        if (data.isEmpty()) return emptyList()
+        val ids = data.split(",").map { it.toInt() }
+        return ids.mapNotNull { id -> Metrics.find { it.id == id } }
+    }
+
+    @TypeConverter
+    fun fromIntList(intList: List<Int>): String {
+        return intList.joinToString(separator = ",")
+    }
+
+    @TypeConverter
+    fun toIntList(data: String): List<Int> {
+        if (data.isEmpty()) return emptyList()
+        return data.split(",").map { it.toInt() }
     }
 }

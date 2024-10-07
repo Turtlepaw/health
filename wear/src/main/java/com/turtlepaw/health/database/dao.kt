@@ -91,3 +91,18 @@ interface ServiceDao {
     @Delete
     suspend fun deleteService(service: Service)
 }
+
+@Dao
+interface CoachingProgramDao {
+    @Insert
+    suspend fun startProgram(program: CoachingProgram)
+
+    @Query("SELECT * FROM coaching_program WHERE name = :programName")
+    suspend fun getProgram(programName: String): CoachingProgram?
+
+    @Update
+    suspend fun updateProgram(program: CoachingProgram)
+
+    @Delete
+    suspend fun deleteProgram(program: CoachingProgram)
+}

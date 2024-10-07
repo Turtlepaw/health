@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.CurvedScope
 import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
 import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
@@ -24,6 +25,8 @@ fun Page(
     rotaryMode: ScalingLazyColumnState.RotaryMode = ScalingLazyColumnState.RotaryMode.Scroll,
     showTimeText: Boolean = true,
     applyPadding: Boolean = true,
+    startTimeTextLinear: @Composable (() -> Unit)? = null,
+    startTimeTextCurved: (CurvedScope.() -> Unit)? = null,
     content: ScalingLazyListScope.() -> Unit
 ) {
     val columnState = rememberColumnState(
@@ -38,7 +41,13 @@ fun Page(
     )
 
     Scaffold(timeText = if (showTimeText) {
-        { ResponsiveTimeText(modifier = Modifier.scrollAway(columnState)) }
+        {
+            ResponsiveTimeText(
+                modifier = Modifier.scrollAway(columnState),
+                startCurvedContent = startTimeTextCurved,
+                startLinearContent = startTimeTextLinear
+            )
+        }
     } else null, positionIndicator = {
         PositionIndicator(columnState.state)
     }, vignette = {

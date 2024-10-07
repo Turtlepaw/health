@@ -31,6 +31,7 @@ import com.turtlepaw.health.apps.health.complication.MainComplicationService
 import com.turtlepaw.health.database.AppDatabase
 import com.turtlepaw.health.database.ServiceType
 import com.turtlepaw.health.database.SunlightDay
+import com.turtlepaw.health.utils.HealthNotifications
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
 import kotlinx.coroutines.CoroutineScope
@@ -144,17 +145,10 @@ class LightWorker : Service(), SensorEventListener {
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "Creating light listener")
-        val channel = NotificationChannel(
-            "sunlight",
-            "Sunlight",
-            NotificationManager.IMPORTANCE_DEFAULT
-        )
+        HealthNotifications().createChannel(this)
 
-        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
-            channel
-        )
-
-        val notification = NotificationCompat.Builder(this, "sunlight")
+        val notification =
+            NotificationCompat.Builder(this, HealthNotifications.NOTIFICATION_CHANNEL)
             .setSmallIcon(
                 IconCompat.createFromIcon(
                     this,
@@ -302,7 +296,7 @@ class LightWorker : Service(), SensorEventListener {
             description = "Receive notifications when you reach your goal"
         }
         val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
 
         // Create the notification

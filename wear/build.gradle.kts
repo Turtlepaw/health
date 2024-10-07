@@ -1,4 +1,4 @@
-@Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
+//@Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
@@ -62,12 +62,8 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.tiles)
     implementation(libs.androidx.tiles.material)
-    implementation(libs.horologist.compose.tools)
-    implementation(libs.horologist.tiles)
     implementation(libs.androidx.watchface.complications.data.source.ktx)
-    implementation(libs.horologist.compose.layout)
     implementation(libs.androidx.compose.navigation)
-    implementation(libs.horologist.composables)
     implementation(libs.play.services.pal)
     implementation(libs.androidx.wear.tooling.preview)
     implementation(libs.androidx.datastore.preferences)
@@ -88,11 +84,35 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
+    // Horologist
+    implementation(libs.horologist.health.service)
+    implementation(libs.horologist.health.composables)
+    implementation(libs.horologist.compose.material)
+    implementation(libs.horologist.compose.layout)
+    implementation(libs.horologist.composables)
+    implementation(libs.horologist.compose.tools)
+    implementation(libs.horologist.tiles)
+
     // Icons
     implementation(libs.material.icons.extended)
 
     // Room
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
+
+    // Gson
+    implementation(libs.gson)
+
+    // Wear OS
+    implementation(libs.androidx.wear.ongoing)
+    implementation(libs.horologist.health.service)
+
+    // Health services
+    implementation(libs.androidx.health.services.client)
+
+    // Bluetooth
+    implementation(project(":heart_connection"))
+    implementation(libs.jasonchenlijian.fastble)
+
     //wearApp(project(":wear"))
 }

@@ -173,7 +173,7 @@ private fun noDataLayout(
     return EdgeContentLayout.Builder(deviceParameters)
         .setPrimaryLabelTextContent(
             Text.Builder(context, "Sunlight")
-                .setTypography(6.toInt())
+                .setTypography(Typography.TYPOGRAPHY_TITLE3)
                 .setColor(argb(TileColors.LightText))
                 .build()
         )
@@ -224,7 +224,7 @@ private fun tileLayout(
     today: Int,
     goal: Int
 ): EdgeContentLayout.Builder {
-    val formatter = DateTimeFormatter.ofPattern("h:mma")
+    DateTimeFormatter.ofPattern("h:mma")
     val deviceParameters = buildDeviceParameters(context.resources)
     return EdgeContentLayout.Builder(deviceParameters)
         .setEdgeContent(
@@ -242,7 +242,7 @@ private fun tileLayout(
         )
         .setPrimaryLabelTextContent(
             Text.Builder(context, "Sunlight")
-                .setTypography(6.toInt())
+                .setTypography(Typography.TYPOGRAPHY_TITLE3)
                 .setColor(argb(TileColors.LightText))
                 .build()
         )
@@ -327,8 +327,8 @@ private fun tileLayout(
 @Composable
 fun TilePreview() {
     val timeManager = TimeManager()
-    val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0));
-    val sleepQuality = timeManager.calculateSleepQuality(timeDifference)
+    val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0))
+    timeManager.calculateSleepQuality(timeDifference)
 
     LayoutRootPreview(root = tileLayout(
         LocalContext.current,
@@ -346,8 +346,8 @@ fun TilePreview() {
 @Composable
 fun NoDataPreview() {
     val timeManager = TimeManager()
-    val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0));
-    val sleepQuality = timeManager.calculateSleepQuality(timeDifference)
+    val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0))
+    timeManager.calculateSleepQuality(timeDifference)
 
     LayoutRootPreview(root = noDataLayout(
         LocalContext.current

@@ -20,6 +20,7 @@ import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.turtlepaw.health.apps.health.presentation.pages.WearHome
+import com.turtlepaw.health.apps.health.presentation.pages.coaching.StartCoaching
 import com.turtlepaw.health.apps.health.presentation.theme.HealthTheme
 import com.turtlepaw.health.database.AppDatabase
 import com.turtlepaw.health.utils.SettingsBasics
@@ -33,7 +34,8 @@ enum class Routes(private val route: String) {
     HISTORY("/history"),
     CLOCKWORK("/clockwork-toolkit"),
     NOTICES("/notices"),
-    STATS("/stats");
+    STATS("/stats"),
+    START_COACHING("/start-coaching");
 
     fun getRoute(query: String? = null): String {
         return if(query != null){
@@ -82,7 +84,10 @@ fun WearPages(
             startDestination = Routes.HOME.getRoute()
         ) {
             composable(Routes.HOME.getRoute()) {
-                WearHome(database)
+                WearHome(database, navController)
+            }
+            composable(Routes.START_COACHING.getRoute()) {
+                StartCoaching(database)
             }
         }
     }

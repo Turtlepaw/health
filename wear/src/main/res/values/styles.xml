@@ -23,4 +23,10 @@
         <item name="windowSplashScreenAnimatedIcon">@drawable/reflections_splash_icon</item>
         <item name="postSplashScreenTheme">@android:style/Theme.DeviceDefault</item>
     </style>
+    <!-- Exercise -->
+    <style name="MainActivityTheme.Exercise.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/exercise_splash_icon</item>
+        <item name="postSplashScreenTheme">@android:style/Theme.DeviceDefault</item>
+    </style>
 </resources>

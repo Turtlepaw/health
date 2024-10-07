@@ -34,6 +34,13 @@ data class Service(
     val isEnabled: Boolean
 )
 
+@Entity(tableName = "coaching_program")
+data class CoachingProgram(
+    @PrimaryKey val name: String,
+    val progress: Int,
+    val items: Map<String, Boolean>
+)
+
 enum class ServiceType(val serviceName: String) {
     SLEEP("sleep"),
     SUNLIGHT("sunlight"),
@@ -48,4 +55,8 @@ enum class ReflectionType(val displayName: String) {
     Worried("Worried"),
     Frustrated("Frustrated"),
     Sad("Sad"),
+}
+
+enum class CoachingType(val displayName: String) {
+    Sleep("Sleep Coaching"),
 }
