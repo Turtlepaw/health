@@ -18,6 +18,9 @@
 package com.turtlepaw.health.apps.exercise.presentation.pages
 
 import android.app.Application
+import android.content.Context
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -110,6 +113,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ExerciseRoute(
+    context: Context,
     preference: Preference,
     bluetoothHeartRate: Int?,
     ambientState: AmbientState,
@@ -140,6 +144,15 @@ fun ExerciseRoute(
             onPauseClick = {
                 coroutineScope.launch {
                     exerciseViewModel.pauseExercise()
+                    val vibrator = context.getSystemService(Vibrator::class.java)
+
+                    if (vibrator != null && vibrator.hasVibrator()) {
+                        vibrator.vibrate(
+                            VibrationEffect.startComposition().addPrimitive(
+                                VibrationEffect.Composition.PRIMITIVE_CLICK, 1f
+                            ).compose()
+                        )
+                    }
                 }
             },
             onEndClick = {
@@ -151,6 +164,15 @@ fun ExerciseRoute(
             onResumeClick = {
                 coroutineScope.launch {
                     exerciseViewModel.resumeExercise()
+                    val vibrator = context.getSystemService(Vibrator::class.java)
+
+                    if (vibrator != null && vibrator.hasVibrator()) {
+                        vibrator.vibrate(
+                            VibrationEffect.startComposition().addPrimitive(
+                                VibrationEffect.Composition.PRIMITIVE_CLICK, 1f
+                            ).compose()
+                        )
+                    }
                 }
             },
             onStartClick = {

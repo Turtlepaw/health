@@ -11,6 +11,8 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -363,10 +365,25 @@ fun WearPages(
 
                     if (preference == null) LoadingPage() else {
                         ExerciseRoute(
+                            context,
                             preference!!,
                             bluetoothHeartRate = heartRate,
                             ambientState = ambientStateUpdate.ambientState,
                             onSummary = { summary ->
+                                val vibrator = context.getSystemService(Vibrator::class.java)
+
+                                if (vibrator != null && vibrator.hasVibrator()) {
+                                    vibrator.vibrate(
+                                        VibrationEffect.startComposition().addPrimitive(
+                                            VibrationEffect.Composition.PRIMITIVE_SLOW_RISE, 1f
+                                        ).addPrimitive(
+                                            VibrationEffect.Composition.PRIMITIVE_QUICK_RISE,
+                                            1f,
+                                            400
+                                        ).compose()
+                                    )
+                                }
+
                                 swipeToDismissEnabled = true
                                 val maxHR = exerciseViewModel.heartRateHistory.value?.maxOrNull()
                                 navController.navigateToTopLevel(
