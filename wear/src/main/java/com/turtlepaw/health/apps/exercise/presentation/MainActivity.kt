@@ -8,7 +8,6 @@ package com.turtlepaw.health.apps.exercise.presentation
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -44,12 +43,14 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.compose.ambient.AmbientAware
 import com.turtlepaw.health.apps.exercise.manager.ExerciseViewModel
-import com.turtlepaw.health.apps.exercise.manager.HeartRateSource
+import com.turtlepaw.health.apps.exercise.manager.HeartRateModel
 import com.turtlepaw.health.apps.exercise.presentation.pages.BluetoothSearch
 import com.turtlepaw.health.apps.exercise.presentation.pages.ExerciseRoute
+import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryScreenState
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.averageHeartRateArg
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.elapsedTimeArg
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.maxHeartRateArg
+import com.turtlepaw.health.apps.exercise.presentation.pages.summary.stepsArg
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.totalCaloriesArg
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.totalDistanceArg
 import com.turtlepaw.health.components.ErrorPage
@@ -72,6 +73,10 @@ import com.turtlepaw.heartconnect.presentation.pages.summary.SummaryRoute
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
+import kotlin.time.toJavaDuration
 
 enum class Routes(private val route: String) {
     HOME("/home"),
@@ -148,11 +153,17 @@ class MainActivity : ComponentActivity() {
     // If an exercise is in progress, resume the exercise screen, else start a new one
     private suspend fun prepareIfNoExercise() {
         delay(100) // simulate loading
-        navController.currentDestination?.route?.startsWith("/home") == true
+        val isRegularLaunch = navController.currentDestination?.route?.startsWith("/home") == true
 
-//        if (isRegularLaunch && exerciseSessionManager.isExerciseInProgress()) {
-//            navController.navigate("/exercise")
-//        }
+        val progress = exerciseViewModel.isExerciseInProgress(this)
+        if (isRegularLaunch && progress.first && progress.second != null) {
+            val id = Exercises.indexOfFirst { it == progress.second }
+            navController.navigate(Routes.EXERCISE.getRoute(id.toString())) {
+                popUpTo(Routes.HOME.getRoute()) {
+                    inclusive = true
+                }
+            }
+        }
     }
 }
 
@@ -170,9 +181,10 @@ fun WearPages(
         // Creates a navigation controller for our pages
         //val navController = rememberSwipeDismissableNavController()
         val coroutineScope = rememberCoroutineScope()
-        remember { mutableListOf<BluetoothDevice>() }
+        val heartRateModel: HeartRateModel by context.viewModels()
+        //remember { mutableListOf<BluetoothDevice>() }
         val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
-        val heartRate by exerciseViewModel.heartRate.observeAsState(0)
+        val heartRate by heartRateModel.heartRate.observeAsState(null)
         val heartConnection = HeartConnection(
             createGattCallback {},
             context,
@@ -274,7 +286,8 @@ fun WearPages(
                     BluetoothSearch(
                         lifecycleOwner,
                         heartConnection,
-                        selectedDevice
+                        selectedDevice,
+                        context
                     ) {
                         Log.d("BluetoothSearch", "${it.name} has been selected")
                         sharedPreferences.edit {
@@ -282,7 +295,8 @@ fun WearPages(
                             commit()
                         }
                         selectedDevice = it.mac
-                        exerciseViewModel.attemptToReconnect()
+                        heartRateModel.connectHeartRateMonitor(context, it)
+                        exerciseViewModel?.reconnectHeartRateMonitor()
                         navController.popBackStack()
                     }
                 }
@@ -315,6 +329,7 @@ fun WearPages(
                 ) {
                     val id = it.arguments?.getString("id")!!.toInt()
                     val exercise = Exercises.elementAt(id)
+                    exerciseViewModel
 
                     ExerciseConfiguration(
                         exercise,
@@ -327,7 +342,7 @@ fun WearPages(
                         coroutineScope
                         swipeToDismissEnabled = false
                         coroutineScope.launch {
-                            exerciseViewModel.startExercise()
+                            exerciseViewModel.startExercise(exercise)
                         }
                         navController.navigate(Routes.EXERCISE.getRoute(id.toString())) {
                             popUpTo(Routes.HOME.getRoute()) {
@@ -338,13 +353,13 @@ fun WearPages(
                 }
                 composable(Routes.EXERCISE.getRoute("{id}")) {
                     val id = it.arguments?.getString("id")!!.toInt()
-                    Exercises.elementAt(id)
+                    val exercise = Exercises.elementAt(id)
                     var preference by remember { mutableStateOf<Preference?>(null) }
 
-//                    LaunchedEffect(exercise) {
-//                        preference = dao.preferenceDao().getOrInsertPreference(id)
-//                        exerciseViewModel.setId(id, context)
-//                    }
+                    LaunchedEffect(exercise) {
+                        preference = dao.preferenceDao().getOrInsertPreference(id)
+                        //exerciseViewModel.setId(id, context)
+                    }
 
                     if (preference == null) LoadingPage() else {
                         ExerciseRoute(
@@ -354,10 +369,9 @@ fun WearPages(
                             onSummary = { summary ->
                                 swipeToDismissEnabled = true
                                 val maxHR = exerciseViewModel.heartRateHistory.value?.maxOrNull()
-                                Log.d("abc", "max hr is ${exerciseViewModel.heartRateHistory}")
                                 navController.navigateToTopLevel(
                                     Routes.SUMMARY,
-                                    "${Routes.SUMMARY.getRoute()}/${summary.averageHeartRate}/${summary.totalDistance}/${summary.totalCalories}/${summary.elapsedTime}/${maxHR ?: 0}"
+                                    "${Routes.SUMMARY.getRoute()}/${summary.averageHeartRate?.toInt()}/${summary.totalDistance?.toInt()}/${summary.totalCalories?.toInt()}/${summary.elapsedTime.seconds}/${maxHR ?: 0}/${summary.steps}"
                                 )
                             },
                             onRestart = {
@@ -373,16 +387,29 @@ fun WearPages(
                     }
                 }
                 composable(
-                    Routes.SUMMARY.getRoute() + "/{averageHeartRate}/{totalDistance}/{totalCalories}/{elapsedTime}/{maxHeartRate}",
+                    Routes.SUMMARY.getRoute() + "/{averageHeartRate}/{totalDistance}/{totalCalories}/{elapsedTime}/{maxHeartRate}/{steps}",
                     arguments = listOf(
-                        navArgument(averageHeartRateArg) { type = NavType.FloatType },
-                        navArgument(totalDistanceArg) { type = NavType.FloatType },
-                        navArgument(totalCaloriesArg) { type = NavType.FloatType },
-                        navArgument(elapsedTimeArg) { type = NavType.StringType },
-                        navArgument(maxHeartRateArg) { type = NavType.IntType }
+                        navArgument(averageHeartRateArg) { type = NavType.IntType },
+                        navArgument(totalDistanceArg) { type = NavType.IntType },
+                        navArgument(totalCaloriesArg) { type = NavType.IntType },
+                        navArgument(elapsedTimeArg) { type = NavType.IntType },
+                        navArgument(maxHeartRateArg) { type = NavType.IntType },
+                        navArgument(stepsArg) { type = NavType.LongType }
                     )
                 ) {
-                    SummaryRoute(exerciseViewModel.toSummary()) {
+                    SummaryRoute(
+                        uiState = SummaryScreenState(
+                            averageHeartRate = it.arguments?.getInt(averageHeartRateArg)
+                                ?.toDouble(),
+                            totalDistance = it.arguments?.getInt(totalDistanceArg)?.toDouble(),
+                            totalCalories = it.arguments?.getInt(totalCaloriesArg)?.toDouble(),
+                            elapsedTime = it.arguments?.getInt(elapsedTimeArg)?.toDuration(
+                                DurationUnit.SECONDS
+                            )?.toJavaDuration() ?: Duration.ofSeconds(-1),
+                            maxHeartRate = it.arguments?.getInt(maxHeartRateArg),
+                            steps = it.arguments?.getLong(stepsArg)
+                        )
+                    ) {
                         navController.navigateToTopLevel(Routes.HOME)
                     }
                 }

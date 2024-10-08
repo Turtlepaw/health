@@ -53,7 +53,7 @@ import com.google.android.horologist.compose.material.Title
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryScreenState
 import com.turtlepaw.health.utils.NO_DATA
-import com.turtlepaw.health.utils.formatElapsedTimeToString
+import com.turtlepaw.health.utils.formatElapsedTime
 import com.turtlepaw.heartconnect.presentation.components.CompleteButton
 import java.time.Duration
 import kotlin.math.roundToInt
@@ -96,7 +96,7 @@ fun SummaryScreen(
                             contentDescription = "Timer"
                         )
                     },
-                    content = formatElapsedTimeToString(uiState.elapsedTime)
+                    content = formatElapsedTime(uiState.elapsedTime)
                 )
                 //formatElapsedTime(uiState.elapsedTime, includeSeconds = true) }
             }
@@ -157,6 +157,21 @@ fun SummaryScreen(
                         NO_DATA
                     } else {
                         "${uiState.maxHeartRate.toInt()} max bpm"
+                    }
+                )
+            }
+            item {
+                CompactStatCard(
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = com.turtlepaw.heart_connection.R.drawable.steps),
+                            contentDescription = "Steps"
+                        )
+                    },
+                    content = if (uiState.steps == null) {
+                        NO_DATA
+                    } else {
+                        "${String.format("%,d", uiState.steps)} steps"
                     }
                 )
             }

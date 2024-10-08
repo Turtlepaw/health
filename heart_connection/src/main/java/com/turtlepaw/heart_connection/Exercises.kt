@@ -1,5 +1,6 @@
 package com.turtlepaw.heart_connection
 
+import androidx.health.services.client.data.DataType
 import androidx.health.services.client.data.ExerciseType
 
 data class Metric(
@@ -33,7 +34,7 @@ val CaloriesMetric = Metric(
 )
 
 val StepsMetric = Metric(
-    id = 4,
+    id = 5,
     name = "Steps",
     icon = R.drawable.steps
 )
@@ -42,7 +43,8 @@ val Metrics = listOf(
     ElapsedTimeMetric,
     HeartRateMetric,
     DistanceMetric,
-    CaloriesMetric
+    CaloriesMetric,
+    StepsMetric
 )
 
 data class Exercise(
@@ -50,14 +52,21 @@ data class Exercise(
     val defaultMetrics: List<Metric>,
     val icon: Int,
     val mapped: ExerciseType,
-    val useGps: Boolean = false
+    val useGps: Boolean = false,
+    val dataTypes: Set<DataType<*, *>> = emptySet()
 )
 
 val Workout = Exercise(
     name = "Workout",
     defaultMetrics = Metrics,
     icon = R.drawable.sports_martial_arts,
-    mapped = ExerciseType.WORKOUT
+    mapped = ExerciseType.WORKOUT,
+    useGps = false,
+    dataTypes = setOf(
+        DataType.HEART_RATE_BPM,
+        DataType.CALORIES_TOTAL,
+        DataType.STEPS_TOTAL,
+    )
 )
 
 val Running = Exercise(

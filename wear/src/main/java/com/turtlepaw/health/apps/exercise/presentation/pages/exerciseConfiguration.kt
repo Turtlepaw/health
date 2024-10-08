@@ -54,12 +54,12 @@ fun ExerciseConfiguration(
     ExerciseTheme {
         val coroutineScope = rememberCoroutineScope()
         val progress = remember { Animatable(0f) }
-        val availability = exerciseViewModel.availablities.observeAsState()
+        val availability = exerciseViewModel.availabilities.observeAsState()
         val location =
             availability.value?.values?.filterIsInstance<LocationAvailability>()?.firstOrNull()
 
         LaunchedEffect(Unit) {
-            exerciseViewModel.warmExerciseSession(exercise)
+            exerciseViewModel.warmExerciseSession(exercise, context)
         }
 
         Page(
@@ -115,21 +115,19 @@ fun ExerciseConfiguration(
                             )
                         }
 
-                        exerciseViewModel.startExercise()
                         delay(100)
                         onStart()
                     }
                 }
             }
             item {
-                Spacer(modifier = Modifier.padding(10.dp))
+                Spacer(modifier = Modifier.padding(top = 10.dp))
             }
             item {
                 Chip(
                     onClick = { navigate(Routes.PAIR_DEVICE.getRoute()) },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
+                        .fillMaxWidth(),
                     icon = {
                         Icon(
                             painter = painterResource(id = R.drawable.bluetooth_searching),
@@ -150,8 +148,7 @@ fun ExerciseConfiguration(
                 Chip(
                     onClick = { navigate(Routes.METRIC_EDITOR.getRoute(id.toString())) },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
+                        .fillMaxWidth(),
                     icon = {
                         Icon(
                             painter = painterResource(id = R.drawable.build),

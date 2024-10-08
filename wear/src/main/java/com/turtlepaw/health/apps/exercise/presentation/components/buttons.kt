@@ -56,9 +56,11 @@ fun StartButton(
 
 @Composable
 fun EndButton(
+    isEnding: Boolean,
     onClick: () -> Unit
 ) {
     Button(
+        enabled = !isEnding,
         onClick = {
             onClick()
         }
@@ -113,7 +115,7 @@ fun ButtonsPreview() {
         horizontalArrangement = Arrangement.Center
     ) {
         StartButton {}
-        EndButton {}
+        EndButton(false) {}
         PauseButton {}
     }
 }

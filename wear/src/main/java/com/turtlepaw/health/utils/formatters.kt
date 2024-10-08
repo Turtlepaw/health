@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -125,6 +126,13 @@ fun formatElapsedTimeToString(
     }
 }
 
+fun formatElapsedTime(duration: Duration): String {
+    val hours = duration.toHours()
+    val minutes = duration.toMinutesPart() // Get minutes within the hour
+
+    return String.format("%d:%02d", hours, minutes)
+}
+
 /** Format calories burned to an integer with a "cal" suffix. */
 @Composable
 fun formatCalories(calories: Double?) = buildAnnotatedString {
@@ -132,6 +140,21 @@ fun formatCalories(calories: Double?) = buildAnnotatedString {
         append(NO_DATA)
     } else {
         append(calories.roundToInt().toString())
+        /*        withStyle(style = MaterialTheme.typography.caption3.toSpanStyle()) {
+                    append(" cal")
+                }*/
+    }
+}
+
+@Composable
+fun formatSteps(steps: Long?) = buildAnnotatedString {
+    if (steps == null) {
+        append(NO_DATA)
+    } else {
+        val formattedSteps = AnnotatedString.Builder().apply {
+            append(String.format("%,d", steps))
+        }.toAnnotatedString()
+        append(formattedSteps)
         /*        withStyle(style = MaterialTheme.typography.caption3.toSpanStyle()) {
                     append(" cal")
                 }*/

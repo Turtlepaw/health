@@ -1,6 +1,8 @@
 package com.turtlepaw.health.apps.exercise.presentation.pages
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
 import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.material.Chip
+import androidx.wear.compose.material.ChipDefaults
+import androidx.wear.compose.material.CompactChip
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.RadioButton
@@ -47,6 +51,7 @@ fun BluetoothSearch(
     lifecycleOwner: LifecycleOwner,
     heartConnection: HeartConnection,
     selected: String? = null,
+    context: Context,
     onSelectionConfirm: (it: BleDevice) -> Unit
 ) {
     ExerciseTheme {
@@ -92,6 +97,15 @@ fun BluetoothSearch(
                             },
                             textAlign = TextAlign.Center
                         )
+                        if (state.value == ScanningStatus.Disabled) {
+                            CompactChip(onClick = {
+                                val intentOpenBluetoothSettings = Intent()
+                                intentOpenBluetoothSettings.setAction(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+                                context.startActivity(intentOpenBluetoothSettings)
+                            }, label = {
+                                Text(text = "Settings")
+                            }, colors = ChipDefaults.secondaryChipColors())
+                        }
                     }
                 }
             } else {

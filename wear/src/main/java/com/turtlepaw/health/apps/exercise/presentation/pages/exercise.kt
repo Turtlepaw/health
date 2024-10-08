@@ -39,8 +39,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -88,17 +88,20 @@ import com.google.android.horologist.health.composables.ActiveDurationText
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.exercise.manager.ExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.FakeExerciseViewModel
+import com.turtlepaw.health.apps.exercise.manager.HeartRateSource
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryScreenState
 import com.turtlepaw.health.database.exercise.Preference
 import com.turtlepaw.health.utils.NO_DATA
 import com.turtlepaw.health.utils.formatCalories
 import com.turtlepaw.health.utils.formatDistanceKm
 import com.turtlepaw.health.utils.formatElapsedTime
+import com.turtlepaw.health.utils.formatSteps
 import com.turtlepaw.heart_connection.CaloriesMetric
 import com.turtlepaw.heart_connection.DistanceMetric
 import com.turtlepaw.heart_connection.ElapsedTimeMetric
 import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.HeartRateMetric
+import com.turtlepaw.heart_connection.StepsMetric
 import com.turtlepaw.heartconnect.presentation.components.EndButton
 import com.turtlepaw.heartconnect.presentation.components.PauseButton
 import com.turtlepaw.heartconnect.presentation.components.StartButton
@@ -117,11 +120,12 @@ fun ExerciseRoute(
     exerciseViewModel: ExerciseViewModel
 ) {
     val coroutineScope = rememberCoroutineScope()
-    if (exerciseViewModel.isEnded) {
-        SideEffect {
-            onSummary(exerciseViewModel.toSummary())
-        }
-    }
+//    val isEnded by exerciseViewModel.isEnded.observeAsState(false)
+//    if (isEnded) {
+//        SideEffect {
+//            onSummary(exerciseViewModel.toSummary())
+//        }
+//    }
 
     if (exerciseViewModel.error != null) {
         ErrorStartingExerciseScreen(
@@ -141,6 +145,7 @@ fun ExerciseRoute(
             onEndClick = {
                 coroutineScope.launch {
                     exerciseViewModel.stopExercise()
+                    onSummary(exerciseViewModel.toSummary())
                 }
             },
             onResumeClick = {
@@ -150,7 +155,7 @@ fun ExerciseRoute(
             },
             onStartClick = {
                 coroutineScope.launch {
-                    exerciseViewModel.startExercise()
+                    exerciseViewModel.resumeExercise()
                 }
             },
             uiState = exerciseViewModel,
@@ -318,6 +323,7 @@ fun Exercise(
                                     DistanceMetric -> DistanceRow(uiState)
                                     HeartRateMetric -> HeartRateRow(uiState, bluetoothHeartRate)
                                     CaloriesMetric -> CalorieRow(uiState)
+                                    StepsMetric -> StepsRow(uiState)
                                 }
                             }
                         }
@@ -380,7 +386,8 @@ fun Exercise(
 //                    )
 //                }
 //            }
-            if (uiState.isPaused) {
+            val isPaused by uiState.isPaused.observeAsState(false)
+            if (isPaused) {
                 val infiniteTransition = rememberInfiniteTransition()
                 val alpha = infiniteTransition.animateFloat(
                     initialValue = 0.7f,
@@ -435,12 +442,13 @@ private fun ExerciseControlButtons(
     onResumeClick: () -> Unit,
     onPauseClick: () -> Unit
 ) {
+    val source by uiState.heartRateSource.observeAsState()
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier.fillMaxSize()
     ) {
-        if (isConnectedToBluetooth) {
+        if (source == HeartRateSource.HeartRateMonitor) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -464,6 +472,9 @@ private fun ExerciseControlButtons(
             }
         }
 
+        val isPaused by uiState.isPaused.observeAsState(false)
+        val isEnding by uiState.isEnding.observeAsState(false)
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -471,14 +482,10 @@ private fun ExerciseControlButtons(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (uiState.isEnding) {
-                    StartButton(onClick = onStartClick)
-                } else {
-                    EndButton(onEndClick)
-                }
+                EndButton(isEnding, onEndClick)
 
                 Text(
-                    text = if (uiState.isEnding) "Ending" else "End",
+                    text = if (isEnding) "Ending" else "End",
                     modifier = Modifier
                         .padding(top = 5.dp)
                 )
@@ -487,14 +494,14 @@ private fun ExerciseControlButtons(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (uiState.isPaused) {
+                if (isPaused) {
                     StartButton(onClick = onResumeClick)
                 } else {
                     PauseButton(onPauseClick)
                 }
 
                 Text(
-                    text = if (uiState.isPaused) "Resume" else "Pause",
+                    text = if (isPaused) "Resume" else "Pause",
                     modifier = Modifier
                         .padding(top = 5.dp)
                 )
@@ -564,6 +571,7 @@ fun DataRow(content: @Composable() (RowScope.() -> Unit)) {
 
 @Composable
 private fun DistanceRow(uiState: ExerciseViewModel) {
+    val distance by uiState.distance.observeAsState()
     DataRow {
         Icon(
             painter = painterResource(id = R.drawable.distance),
@@ -571,7 +579,7 @@ private fun DistanceRow(uiState: ExerciseViewModel) {
             modifier = getIconModifier()
         )
         Text(
-            text = formatDistanceKm(meters = uiState.distance?.value),
+            text = formatDistanceKm(meters = distance),
             style = getTextStyle()
         )
 
@@ -597,6 +605,8 @@ private fun HeartRateRow(
     uiState: ExerciseViewModel,
     bluetoothHeartRate: Int?
 ) {
+    val heartRate by uiState.heartRate.observeAsState()
+    val source by uiState.heartRateSource.observeAsState()
     DataRow {
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -607,12 +617,12 @@ private fun HeartRateRow(
                 modifier = getIconModifier()
             )
             Text(
-                text = "${(bluetoothHeartRate ?: (uiState.heartRate.value ?: NO_DATA))}",
+                text = "${heartRate ?: NO_DATA}",
                 //color = if (bluetoothHeartRate != null) MaterialTheme.colors.primary else Color.White,
                 style = getTextStyle()
             )
 
-            if (bluetoothHeartRate != null) {
+            if (source == HeartRateSource.HeartRateMonitor) {
                 Box(modifier = Modifier.padding(start = 5.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.bluetooth_searching),
@@ -629,6 +639,7 @@ private fun HeartRateRow(
 
 @Composable
 private fun CalorieRow(uiState: ExerciseViewModel) {
+    val calories by uiState.calories.observeAsState()
     DataRow {
         Icon(
             painter = painterResource(id = R.drawable.calorie),
@@ -636,9 +647,9 @@ private fun CalorieRow(uiState: ExerciseViewModel) {
             modifier = getIconModifier()
         )
         Text(
-            text = if (uiState.calories?.value == null)
+            text = if (calories == null)
                 NO_DATA else
-                formatCalories(uiState.calories?.value).toString(),
+                formatCalories(calories).toString(),
             style = getTextStyle()
         )
 
@@ -652,9 +663,35 @@ private fun CalorieRow(uiState: ExerciseViewModel) {
 }
 
 @Composable
+private fun StepsRow(uiState: ExerciseViewModel) {
+    val steps by uiState.steps.observeAsState()
+    DataRow {
+        Icon(
+            painter = painterResource(id = com.turtlepaw.heart_connection.R.drawable.steps),
+            contentDescription = "Step",
+            modifier = getIconModifier()
+        )
+        Text(
+            text = if (steps == null)
+                NO_DATA else
+                formatSteps(steps).toString(),
+            style = getTextStyle()
+        )
+
+        Text(
+            text = "steps",
+            color = getSecondaryTextColor(),
+            modifier = getSecondaryTextModifier(),
+            style = getSecondaryTextStyle()
+        )
+    }
+}
+
+@Composable
 private fun DurationRow(uiState: ExerciseViewModel) {
-    val lastActiveDurationCheckpoint = uiState.rawState?.value?.activeDurationCheckpoint
-    val exerciseState = uiState.rawState?.value?.exerciseStateInfo?.state
+    val rawState by uiState.rawState.observeAsState()
+    val lastActiveDurationCheckpoint = rawState?.activeDurationCheckpoint
+    val exerciseState = rawState?.exerciseStateInfo?.state
     DataRow {
         Icon(
             painter = painterResource(id = R.drawable.timer),

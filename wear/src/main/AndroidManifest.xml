@@ -150,7 +150,7 @@
         <!-- Exercise -->
         <service
             android:name=".apps.exercise.manager.ExerciseService"
-            android:foregroundServiceType="health|location"></service>
+            android:foregroundServiceType="health|location" />
         <activity
             android:name=".apps.exercise.presentation.MainActivity"
             android:exported="true"

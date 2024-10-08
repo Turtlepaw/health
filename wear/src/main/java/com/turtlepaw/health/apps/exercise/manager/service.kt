@@ -35,7 +35,6 @@ import com.turtlepaw.health.utils.HealthNotifications
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
 import com.turtlepaw.heart_connection.Exercise
-import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.HeartConnection
 import com.turtlepaw.heart_connection.Workout
 import com.turtlepaw.heart_connection.createGattCallback
@@ -57,9 +56,11 @@ class ExerciseService : Service() {
         private const val ONGOING_STATUS_TEMPLATE = "Ongoing Exercise #duration#"
     }
 
+    private val heartRateHistoryLiveData = MutableLiveData<List<Int>>()
     private val heartRateLiveData = MutableLiveData<Int>()
     private val caloriesLiveData = MutableLiveData<Double>()
     private val distanceLiveData = MutableLiveData<Double>()
+    private val stepsLiveData = MutableLiveData<Long>()
     private val durationLiveData = MutableLiveData<Long>()
     private val heartRateSourceData = MutableLiveData<HeartRateSource>(HeartRateSource.Device)
     private val rawData = MutableLiveData<ExerciseUpdate>()
@@ -69,6 +70,7 @@ class ExerciseService : Service() {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private val binder = LocalBinder()
     private var exerciseType: Exercise? = null
+    private var isInProgress = false
 
     inner class LocalBinder : Binder() {
         fun getService(): ExerciseService = this@ExerciseService
@@ -81,14 +83,19 @@ class ExerciseService : Service() {
         val healthServicesClient = HealthServices.getClient(this)
         exerciseClient = healthServicesClient.exerciseClient
 
-        startForegroundService()
+        //startForegroundService()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 //        coroutineScope.launch {
 //            startExerciseSession()
 //        }
+        startForegroundService()
         return START_STICKY
+    }
+
+    fun getCurrentExercise(): Exercise? {
+        return exerciseType
     }
 
     suspend fun warmExerciseSession(type: Exercise) {
@@ -106,16 +113,30 @@ class ExerciseService : Service() {
         startHeartRateTracking()
     }
 
-    suspend fun startExerciseSession() {
+    suspend fun startExerciseSession(exercise: Exercise) {
+        exerciseType = exercise
+        val dataTypes = setOf(
+            DataType.HEART_RATE_BPM,
+            DataType.CALORIES_TOTAL,
+            DataType.DISTANCE_TOTAL,
+            DataType.STEPS_TOTAL,
+        )
+        if (exercise.useGps == true) dataTypes.plus(DataType.LOCATION)
         exerciseClient?.startExercise(
-            ExerciseConfig.builder((exerciseType ?: Exercises.first()).mapped)
-                .setIsGpsEnabled((exerciseType ?: Exercises.first()).useGps == true).build()
+            ExerciseConfig.builder(exercise.mapped)
+                .setDataTypes(
+                    dataTypes
+                )
+                .setIsGpsEnabled(exercise.useGps == true).build()
         )
         startHeartRateTracking()
+        isInProgress = true
     }
 
     suspend fun stopExerciseSession() {
         exerciseClient?.endExercise()
+        isInProgress = false
+        stopSelf()
     }
 
     suspend fun pauseExerciseSession() {
@@ -139,6 +160,10 @@ class ExerciseService : Service() {
             val connection = HeartConnection(
                 createGattCallback {
                     heartRateLiveData.postValue(it)
+                    heartRateSourceData.postValue(HeartRateSource.HeartRateMonitor)
+                    heartRateHistoryLiveData.postValue(
+                        (heartRateHistoryLiveData.value ?: emptyList()).plus(it)
+                    )
                 },
                 applicationContext,
                 application
@@ -176,6 +201,10 @@ class ExerciseService : Service() {
         startHeartRateTracking()
     }
 
+    fun isExerciseInProgress(): Boolean {
+        return isInProgress
+    }
+
     private val exerciseUpdateListener = object : ExerciseUpdateCallback {
         override fun onAvailabilityChanged(
             dataType: DataType<*, *>,
@@ -191,14 +220,25 @@ class ExerciseService : Service() {
                 update.latestMetrics.getData(DataType.HEART_RATE_BPM)?.lastOrNull()?.value?.toInt()
                     ?: 0
             heartRateLiveData.postValue(heartRate)
+            heartRateSourceData.postValue(HeartRateSource.Device)
+            heartRateHistoryLiveData.postValue(
+                (heartRateHistoryLiveData.value ?: emptyList()).plus(
+                    heartRate
+                )
+            )
 
             val calories =
-                update.latestMetrics.getData(DataType.CALORIES)?.lastOrNull()?.value ?: 0.0
+                update.latestMetrics.getData(DataType.CALORIES_TOTAL)?.total ?: 0.0
             caloriesLiveData.postValue(calories)
 
             val distance =
-                update.latestMetrics.getData(DataType.DISTANCE)?.lastOrNull()?.value ?: 0.0
+                update.latestMetrics.getData(DataType.DISTANCE_TOTAL)?.total ?: 0.0
             distanceLiveData.postValue(distance)
+
+            val steps =
+                update.latestMetrics.getData(DataType.STEPS_TOTAL)?.total ?: 0
+            Log.d("Steps", "$steps")
+            stepsLiveData.postValue(steps)
 
             val duration = update.activeDurationCheckpoint?.activeDuration?.seconds ?: 0L
             durationLiveData.postValue(duration)
@@ -227,6 +267,8 @@ class ExerciseService : Service() {
     fun getRawDataLiveData(): LiveData<ExerciseUpdate> = rawData
     fun getHeartRateSourceData(): LiveData<HeartRateSource> = heartRateSourceData
     fun getAvailability(): LiveData<Map<DataType<*, *>, Availability>> = availabilities
+    fun getStepsLiveData(): LiveData<Long> = stepsLiveData
+    fun getHeartRateHistoryLiveData(): LiveData<List<Int>> = heartRateHistoryLiveData
 
     private fun startForegroundService() {
         // Make an intent that will take the user straight to the exercise UI.
