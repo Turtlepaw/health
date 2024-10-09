@@ -33,6 +33,7 @@ fun StatePicker(
     unitOfMeasurement: String,
     currentState: Int,
     recommendedItem: Int? = null,
+    renderItem: ((Int) -> String) = { it.toString() },
     onSelect: (Int) -> Unit
 ) {
     val initialIndex = options.indexOf(currentState)

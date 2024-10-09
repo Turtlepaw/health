@@ -11,6 +11,7 @@ import androidx.health.services.client.ExerciseUpdateCallback
 import androidx.health.services.client.HealthServices
 import androidx.health.services.client.data.Availability
 import androidx.health.services.client.data.DataType
+import androidx.health.services.client.data.DeltaDataType
 import androidx.health.services.client.data.ExerciseLapSummary
 import androidx.health.services.client.data.ExerciseState
 import androidx.health.services.client.data.ExerciseTrackedStatus.Companion.OWNED_EXERCISE_IN_PROGRESS
@@ -151,6 +152,7 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
             dataType: DataType<*, *>,
             data: Availability
         ) {
+            Log.d("ExerciseViewModel", "Availability changed: $dataType, $data")
             _availabilities.postValue(
                 (availabilities.value ?: emptyMap()).toMutableMap().plus(Pair(dataType, data))
             )
@@ -170,8 +172,8 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
         val exerciseClient = healthServicesClient.exerciseClient
         exerciseClient.setUpdateCallback(exerciseUpdateListener)
 
-        val metrics = setOf(DataType.HEART_RATE_BPM)
-        if (exercise.useGps) metrics.plus(DataType.LOCATION)
+        var metrics: Set<DeltaDataType<*, *>> = setOf(DataType.HEART_RATE_BPM)
+        if (exercise.useGps == true) metrics = metrics.plus(DataType.LOCATION)
 
         exerciseClient.prepareExercise(
             WarmUpConfig(
@@ -179,6 +181,7 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
                 metrics
             )
         )
+        exerciseClient.setUpdateCallback(exerciseUpdateListener)
     }
 
     open fun toSummary(): SummaryScreenState {

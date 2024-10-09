@@ -135,7 +135,6 @@ fun BluetoothSearch(
                             },
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(vertical = 3.dp)
                         )
                     }
                 }

@@ -1,5 +1,6 @@
 package com.turtlepaw.heartconnect.presentation.pages
 
+import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -14,8 +15,10 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.ToggleChip
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.components.Page
+import com.turtlepaw.heart_connection.Exercise
 import com.turtlepaw.heart_connection.Metric
 import com.turtlepaw.heart_connection.Metrics
+import com.turtlepaw.heart_connection.isAvailableFor
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
@@ -63,6 +66,7 @@ fun MetricEditor(
 fun MetricSelector(
     position: Int,
     selectedMetric: Metric,
+    exercise: Exercise,
     onSelect: (metric: Metric) -> Unit
 ) {
     ExerciseTheme {
@@ -75,7 +79,9 @@ fun MetricSelector(
             }
             items(Metrics.size) {
                 val metric = Metrics.elementAt(it)
+                Log.d("TAG", "MetricSelector: $metric and exercise is ${exercise.name}")
                 ToggleChip(
+                    enabled = metric.isAvailableFor(exercise),
                     label = {
                         Text(text = metric.name)
                     },

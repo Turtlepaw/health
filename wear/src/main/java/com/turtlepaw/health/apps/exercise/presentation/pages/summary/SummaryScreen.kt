@@ -53,7 +53,7 @@ import com.google.android.horologist.compose.material.Title
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryScreenState
 import com.turtlepaw.health.utils.NO_DATA
-import com.turtlepaw.health.utils.formatElapsedTime
+import com.turtlepaw.health.utils.formatElapsedTimeToString
 import com.turtlepaw.heartconnect.presentation.components.CompleteButton
 import java.time.Duration
 import kotlin.math.roundToInt
@@ -96,7 +96,7 @@ fun SummaryScreen(
                             contentDescription = "Timer"
                         )
                     },
-                    content = formatElapsedTime(uiState.elapsedTime)
+                    content = formatElapsedTimeToString(uiState.elapsedTime)
                 )
                 //formatElapsedTime(uiState.elapsedTime, includeSeconds = true) }
             }

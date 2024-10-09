@@ -116,3 +116,7 @@ dependencies {
 
     //wearApp(project(":wear"))
 }
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}

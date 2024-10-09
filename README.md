@@ -1,19 +1,42 @@
-<div align="center">
-<img src="./assets/banner.png" width="700" alt="Banner"/>
-<h3>Sunlight Tracker tracks your daily sunlight</h3>
-</div>
+# Health
 
-<img align="right" src="./assets/watch.png" width="200" alt="Banner"/>
+### Advanced insights into your health
 
-## 💡 Features
+## Apps
+
+### Sunlight
+
+#### Features
 
 - ☀️ Discover how much sunlight you have per day and graph it
 - 💡 Get rewarded with <kbd>☀️ Sun Minutes</kbd> and set a goal to reach
 
+#### 🔍 How does it work?
+
+Sunlight continuously samples the device's light sensor, records it, and then, after a minute of
+sunlight, calculates the sunlight minutes accumulated and logs it to your day.
+
+#### 🕒 How is the battery?
+
+The app saves battery by automatically stopping the sampling at night, since there's no sun at night
+in most places.
+
+> [!NOTE]
+> If you require sunlight tracking at
+> night, [submit your use case](https://github.com/Turtlepaw/health/issues/new).
+
+### Reflect
+
+- 😊 Reflect on how you feel
+- 📅 See past reflections
+
+### Heart Connect
+
+- 📡 Connect external heart rate devices
+
+### Health
+
+- 🔗 Connect all your health data and see insights
+    - e.g. getting sunlight yesterday improved your night's sleep
+
 ---
-
-## 🔍 How does it work?
-Sunlight Tracker samples the device's light sensor every minute, then it checks if its equals or is more than the threshold, if it's more it will add a sun minute to your daily activity.
-
-## 🕒 How is the battery?
-We're currently working to improve the battery by stopping the sampling at night, since there's no sun at night in most places, although this will be optional and user customizable for some cases.

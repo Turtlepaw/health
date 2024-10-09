@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.turtlepaw.health.database.Day
 import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.Metric
 
@@ -50,6 +51,18 @@ interface ExerciseDao {
 
     @Query("SELECT * FROM exercise ORDER BY timestamp DESC")
     suspend fun getExercises(): List<Exercise>
+
+//    @Query("DELETE FROM exercise WHERE id = :favoriteId")
+//    suspend fun deleteFavoriteById(favoriteId: Int)
+}
+
+@Dao
+interface DayDao {
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
+    suspend fun insertDay(day: Day)
+
+    @Query("SELECT * FROM day ORDER BY date DESC")
+    suspend fun getDays(): List<Day>
 
 //    @Query("DELETE FROM exercise WHERE id = :favoriteId")
 //    suspend fun deleteFavoriteById(favoriteId: Int)

@@ -9,6 +9,10 @@ class HealthNotifications {
         const val NOTIFICATION_CHANNEL =
             "FOREGROUND"
         private const val NOTIFICATION_CHANNEL_DISPLAY = "Foreground Services"
+
+        const val EXERCISE_NOTIFICATION_CHANNEL =
+            "EXERCISE_FOREGROUND"
+        private const val EXERCISE_NOTIFICATION_CHANNEL_DISPLAY = "Exercises"
     }
 
     /*
@@ -18,9 +22,25 @@ class HealthNotifications {
         val channel = NotificationChannel(
             NOTIFICATION_CHANNEL,
             NOTIFICATION_CHANNEL_DISPLAY,
-            NotificationManager.IMPORTANCE_HIGH
+            NotificationManager.IMPORTANCE_MIN
         ).apply {
             description = "Channel for foreground service notifications, you may disable it."
+        }
+
+        val notificationManager = context.getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    /*
+    Creates a unified notification channel for exercise foreground notifications
+ */
+    fun createExerciseChannel(context: Context) {
+        val channel = NotificationChannel(
+            EXERCISE_NOTIFICATION_CHANNEL,
+            EXERCISE_NOTIFICATION_CHANNEL_DISPLAY,
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Channel for exercise foreground service notifications."
         }
 
         val notificationManager = context.getSystemService(NotificationManager::class.java)

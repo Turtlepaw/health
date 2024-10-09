@@ -29,7 +29,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.wear.ongoing.OngoingActivity
 import androidx.wear.ongoing.Status
-import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.exercise.presentation.MainActivity
 import com.turtlepaw.health.utils.HealthNotifications
 import com.turtlepaw.health.utils.Settings
@@ -117,9 +116,9 @@ class ExerciseService : Service() {
         exerciseType = exercise
         val dataTypes = setOf(
             DataType.HEART_RATE_BPM,
-            DataType.CALORIES_TOTAL,
-            DataType.DISTANCE_TOTAL,
-            DataType.STEPS_TOTAL,
+            DataType.CALORIES,
+            DataType.DISTANCE,
+            DataType.STEPS,
         )
         if (exercise.useGps == true) dataTypes.plus(DataType.LOCATION)
         exerciseClient?.startExercise(
@@ -136,6 +135,7 @@ class ExerciseService : Service() {
     suspend fun stopExerciseSession() {
         exerciseClient?.endExercise()
         isInProgress = false
+        stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
@@ -159,6 +159,7 @@ class ExerciseService : Service() {
 
             val connection = HeartConnection(
                 createGattCallback {
+                    // Prioritize peripherals
                     heartRateLiveData.postValue(it)
                     heartRateSourceData.postValue(HeartRateSource.HeartRateMonitor)
                     heartRateHistoryLiveData.postValue(
@@ -216,29 +217,40 @@ class ExerciseService : Service() {
         }
 
         override fun onExerciseUpdateReceived(update: ExerciseUpdate) {
-            val heartRate =
-                update.latestMetrics.getData(DataType.HEART_RATE_BPM)?.lastOrNull()?.value?.toInt()
-                    ?: 0
-            heartRateLiveData.postValue(heartRate)
-            heartRateSourceData.postValue(HeartRateSource.Device)
-            heartRateHistoryLiveData.postValue(
-                (heartRateHistoryLiveData.value ?: emptyList()).plus(
-                    heartRate
+            if (heartRateSourceData.value == HeartRateSource.Device) {
+                val heartRate =
+                    update.latestMetrics.getData(DataType.HEART_RATE_BPM)
+                        ?.lastOrNull()?.value?.toInt()
+                        ?: 0
+                heartRateLiveData.postValue(heartRate)
+                heartRateSourceData.postValue(HeartRateSource.Device)
+
+                heartRateHistoryLiveData.postValue(
+                    update.latestMetrics.getData(DataType.HEART_RATE_BPM).map {
+                        it.value.toInt()
+                    }.plus(
+                        heartRateHistoryLiveData.value?.iterator() ?: emptyList<Int>().iterator()
+                    ) as List<Int>
                 )
-            )
+            }
 
-            val calories =
-                update.latestMetrics.getData(DataType.CALORIES_TOTAL)?.total ?: 0.0
-            caloriesLiveData.postValue(calories)
+            val _calories = update.latestMetrics.getData(DataType.CALORIES)
+            if (_calories.isNotEmpty()) {
+                val calories = _calories.sumOf { it.value }
+                caloriesLiveData.postValue((caloriesLiveData.value ?: 0.0).plus(calories))
+            }
 
-            val distance =
-                update.latestMetrics.getData(DataType.DISTANCE_TOTAL)?.total ?: 0.0
-            distanceLiveData.postValue(distance)
+            val _distance = update.latestMetrics.getData(DataType.DISTANCE)
+            if (_distance.isNotEmpty()) {
+                val distance = _distance.sumOf { it.value }
+                distanceLiveData.postValue((distanceLiveData.value ?: 0.0).plus(distance))
+            }
 
-            val steps =
-                update.latestMetrics.getData(DataType.STEPS_TOTAL)?.total ?: 0
-            Log.d("Steps", "$steps")
-            stepsLiveData.postValue(steps)
+            val _steps = update.latestMetrics.getData(DataType.STEPS)
+            if (_steps.isNotEmpty()) {
+                val steps = _steps.sumOf { it.value }
+                stepsLiveData.postValue((stepsLiveData.value ?: 0L).plus(steps))
+            }
 
             val duration = update.activeDurationCheckpoint?.activeDuration?.seconds ?: 0L
             durationLiveData.postValue(duration)
@@ -246,17 +258,11 @@ class ExerciseService : Service() {
             rawData.postValue(update)
         }
 
-        override fun onLapSummaryReceived(lapSummary: ExerciseLapSummary) {
+        override fun onLapSummaryReceived(lapSummary: ExerciseLapSummary) {}
 
-        }
+        override fun onRegistered() {}
 
-        override fun onRegistered() {
-
-        }
-
-        override fun onRegistrationFailed(throwable: Throwable) {
-
-        }
+        override fun onRegistrationFailed(throwable: Throwable) {}
     }
 
     // Expose LiveData for external observers
@@ -280,11 +286,14 @@ class ExerciseService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        HealthNotifications().createChannel(this)
+        HealthNotifications().createExerciseChannel(this)
 
         // Build the notification.
         val notificationBuilder =
-            NotificationCompat.Builder(applicationContext, HealthNotifications.NOTIFICATION_CHANNEL)
+            NotificationCompat.Builder(
+                applicationContext,
+                HealthNotifications.EXERCISE_NOTIFICATION_CHANNEL
+            )
                 .setContentTitle(NOTIFICATION_TITLE)
                 .setContentText(NOTIFICATION_TEXT)
                 .setSmallIcon(
@@ -305,8 +314,8 @@ class ExerciseService : Service() {
                 applicationContext,
                 NOTIFICATION_ID, notificationBuilder
             )
-                .setAnimatedIcon(R.drawable.exercise)
-                .setStaticIcon(R.drawable.exercise)
+                .setAnimatedIcon((exerciseType ?: Workout).icon)
+                .setStaticIcon((exerciseType ?: Workout).icon)
                 .setTouchIntent(pendingIntent)
                 .setStatus(ongoingActivityStatus)
                 .build()

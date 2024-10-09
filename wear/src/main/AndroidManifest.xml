@@ -103,6 +103,7 @@
             android:name=".apps.health.presentation.MainActivity"
             android:exported="true"
             android:taskAffinity=""
+            android:launchMode="singleInstance"
             android:theme="@style/MainActivityTheme.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -116,6 +117,7 @@
             android:name=".apps.sunlight.presentation.MainActivity"
             android:exported="true"
             android:taskAffinity=""
+            android:launchMode="singleInstance"
             android:theme="@style/MainActivityTheme.Sunlight.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -128,6 +130,7 @@
             android:name=".apps.sleep.presentation.MainActivity"
             android:exported="true"
             android:taskAffinity=""
+            android:launchMode="singleInstance"
             android:theme="@style/MainActivityTheme.Sunlight.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -140,6 +143,7 @@
             android:icon="@mipmap/reflections_ic_launcher"
             android:label="@string/reflections_app_name"
             android:taskAffinity=""
+            android:launchMode="singleInstance"
             android:theme="@style/MainActivityTheme.Reflections.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -157,6 +161,7 @@
             android:icon="@mipmap/exercise_ic_launcher"
             android:label="@string/exercise_app_name"
             android:taskAffinity=""
+            android:launchMode="singleInstance"
             android:theme="@style/MainActivityTheme.Exercise.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

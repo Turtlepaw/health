@@ -1,14 +1,17 @@
-package com.turtlepaw.heartconnect.presentation.pages
+package com.turtlepaw.health.apps.exercise.presentation.pages
 
 import android.app.Application
-import android.content.Context
 import android.os.VibrationEffect
 import android.os.Vibrator
+import androidx.activity.ComponentActivity
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
@@ -17,20 +20,23 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.health.services.client.data.LocationAvailability
+import androidx.wear.compose.foundation.CurvedModifier
 import androidx.wear.compose.foundation.CurvedTextStyle
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.wear.compose.foundation.curvedComposable
+import androidx.wear.compose.foundation.padding
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.curvedText
-import androidx.wear.tooling.preview.devices.WearDevices
+import androidx.wear.compose.ui.tooling.preview.WearPreviewSmallRound
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.exercise.manager.ExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.FakeExerciseViewModel
+import com.turtlepaw.health.apps.exercise.manager.HeartRateModel
 import com.turtlepaw.health.apps.exercise.presentation.Routes
 import com.turtlepaw.health.components.Page
 import com.turtlepaw.heart_connection.Exercise
@@ -46,9 +52,10 @@ fun ExerciseConfiguration(
     exercise: Exercise,
     navigate: (route: String) -> Unit,
     id: Int,
-    context: Context,
+    context: ComponentActivity,
     heartRate: Int?,
     exerciseViewModel: ExerciseViewModel,
+    heartRateModel: HeartRateModel,
     onStart: () -> Unit
 ) {
     ExerciseTheme {
@@ -60,6 +67,11 @@ fun ExerciseConfiguration(
 
         LaunchedEffect(Unit) {
             exerciseViewModel.warmExerciseSession(exercise, context)
+            try {
+                heartRateModel.attemptConnectSaved(context)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
 
         Page(
@@ -71,9 +83,18 @@ fun ExerciseConfiguration(
                 )
             },
             startTimeTextCurved = {
+                curvedComposable(
+                    modifier = CurvedModifier.padding(all = 5.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.MyLocation,
+                        contentDescription = "Location",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
                 curvedText(
                     text = updatePrepareLocationStatus(
-                        locationAvailability = location ?: LocationAvailability.UNAVAILABLE
+                        locationAvailability = location ?: LocationAvailability.ACQUIRING
                     ),
                     style = CurvedTextStyle()
                 )
@@ -139,8 +160,14 @@ fun ExerciseConfiguration(
                             text = "Connect Sensor"
                         )
                     },
-                    secondaryLabel = heartRate?.let { bpm ->
-                        { Text(text = "${bpm}bpm") }
+                    secondaryLabel = {
+                        if (heartRate != null) {
+                            if (heartRate > 0) {
+                                Text(text = "${heartRate}bpm")
+                            } else {
+                                Text(text = "Loading")
+                            }
+                        }
                     }
                 )
             }
@@ -180,16 +207,17 @@ private fun updatePrepareLocationStatus(locationAvailability: LocationAvailabili
     }
 }
 
-@Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
+@WearPreviewSmallRound()
 @Composable
 fun ExerciseConfigurationPreview() {
     ExerciseConfiguration(
         Exercises.first(),
         {},
         1,
-        LocalContext.current,
+        LocalContext.current as ComponentActivity,
         86,
-        FakeExerciseViewModel(Application())
+        FakeExerciseViewModel(Application()),
+        HeartRateModel(Application()),
     ) {}
 }
 

@@ -41,6 +41,13 @@ data class CoachingProgram(
     val items: Map<String, Boolean>
 )
 
+@Entity(tableName = "day")
+data class Day(
+    @PrimaryKey val date: LocalDate,
+    val steps: Int,
+    val goal: Int
+)
+
 enum class ServiceType(val serviceName: String) {
     SLEEP("sleep"),
     SUNLIGHT("sunlight"),

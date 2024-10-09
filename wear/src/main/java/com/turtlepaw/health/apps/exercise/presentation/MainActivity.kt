@@ -47,6 +47,7 @@ import com.google.android.horologist.compose.ambient.AmbientAware
 import com.turtlepaw.health.apps.exercise.manager.ExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.HeartRateModel
 import com.turtlepaw.health.apps.exercise.presentation.pages.BluetoothSearch
+import com.turtlepaw.health.apps.exercise.presentation.pages.ExerciseConfiguration
 import com.turtlepaw.health.apps.exercise.presentation.pages.ExerciseRoute
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryScreenState
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.averageHeartRateArg
@@ -66,7 +67,6 @@ import com.turtlepaw.heart_connection.Metric
 import com.turtlepaw.heart_connection.createGattCallback
 import com.turtlepaw.heartconnect.presentation.components.LoadingPage
 import com.turtlepaw.heartconnect.presentation.pages.AppIntroduction
-import com.turtlepaw.heartconnect.presentation.pages.ExerciseConfiguration
 import com.turtlepaw.heartconnect.presentation.pages.ExerciseList
 import com.turtlepaw.heartconnect.presentation.pages.MetricEditor
 import com.turtlepaw.heartconnect.presentation.pages.MetricSelector
@@ -339,7 +339,8 @@ fun WearPages(
                         id,
                         context,
                         heartRate,
-                        exerciseViewModel
+                        exerciseViewModel,
+                        heartRateModel
                     ) {
                         coroutineScope
                         swipeToDismissEnabled = false
@@ -461,7 +462,11 @@ fun WearPages(
                     if (selectedMetric == null) {
                         LoadingPage()
                     } else {
-                        MetricSelector(position, selectedMetric!!) { metric ->
+                        MetricSelector(
+                            position,
+                            selectedMetric!!,
+                            Exercises.elementAt(id)
+                        ) { metric ->
                             selectedMetric = metric
 
                             coroutineScope.launch {

@@ -6,6 +6,7 @@ import java.time.LocalTime
 
 enum class Settings(private val key: String, private val default: Any?) {
     GOAL("goal", 15),
+    STEP_GOAL("step_goal", 5000),
     SUN_THRESHOLD("threshold", 5000),
     TIMEOUT("timeout", LocalTime.of(20, 0)),
     WAKEUP("wakeup", LocalTime.of(5, 0)),
@@ -104,4 +105,11 @@ enum class SettingsBasics(private val key: String, private val mode: Int?) {
     fun getMode(): Int {
         return mode ?: Context.MODE_PRIVATE
     }
+}
+
+fun Context.getDefaultSharedSettings(): SharedPreferences {
+    return getSharedPreferences(
+        SettingsBasics.SHARED_PREFERENCES.getKey(),
+        SettingsBasics.SHARED_PREFERENCES.getMode()
+    )
 }

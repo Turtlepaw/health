@@ -12,6 +12,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.intl.Locale
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -21,9 +27,14 @@ import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.turtlepaw.health.apps.health.presentation.pages.WearHome
 import com.turtlepaw.health.apps.health.presentation.pages.coaching.StartCoaching
+import com.turtlepaw.health.apps.health.presentation.pages.settings.WearSettings
 import com.turtlepaw.health.apps.health.presentation.theme.HealthTheme
+import com.turtlepaw.health.apps.sunlight.presentation.pages.StatePicker
 import com.turtlepaw.health.database.AppDatabase
+import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
+import com.turtlepaw.health.utils.getDefaultSharedSettings
+import java.text.NumberFormat
 
 
 enum class Routes(private val route: String) {
@@ -63,6 +74,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             WearPages(
+                this,
                 sharedPreferences,
                 AppDatabase.getDatabase(applicationContext),
             )
@@ -72,6 +84,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun WearPages(
+    context: ComponentActivity,
     sharedPreferences: SharedPreferences,
     database: AppDatabase
 ){
@@ -84,10 +97,41 @@ fun WearPages(
             startDestination = Routes.HOME.getRoute()
         ) {
             composable(Routes.HOME.getRoute()) {
-                WearHome(database, navController)
+                WearHome(context, database, navController)
             }
             composable(Routes.START_COACHING.getRoute()) {
                 StartCoaching(database)
+            }
+            composable(Routes.SETTINGS.getRoute()) {
+                var goal by remember { mutableStateOf<Int?>(null) }
+                LaunchedEffect(Unit) {
+                    goal = context.getDefaultSharedSettings()
+                        .getInt(Settings.STEP_GOAL.getKey(), Settings.STEP_GOAL.getDefaultAsInt())
+                }
+
+                WearSettings(goal, navController::navigate)
+            }
+            composable(Routes.GOAL_PICKER.getRoute()) {
+                var goal by remember { mutableStateOf<Int?>(null) }
+                LaunchedEffect(Unit) {
+                    goal = context.getDefaultSharedSettings()
+                        .getInt(Settings.STEP_GOAL.getKey(), Settings.STEP_GOAL.getDefaultAsInt())
+                }
+
+                StatePicker(
+                    List(10) {
+                        it.times(1000).plus(1000)
+                    },
+                    unitOfMeasurement = "",
+                    goal ?: Settings.STEP_GOAL.getDefaultAsInt(),
+                    recommendedItem = null,
+                    renderItem = {
+                        NumberFormat.getInstance(Locale.current.platformLocale).format(it)
+                    }
+                ) {
+                    sharedPreferences.edit().putInt(Settings.STEP_GOAL.getKey(), it).apply()
+                    navController.popBackStack()
+                }
             }
         }
     }

@@ -6,19 +6,32 @@ import androidx.health.services.client.data.ExerciseType
 data class Metric(
     val id: Int,
     val name: String,
-    val icon: Int
+    val icon: Int,
+    val dataType: DataType<*, *>? = null
 )
+
+/**
+ * Checks if a metric is available for a given exercise.
+ *
+ * Note that [ElapsedTimeMetric] will always be available
+ */
+fun Metric.isAvailableFor(exercise: Exercise): Boolean {
+    return if (this == ElapsedTimeMetric) true
+    else exercise.dataTypes.contains(dataType)
+}
 
 val HeartRateMetric = Metric(
     id = 1,
     name = "Heart Rate",
-    icon = R.drawable.heart
+    icon = R.drawable.heart,
+    dataType = DataType.HEART_RATE_BPM
 )
 
 val DistanceMetric = Metric(
     id = 2,
     name = "Distance",
-    icon = R.drawable.distance
+    icon = R.drawable.distance,
+    dataType = DataType.DISTANCE
 )
 
 val ElapsedTimeMetric = Metric(
@@ -30,13 +43,15 @@ val ElapsedTimeMetric = Metric(
 val CaloriesMetric = Metric(
     id = 4,
     name = "Calories",
-    icon = R.drawable.calorie
+    icon = R.drawable.calorie,
+    dataType = DataType.CALORIES
 )
 
 val StepsMetric = Metric(
     id = 5,
     name = "Steps",
-    icon = R.drawable.steps
+    icon = R.drawable.steps,
+    dataType = DataType.STEPS
 )
 
 val Metrics = listOf(
@@ -53,7 +68,7 @@ data class Exercise(
     val icon: Int,
     val mapped: ExerciseType,
     val useGps: Boolean = false,
-    val dataTypes: Set<DataType<*, *>> = emptySet()
+    val dataTypes: Set<DataType<*, *>>
 )
 
 val Workout = Exercise(
@@ -64,8 +79,8 @@ val Workout = Exercise(
     useGps = false,
     dataTypes = setOf(
         DataType.HEART_RATE_BPM,
-        DataType.CALORIES_TOTAL,
-        DataType.STEPS_TOTAL,
+        DataType.CALORIES,
+        DataType.DISTANCE
     )
 )
 
@@ -79,7 +94,14 @@ val Running = Exercise(
     ),
     icon = R.drawable.run,
     mapped = ExerciseType.RUNNING,
-    useGps = true
+    useGps = true,
+    dataTypes = setOf(
+        DataType.HEART_RATE_BPM,
+        DataType.CALORIES,
+        DataType.STEPS,
+        DataType.DISTANCE,
+        DataType.LOCATION
+    )
 )
 
 val Walking = Exercise(
@@ -92,7 +114,14 @@ val Walking = Exercise(
     ),
     icon = R.drawable.walk,
     mapped = ExerciseType.WALKING,
-    useGps = true
+    useGps = true,
+    dataTypes = setOf(
+        DataType.HEART_RATE_BPM,
+        DataType.CALORIES,
+        DataType.STEPS,
+        DataType.DISTANCE,
+        DataType.LOCATION
+    )
 )
 
 val Exercises = listOf(
