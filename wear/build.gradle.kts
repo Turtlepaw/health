@@ -95,6 +95,7 @@ dependencies {
 
     // Icons
     implementation(libs.material.icons.extended)
+    debugImplementation(libs.androidx.tiles.tooling)
 
     // Room
     ksp(libs.androidx.room.compiler)
@@ -113,6 +114,9 @@ dependencies {
     // Bluetooth
     implementation(project(":heart_connection"))
     implementation(libs.jasonchenlijian.fastble)
+
+    // Wear Tiles
+    implementation(libs.androidx.tiles.tooling.preview)
 
     //wearApp(project(":wear"))
 }

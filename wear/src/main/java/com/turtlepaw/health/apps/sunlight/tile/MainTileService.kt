@@ -80,7 +80,7 @@ class MainTileService : SuspendingTileService() {
         return ResourceBuilders.Resources.Builder()
             .setVersion(RESOURCES_VERSION)
             .addIdToImageMapping(
-                com.turtlepaw.health.apps.health.tile.Images.SLEEP_QUALITY.getId(),
+                com.turtlepaw.health.apps.health.tile.Images.STEPS.getId(),
                 ResourceBuilders.ImageResource.Builder()
                     .setAndroidResourceByResId(
                         ResourceBuilders.AndroidImageResourceByResId.Builder()
@@ -227,7 +227,7 @@ private fun tileLayout(
     today: Int,
     goal: Int
 ): EdgeContentLayout.Builder {
-    val formatter = DateTimeFormatter.ofPattern("h:mma")
+    DateTimeFormatter.ofPattern("h:mma")
     val deviceParameters = buildDeviceParameters(context.resources)
     return EdgeContentLayout.Builder(deviceParameters)
         .setEdgeContent(
@@ -331,7 +331,7 @@ private fun tileLayout(
 fun TilePreview() {
     val timeManager = TimeManager()
     val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0))
-    val sleepQuality = timeManager.calculateSleepQuality(timeDifference)
+    timeManager.calculateSleepQuality(timeDifference)
 
     LayoutRootPreview(root = tileLayout(
         LocalContext.current,
@@ -350,7 +350,7 @@ fun TilePreview() {
 fun NoDataPreview() {
     val timeManager = TimeManager()
     val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0))
-    val sleepQuality = timeManager.calculateSleepQuality(timeDifference)
+    timeManager.calculateSleepQuality(timeDifference)
 
     LayoutRootPreview(root = noDataLayout(
         LocalContext.current

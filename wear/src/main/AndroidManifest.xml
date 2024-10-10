@@ -83,7 +83,7 @@
         <service
             android:name=".apps.sunlight.tile.MainTileService"
             android:exported="true"
-            android:label="@string/tile_label"
+            android:label="@string/sunlight_tile_label"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
             <intent-filter>
                 <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
@@ -98,6 +98,7 @@
             android:name="com.google.android.wearable"
             android:required="true" />
 
+        <!-- Health -->
         <activity
             android:icon="@mipmap/ic_launcher"
             android:name=".apps.health.presentation.MainActivity"
@@ -111,6 +112,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".apps.health.tile.MainTileService"
+            android:exported="true"
+            android:label="@string/step_streak_tile_label"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@drawable/step_streak_tile_preview" />
+        </service>
+
+        <!-- Sunlight -->
         <activity
             android:icon="@mipmap/sunlight_ic_launcher"
             android:label="@string/sunlight_app_name"
@@ -124,6 +141,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Sleep -->
         <activity
             android:icon="@mipmap/sleep_ic_launcher"
             android:label="@string/sleep_app_name"
@@ -137,6 +156,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Reflections -->
         <activity
             android:name=".apps.reflections.presentation.MainActivity"
             android:exported="true"

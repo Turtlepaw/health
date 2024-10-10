@@ -7,9 +7,10 @@ import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.FontWeightProp
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental
 
-enum class FontStyle(private val fontSize: Float) {
-    PrimaryFontSize(33f),
-    SecondaryFontSize(24f);
+enum class FontStyle(private val fontSize: Float, private val color: Int) {
+    PrimaryFontSize(33f, TileColors.PrimaryColor),
+    PrimaryLightFontSize(33f, TileColors.LightText),
+    SecondaryFontSize(24f, TileColors.LightText);
 
     private fun getFontSize(): Float {
         return fontSize
@@ -23,7 +24,7 @@ enum class FontStyle(private val fontSize: Float) {
                     .build()
             )
             .setColor(
-                ColorBuilders.argb(TileColors.PrimaryColor)
+                ColorBuilders.argb(color)
             )
             .setSize(
                 SpProp.Builder()

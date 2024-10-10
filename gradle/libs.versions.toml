@@ -26,6 +26,7 @@ tiles = "1.4.0"
 tilesMaterial = "1.4.0"
 horologist = "0.6.19"
 horologistRotary = "0.6.17"
+tilesToolingPreview = "1.5.0-alpha01"
 watchfaceComplicationsDataSourceKtx = "1.2.1"
 wear = "1.3.0"
 wearToolingPreview = "1.0.0"
@@ -37,11 +38,13 @@ roomKtx = "2.6.1"
 runtimeLivedata = "1.7.3"
 fastbleVersion = "2.4.0"
 wearOngoing = "1.0.0"
+tilesTooling = "1.4.0"
 
 [libraries]
 # Health
 androidx-health-services-client = { module = "androidx.health:health-services-client", version.ref = "healthServicesClient" }
 # Bluetooth
+androidx-tiles-tooling-preview = { module = "androidx.wear.tiles:tiles-tooling-preview", version.ref = "tilesToolingPreview" }
 jasonchenlijian-fastble = { module = "com.github.Jasonchenlijian:FastBle", version.ref = "fastbleVersion" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomKtx" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
@@ -95,6 +98,7 @@ androidx-wear-tooling-preview = { group = "androidx.wear", name = "wear-tooling-
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtimeLivedata" }
 androidx-wear-ongoing = { group = "androidx.wear", name = "wear-ongoing", version.ref = "wearOngoing" }
+androidx-tiles-tooling = { group = "androidx.wear.tiles", name = "tiles-tooling", version.ref = "tilesTooling" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

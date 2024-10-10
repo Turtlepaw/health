@@ -51,10 +51,10 @@ import com.google.android.horologist.compose.material.ListHeaderDefaults.firstIt
 import com.google.android.horologist.compose.material.ResponsiveListHeader
 import com.google.android.horologist.compose.material.Title
 import com.turtlepaw.health.R
+import com.turtlepaw.health.apps.exercise.presentation.components.CompleteButton
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryScreenState
 import com.turtlepaw.health.utils.NO_DATA
 import com.turtlepaw.health.utils.formatElapsedTimeToString
-import com.turtlepaw.heartconnect.presentation.components.CompleteButton
 import java.time.Duration
 import kotlin.math.roundToInt
 

@@ -118,7 +118,7 @@ fun formatElapsedTimeToString(
         val minutes = elapsedDuration.toMinutes() % MINUTES_PER_HOUR
         val seconds = elapsedDuration.seconds % SECONDS_PER_MINUTE
 
-        var text = "$hours:${"%02d".format(minutes)}"
+        var text = "$hours:${"%02d".format(minutes)}.${seconds}"
 
         if (includeSeconds) text = text.plus("%02d".format(seconds))
 

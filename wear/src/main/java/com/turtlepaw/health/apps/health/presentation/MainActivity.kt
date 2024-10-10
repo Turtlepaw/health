@@ -70,8 +70,6 @@ class MainActivity : ComponentActivity() {
             SettingsBasics.SHARED_PREFERENCES.getMode()
         )
 
-
-
         setContent {
             WearPages(
                 this,

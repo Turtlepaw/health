@@ -73,7 +73,12 @@ data class Exercise(
 
 val Workout = Exercise(
     name = "Workout",
-    defaultMetrics = Metrics,
+    defaultMetrics = listOf(
+        HeartRateMetric,
+        CaloriesMetric,
+        DistanceMetric,
+        ElapsedTimeMetric
+    ),
     icon = R.drawable.sports_martial_arts,
     mapped = ExerciseType.WORKOUT,
     useGps = false,

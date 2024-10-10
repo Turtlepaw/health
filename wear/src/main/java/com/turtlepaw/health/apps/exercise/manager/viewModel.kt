@@ -25,6 +25,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asFlow
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryScreenState
 import com.turtlepaw.heart_connection.Exercise
+import com.turtlepaw.heart_connection.Exercises
 import kotlinx.coroutines.flow.first
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
@@ -40,7 +41,7 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
     val _isPaused = MutableLiveData<Boolean>()
     val isPaused: LiveData<Boolean> get() = _isPaused
 
-    val _isEnding = MutableLiveData<Boolean>()
+    val _isEnding = MutableLiveData<Boolean>(false)
     val isEnding: LiveData<Boolean> get() = _isEnding
 
     val _heartRate = MutableLiveData<Int>()
@@ -98,8 +99,10 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun bindService() {
+    private fun bindService(exercise: Exercise = Exercises.first()) {
+        val exerciseId = Exercises.indexOf(exercise)
         Intent(getApplication(), ExerciseService::class.java).also { intent ->
+            intent.putExtra("exerciseId", exerciseId)
             getApplication<Application>().startForegroundService(intent) // Start as foreground service
             getApplication<Application>().bindService(
                 intent,
@@ -122,7 +125,7 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
     }
 
     open suspend fun startExercise(exercise: Exercise) {
-        bindService()
+        bindService(exercise)
         _isBound.asFlow().first { it }
         exerciseService!!.startExerciseSession(exercise)
     }
@@ -185,9 +188,17 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
     }
 
     open fun toSummary(): SummaryScreenState {
+        Log.d("toSummary", "heartRateHistory type: ${heartRateHistory.value?.javaClass?.name}")
+        Log.d("toSummary", "heartRateHistory avarage: ${heartRateHistory.value?.average()}")
+        Log.d(
+            "toSummary",
+            "heartRateHistory first element: ${heartRateHistory.value?.firstOrNull()}"
+        )
+        Log.d("toSummary", "heartRateHistory elements: ${heartRateHistory.value}")
+
         Log.d("toSummary", "${calculateDuration().seconds}")
         return SummaryScreenState(
-            averageHeartRate = heartRateHistory.value?.average() ?: 0.0,
+            averageHeartRate = heartRateHistory.value?.average()?.toDouble() ?: 0.0,
             totalCalories = calories.value ?: 0.0,
             totalDistance = distance.value ?: 0.0,
             elapsedTime = calculateDuration(),

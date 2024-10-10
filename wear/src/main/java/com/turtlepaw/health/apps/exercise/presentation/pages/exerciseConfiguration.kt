@@ -38,10 +38,10 @@ import com.turtlepaw.health.apps.exercise.manager.ExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.FakeExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.HeartRateModel
 import com.turtlepaw.health.apps.exercise.presentation.Routes
+import com.turtlepaw.health.apps.exercise.presentation.components.StartButton
 import com.turtlepaw.health.components.Page
 import com.turtlepaw.heart_connection.Exercise
 import com.turtlepaw.heart_connection.Exercises
-import com.turtlepaw.heartconnect.presentation.components.StartButton
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -75,30 +75,34 @@ fun ExerciseConfiguration(
         }
 
         Page(
-            startTimeTextLinear = {
-                Text(
-                    text = updatePrepareLocationStatus(
-                        locationAvailability = location ?: LocationAvailability.UNAVAILABLE
-                    )
-                )
-            },
-            startTimeTextCurved = {
-                curvedComposable(
-                    modifier = CurvedModifier.padding(all = 5.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.MyLocation,
-                        contentDescription = "Location",
-                        modifier = Modifier.size(16.dp)
+            startTimeTextLinear = if (exercise.useGps) {
+                {
+                    Text(
+                        text = updatePrepareLocationStatus(
+                            locationAvailability = location ?: LocationAvailability.UNAVAILABLE
+                        )
                     )
                 }
-                curvedText(
-                    text = updatePrepareLocationStatus(
-                        locationAvailability = location ?: LocationAvailability.ACQUIRING
-                    ),
-                    style = CurvedTextStyle()
-                )
-            },
+            } else null,
+            startTimeTextCurved = if (exercise.useGps) {
+                {
+                    curvedComposable(
+                        modifier = CurvedModifier.padding(all = 5.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.MyLocation,
+                            contentDescription = "Location",
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    curvedText(
+                        text = updatePrepareLocationStatus(
+                            locationAvailability = location ?: LocationAvailability.ACQUIRING
+                        ),
+                        style = CurvedTextStyle()
+                    )
+                }
+            } else null,
         ) {
             item {
                 Text(
@@ -165,7 +169,7 @@ fun ExerciseConfiguration(
                             if (heartRate > 0) {
                                 Text(text = "${heartRate}bpm")
                             } else {
-                                Text(text = "Loading")
+                                Text(text = "Loading...")
                             }
                         }
                     }

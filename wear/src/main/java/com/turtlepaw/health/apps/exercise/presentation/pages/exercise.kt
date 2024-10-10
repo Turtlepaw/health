@@ -92,6 +92,9 @@ import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.exercise.manager.ExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.FakeExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.HeartRateSource
+import com.turtlepaw.health.apps.exercise.presentation.components.EndButton
+import com.turtlepaw.health.apps.exercise.presentation.components.PauseButton
+import com.turtlepaw.health.apps.exercise.presentation.components.StartButton
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryScreenState
 import com.turtlepaw.health.database.exercise.Preference
 import com.turtlepaw.health.utils.NO_DATA
@@ -105,9 +108,6 @@ import com.turtlepaw.heart_connection.ElapsedTimeMetric
 import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.HeartRateMetric
 import com.turtlepaw.heart_connection.StepsMetric
-import com.turtlepaw.heartconnect.presentation.components.EndButton
-import com.turtlepaw.heartconnect.presentation.components.PauseButton
-import com.turtlepaw.heartconnect.presentation.components.StartButton
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
 import kotlinx.coroutines.launch
 
@@ -277,6 +277,12 @@ fun Exercise(
                 state = pagerState
             ) {
                 if (it == 0) {
+                    val heartRate by uiState.heartRate.observeAsState()
+                    val progress by animateFloatAsState(
+                        (heartRate
+                            ?: 0).toFloat() / MAX_HEART_RATE.toFloat(),
+                        animationSpec = tween(250)
+                    )
                     SegmentedProgressIndicator(
                         trackColor = Color.Transparent,
                         trackSegments = listOf(
@@ -313,9 +319,7 @@ fun Exercise(
                                 trackColor = MaterialTheme.colors.surface
                             )
                         ),
-                        progress = (bluetoothHeartRate
-                            ?: (uiState.heartRate?.value
-                                ?: 0)).toFloat() / MAX_HEART_RATE.toFloat(),
+                        progress = progress,
                         startAngle = 130f,
                         endAngle = 230f,
                         strokeWidth = 9.dp,
@@ -335,10 +339,6 @@ fun Exercise(
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-//                            DurationRow(uiState)
-//                            HeartRateRow(uiState, bluetoothHeartRate)
-//                            DistanceRow(uiState)
-//                            CalorieRow(uiState)
                             preference.metrics.map { m ->
                                 when (m) {
                                     ElapsedTimeMetric -> DurationRow(uiState)

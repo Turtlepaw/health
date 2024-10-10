@@ -2,60 +2,47 @@ package com.turtlepaw.health.apps.health.tile
 
 import android.content.Context
 import android.util.Log
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders.argb
+import androidx.wear.protolayout.DeviceParametersBuilders
 import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.LayoutElementBuilders
-import androidx.wear.protolayout.LayoutElementBuilders.SpanText
-import androidx.wear.protolayout.LayoutElementBuilders.Spannable
 import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ModifiersBuilders.Modifiers
 import androidx.wear.protolayout.ModifiersBuilders.Padding
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.TimelineBuilders
-import androidx.wear.protolayout.material.CircularProgressIndicator
-import androidx.wear.protolayout.material.ProgressIndicatorColors
 import androidx.wear.protolayout.material.Text
 import androidx.wear.protolayout.material.Typography
 import androidx.wear.protolayout.material.layouts.EdgeContentLayout
+import androidx.wear.protolayout.material.layouts.PrimaryLayout
 import androidx.wear.tiles.EventBuilders
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
+import androidx.wear.tiles.tooling.preview.Preview
+import androidx.wear.tiles.tooling.preview.TilePreviewData
+import androidx.wear.tiles.tooling.preview.TilePreviewHelper
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.tools.LayoutRootPreview
-import com.google.android.horologist.compose.tools.buildDeviceParameters
 import com.google.android.horologist.tiles.SuspendingTileService
-import com.turtlepaw.health.R
-import com.turtlepaw.health.apps.health.presentation.dataStore
 import com.turtlepaw.health.apps.sunlight.tile.MainTileService
-import com.turtlepaw.health.utils.Settings
+import com.turtlepaw.health.database.AppDatabase
 import com.turtlepaw.health.utils.SettingsBasics
-import com.turtlepaw.health.utils.SunlightViewModel
-import com.turtlepaw.health.utils.SunlightViewModelFactory
-import com.turtlepaw.health.utils.TimeManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import kotlin.math.abs
 
 
 private const val RESOURCES_VERSION = "1"
 const val DEFAULT_GOAL = 8 // 8hrs
 private const val LAUNCH_APP_ID = "LAUNCH_APP"
 enum class Images(private val id: String) {
-    SLEEP_QUALITY("sleep_quality");
+    STEPS("steps");
 
     fun getId(): String {
         return id
@@ -81,11 +68,11 @@ class MainTileService : SuspendingTileService(), ViewModelStoreOwner {
         return ResourceBuilders.Resources.Builder()
             .setVersion(RESOURCES_VERSION)
             .addIdToImageMapping(
-                com.turtlepaw.health.apps.sunlight.tile.Images.SLEEP_QUALITY.getId(),
+                Images.STEPS.getId(),
                 ResourceBuilders.ImageResource.Builder()
                     .setAndroidResourceByResId(
                         ResourceBuilders.AndroidImageResourceByResId.Builder()
-                        .setResourceId(R.drawable.sleep_quality)
+                            .setResourceId(com.turtlepaw.heart_connection.R.drawable.steps)
                         .build()
                     ).build()
             ).build()
@@ -99,16 +86,13 @@ class MainTileService : SuspendingTileService(), ViewModelStoreOwner {
             Log.d("Tile", "Launching main activity...")
             startActivity(packageManager.getLaunchIntentForPackage(packageName))
         }
-        
-        val sharedPreferences = getSharedPreferences(
+
+        getSharedPreferences(
             SettingsBasics.SHARED_PREFERENCES.getKey(),
             SettingsBasics.SHARED_PREFERENCES.getMode()
         )
-        val sunlightViewModel = ViewModelProvider(this, SunlightViewModelFactory(dataStore)).get(
-            SunlightViewModel::class.java)
-        // Get preferences
-        val goal = sharedPreferences.getInt(Settings.GOAL.getKey(), Settings.GOAL.getDefaultAsInt())
-        val today = sunlightViewModel.getDay(LocalDate.now())?.second ?: 0
+        val database = AppDatabase.getDatabase(this)
+        val stepStreak = database.dayDao().getDays().filter { it.steps >= it.goal }.size
 
         val singleTileTimeline = TimelineBuilders.Timeline.Builder().addTimelineEntry(
             TimelineBuilders.TimelineEntry.Builder().setLayout(
@@ -131,12 +115,13 @@ class MainTileService : SuspendingTileService(), ViewModelStoreOwner {
                                 .build()
                         )
                         .addContent(
-                            if(today == 0) noDataLayout(
-                                this
+                            if (stepStreak == 0) noDataLayout(
+                                this,
+                                requestParams.deviceConfiguration
                             ).build() else tileLayout(
                                 this,
-                                today,
-                                goal
+                                stepStreak,
+                                requestParams.deviceConfiguration
                             ).build()
                         )
                         .build()
@@ -167,12 +152,13 @@ class MainTileService : SuspendingTileService(), ViewModelStoreOwner {
 }
 
 private fun noDataLayout(
-    context: Context
+    context: Context,
+    deviceParameters: DeviceParametersBuilders.DeviceParameters
 ): EdgeContentLayout.Builder {
-    val deviceParameters = buildDeviceParameters(context.resources)
     return EdgeContentLayout.Builder(deviceParameters)
+        .setResponsiveContentInsetEnabled(true)
         .setPrimaryLabelTextContent(
-            Text.Builder(context, "Sunlight")
+            Text.Builder(context, "Step Streak")
                 .setTypography(Typography.TYPOGRAPHY_TITLE3)
                 .setColor(argb(TileColors.LightText))
                 .build()
@@ -180,7 +166,7 @@ private fun noDataLayout(
         .setSecondaryLabelTextContent(
                     Text.Builder(
                         context,
-                        "No data. Wear your watch in the sun."
+                        "Reach your goal before midnight."
                     ).setTypography(Typography.TYPOGRAPHY_BODY2)
                         .setColor(argb(TileColors.White))
                         .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE_END)
@@ -222,134 +208,82 @@ private fun noDataLayout(
 private fun tileLayout(
     context: Context,
     today: Int,
-    goal: Int
-): EdgeContentLayout.Builder {
+    deviceParameters: DeviceParametersBuilders.DeviceParameters
+): PrimaryLayout.Builder {
     DateTimeFormatter.ofPattern("h:mma")
-    val deviceParameters = buildDeviceParameters(context.resources)
-    return EdgeContentLayout.Builder(deviceParameters)
-        .setEdgeContent(
-            CircularProgressIndicator.Builder()
-                .setProgress(today.toFloat() / goal.toFloat())
-                .setStartAngle(-150f)
-                .setEndAngle(150f)
-                .setCircularProgressIndicatorColors(
-                    ProgressIndicatorColors(
-                        TileColors.PrimaryColor,
-                        TileColors.TrackColor
-                    )
-                )
-                .build()
-        )
+    return PrimaryLayout.Builder(deviceParameters)
+        .setResponsiveContentInsetEnabled(true)
         .setPrimaryLabelTextContent(
-            Text.Builder(context, "Sunlight")
+            Text.Builder(context, "Step Streak")
                 .setTypography(Typography.TYPOGRAPHY_TITLE3)
                 .setColor(argb(TileColors.LightText))
                 .build()
         )
         .setSecondaryLabelTextContent(
-            LayoutElementBuilders.Column.Builder()
-                .addContent(
-                    Text.Builder(
-                        context,
-                        if(today >= goal) "Goal Reached" else "${abs(today - goal)}m to go"                    )
-                        .setTypography(Typography.TYPOGRAPHY_BODY1)
-                        .setColor(argb(TileColors.White))
-                        .setModifiers(
-                            Modifiers.Builder()
-                                .setPadding(
-                                    Padding.Builder()
-                                        .setBottom(
-                                            dp(20f)
-                                        )
-                                        .build()
-                                )
-                                .build()
-                        )
-                        .build()
-                )
-//                .addContent(
-//                    Text.Builder(context, sleepQuality.getTitle())
-//                        .setTypography(Typography.TYPOGRAPHY_BODY2)
-//                        .setColor(argb(TileColors.White))
-//                        .build()
-//                )
+            Text.Builder(context, "Keep going!")
+                .setTypography(Typography.TYPOGRAPHY_BODY2)
+                .setColor(argb(TileColors.LightText))
                 .build()
         )
         .setContent(
-            Spannable.Builder()
-                .addSpan(
-                    SpanText.Builder()
-                        .setText(today.toString())
-                        .setFontStyle(
-                            FontStyle.PrimaryFontSize.getBuilder()
-                        )
-                        .build()
-                )
-                .addSpan(
-                    SpanText.Builder()
-                        .setText("m")
-                        .setFontStyle(
-                            FontStyle.SecondaryFontSize.getBuilder()
-                        )
-                        .build()
-                )
-//                .addSpan(
-//                    SpanText.Builder()
-//                        .setText(" ")
-//                        .build()
-//                )
-//                .addSpan(
-//                    SpanText.Builder()
-//                        .setText(sleepTime.minutes.toString())
-//                        .setFontStyle(
-//                            FontStyle.PrimaryFontSize.getBuilder()
-//                        )
-//                        .build()
-//                )
-//                .addSpan(
-//                    SpanText.Builder()
-//                        .setText("m")
-//                        .setFontStyle(
-//                            FontStyle.SecondaryFontSize.getBuilder()
-//                        )
-//                        .build()
-//                )
+            Text.Builder(context, "Day $today")
+                .setTypography(Typography.TYPOGRAPHY_DISPLAY3)
+                .setColor(argb(TileColors.PrimaryColor))
                 .build()
         )
 }
 
-@Preview(
-    device = WearDevices.SMALL_ROUND,
-    showSystemUi = true,
-    backgroundColor = 0xff000000,
-    showBackground = true
-)
-@Composable
-fun TilePreview() {
-    val timeManager = TimeManager()
-    val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0))
-    timeManager.calculateSleepQuality(timeDifference)
-
-    LayoutRootPreview(root = tileLayout(
-        LocalContext.current,
-        15,
-        Settings.GOAL.getDefaultAsInt()
-    ).build())
+@Preview(device = WearDevices.SMALL_ROUND)
+@Preview(device = WearDevices.SMALL_ROUND, fontScale = 1.24f)
+@Preview(device = WearDevices.LARGE_ROUND)
+@Preview(device = WearDevices.LARGE_ROUND, fontScale = 1.24f)
+fun TilePreview(context: Context) = TilePreviewData(
+    onTileResourceRequest = {
+        ResourceBuilders.Resources.Builder()
+            .setVersion(RESOURCES_VERSION)
+            .addIdToImageMapping(
+                Images.STEPS.getId(),
+                ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(com.turtlepaw.heart_connection.R.drawable.steps)
+                            .build()
+                    ).build()
+            ).build()
+    }
+) {
+    TilePreviewHelper.singleTimelineEntryTileBuilder(
+        tileLayout(
+            context,
+            10,
+            it.deviceConfiguration
+        ).build()
+    ).build()
 }
 
-@Preview(
-    device = WearDevices.SMALL_ROUND,
-    showSystemUi = true,
-    backgroundColor = 0xff000000,
-    showBackground = true
-)
-@Composable
-fun NoDataPreview() {
-    val timeManager = TimeManager()
-    val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0))
-    timeManager.calculateSleepQuality(timeDifference)
-
-    LayoutRootPreview(root = noDataLayout(
-        LocalContext.current
-    ).build())
+@Preview(device = WearDevices.SMALL_ROUND)
+@Preview(device = WearDevices.SMALL_ROUND, fontScale = 1.24f)
+@Preview(device = WearDevices.LARGE_ROUND)
+@Preview(device = WearDevices.LARGE_ROUND, fontScale = 1.24f)
+fun NoDataPreview(context: Context) = TilePreviewData(
+    onTileResourceRequest = {
+        ResourceBuilders.Resources.Builder()
+            .setVersion(RESOURCES_VERSION)
+            .addIdToImageMapping(
+                Images.STEPS.getId(),
+                ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(com.turtlepaw.heart_connection.R.drawable.steps)
+                            .build()
+                    ).build()
+            ).build()
+    }
+) {
+    TilePreviewHelper.singleTimelineEntryTileBuilder(
+        noDataLayout(
+            context,
+            it.deviceConfiguration
+        ).build()
+    ).build()
 }

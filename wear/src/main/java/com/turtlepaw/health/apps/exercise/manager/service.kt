@@ -34,8 +34,8 @@ import com.turtlepaw.health.utils.HealthNotifications
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
 import com.turtlepaw.heart_connection.Exercise
+import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.HeartConnection
-import com.turtlepaw.heart_connection.Workout
 import com.turtlepaw.heart_connection.createGattCallback
 import kotlinx.coroutines.*
 
@@ -55,7 +55,7 @@ class ExerciseService : Service() {
         private const val ONGOING_STATUS_TEMPLATE = "Ongoing Exercise #duration#"
     }
 
-    private val heartRateHistoryLiveData = MutableLiveData<List<Int>>()
+    private val heartRateHistoryLiveData = MutableLiveData<List<Int>>(emptyList())
     private val heartRateLiveData = MutableLiveData<Int>()
     private val caloriesLiveData = MutableLiveData<Double>()
     private val distanceLiveData = MutableLiveData<Double>()
@@ -89,7 +89,9 @@ class ExerciseService : Service() {
 //        coroutineScope.launch {
 //            startExerciseSession()
 //        }
-        startForegroundService()
+        val exercise = Exercises.elementAtOrNull(intent?.getIntExtra("exerciseId", 0) ?: 0)
+            ?: Exercises.first()
+        startForegroundService(exercise)
         return START_STICKY
     }
 
@@ -113,18 +115,17 @@ class ExerciseService : Service() {
     }
 
     suspend fun startExerciseSession(exercise: Exercise) {
-        exerciseType = exercise
-        val dataTypes = setOf(
-            DataType.HEART_RATE_BPM,
-            DataType.CALORIES,
-            DataType.DISTANCE,
-            DataType.STEPS,
+        Log.d(
+            "ExerciseService",
+            "Starting exercise session with data types: ${
+                exercise.dataTypes.map { it.name }.joinToString(",")
+            }"
         )
-        if (exercise.useGps == true) dataTypes.plus(DataType.LOCATION)
+        exerciseType = exercise
         exerciseClient?.startExercise(
             ExerciseConfig.builder(exercise.mapped)
                 .setDataTypes(
-                    dataTypes
+                    exercise.dataTypes
                 )
                 .setIsGpsEnabled(exercise.useGps == true).build()
         )
@@ -229,8 +230,8 @@ class ExerciseService : Service() {
                     update.latestMetrics.getData(DataType.HEART_RATE_BPM).map {
                         it.value.toInt()
                     }.plus(
-                        heartRateHistoryLiveData.value?.iterator() ?: emptyList<Int>().iterator()
-                    ) as List<Int>
+                        heartRateHistoryLiveData.value ?: emptyList<Int>()
+                    )
                 )
             }
 
@@ -276,7 +277,7 @@ class ExerciseService : Service() {
     fun getStepsLiveData(): LiveData<Long> = stepsLiveData
     fun getHeartRateHistoryLiveData(): LiveData<List<Int>> = heartRateHistoryLiveData
 
-    private fun startForegroundService() {
+    private fun startForegroundService(exercise: Exercise) {
         // Make an intent that will take the user straight to the exercise UI.
         val notificationIntent = Intent(applicationContext, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
@@ -297,7 +298,7 @@ class ExerciseService : Service() {
                 .setContentTitle(NOTIFICATION_TITLE)
                 .setContentText(NOTIFICATION_TEXT)
                 .setSmallIcon(
-                    (exerciseType ?: Workout).icon
+                    exercise.icon
                 )
                 .setContentIntent(pendingIntent)
                 .setOngoing(true)
@@ -314,8 +315,8 @@ class ExerciseService : Service() {
                 applicationContext,
                 NOTIFICATION_ID, notificationBuilder
             )
-                .setAnimatedIcon((exerciseType ?: Workout).icon)
-                .setStaticIcon((exerciseType ?: Workout).icon)
+                .setAnimatedIcon(exercise.icon)
+                .setStaticIcon(exercise.icon)
                 .setTouchIntent(pendingIntent)
                 .setStatus(ongoingActivityStatus)
                 .build()

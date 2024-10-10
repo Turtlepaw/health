@@ -24,7 +24,7 @@ interface PreferenceDao {
                 metrics = old.metrics.mapIndexed { index, metric ->
                     if (index == position) newMetric
                     else metric
-                }
+                }.take(4)
             )
         )
     }
@@ -35,7 +35,7 @@ interface PreferenceDao {
             insertPreference(
                 Preference(
                     id = id,
-                    metrics = Exercises.elementAt(id).defaultMetrics
+                    metrics = Exercises.elementAt(id).defaultMetrics.take(4)
                 )
             )
 

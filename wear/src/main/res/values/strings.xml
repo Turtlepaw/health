@@ -9,6 +9,7 @@
     values-round/strings.xml for round devices.
     -->
     <string name="hello_world">From the Square world,\nHello, %1$s!</string>
-    <string name="tile_label">Sunlight Today</string>
+    <string name="sunlight_tile_label">Sunlight Today</string>
     <string name="complication_label">Sunlight Today</string>
+    <string name="step_streak_tile_label">Step Streak</string>
 </resources>

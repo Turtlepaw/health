@@ -1,4 +1,4 @@
-package com.turtlepaw.heartconnect.presentation.components
+package com.turtlepaw.health.apps.exercise.presentation.components
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
@@ -31,7 +31,8 @@ fun StartButton(
 ) {
     Button(
         onClick = {
-            onClick()
+            if (!((progress?.value ?: 0f) > 0f))
+                onClick()
         }
     ) {
         if (progress != null) {
