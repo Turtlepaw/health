@@ -133,6 +133,7 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
     open suspend fun stopExercise() {
         _isEnding.postValue(true)
         exerciseService?.stopExerciseSession()
+        getApplication<Application>().unbindService(serviceConnection)
         _isEnded.postValue(true)
     }
 
@@ -188,15 +189,6 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
     }
 
     open fun toSummary(): SummaryScreenState {
-        Log.d("toSummary", "heartRateHistory type: ${heartRateHistory.value?.javaClass?.name}")
-        Log.d("toSummary", "heartRateHistory avarage: ${heartRateHistory.value?.average()}")
-        Log.d(
-            "toSummary",
-            "heartRateHistory first element: ${heartRateHistory.value?.firstOrNull()}"
-        )
-        Log.d("toSummary", "heartRateHistory elements: ${heartRateHistory.value}")
-
-        Log.d("toSummary", "${calculateDuration().seconds}")
         return SummaryScreenState(
             averageHeartRate = heartRateHistory.value?.average()?.toDouble() ?: 0.0,
             totalCalories = calories.value ?: 0.0,

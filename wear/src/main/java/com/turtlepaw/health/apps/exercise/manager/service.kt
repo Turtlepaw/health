@@ -1,6 +1,7 @@
 package com.turtlepaw.health.apps.exercise.manager
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.Service
 import android.bluetooth.BluetoothManager
@@ -19,10 +20,8 @@ import androidx.health.services.client.data.DataType
 import androidx.health.services.client.data.ExerciseConfig
 import androidx.health.services.client.data.ExerciseLapSummary
 import androidx.health.services.client.data.ExerciseUpdate
-import androidx.health.services.client.data.WarmUpConfig
 import androidx.health.services.client.endExercise
 import androidx.health.services.client.pauseExercise
-import androidx.health.services.client.prepareExercise
 import androidx.health.services.client.resumeExercise
 import androidx.health.services.client.startExercise
 import androidx.lifecycle.LiveData
@@ -70,6 +69,7 @@ class ExerciseService : Service() {
     private val binder = LocalBinder()
     private var exerciseType: Exercise? = null
     private var isInProgress = false
+    private var connection: HeartConnection? = null
 
     inner class LocalBinder : Binder() {
         fun getService(): ExerciseService = this@ExerciseService
@@ -99,21 +99,6 @@ class ExerciseService : Service() {
         return exerciseType
     }
 
-    suspend fun warmExerciseSession(type: Exercise) {
-        val metrics = setOf(DataType.HEART_RATE_BPM)
-        if (type.useGps) metrics.plus(DataType.LOCATION)
-
-        exerciseType = type
-        exerciseClient?.prepareExercise(
-            WarmUpConfig(
-                type.mapped,
-                metrics
-            )
-        )
-
-        startHeartRateTracking()
-    }
-
     suspend fun startExerciseSession(exercise: Exercise) {
         Log.d(
             "ExerciseService",
@@ -133,9 +118,17 @@ class ExerciseService : Service() {
         isInProgress = true
     }
 
+    @SuppressLint("MissingPermission")
     suspend fun stopExerciseSession() {
         exerciseClient?.endExercise()
         isInProgress = false
+        try {
+            connection?.disconnect()
+        } catch (e: Exception) {
+            Log.e("ExerciseService", "Error disconnecting from device", e)
+        }
+        Log.d("ExerciseService", "Stopping exercise session")
+        delay(1000)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -158,7 +151,7 @@ class ExerciseService : Service() {
         ) {
             var bluetoothAdapter = getSystemService(BluetoothManager::class.java)?.adapter
 
-            val connection = HeartConnection(
+            connection = HeartConnection(
                 createGattCallback {
                     // Prioritize peripherals
                     heartRateLiveData.postValue(it)
@@ -186,7 +179,7 @@ class ExerciseService : Service() {
             val device = bluetoothAdapter?.getRemoteDevice(macId)
                 ?: return
 
-            connection.connectToDevice(device)
+            connection!!.connectToDevice(device)
         }
 //        } else {
 //            coroutineScope.launch {
@@ -222,8 +215,7 @@ class ExerciseService : Service() {
                 val heartRate =
                     update.latestMetrics.getData(DataType.HEART_RATE_BPM)
                         ?.lastOrNull()?.value?.toInt()
-                        ?: 0
-                heartRateLiveData.postValue(heartRate)
+                if (heartRate != null) heartRateLiveData.postValue(heartRate!!)
                 heartRateSourceData.postValue(HeartRateSource.Device)
 
                 heartRateHistoryLiveData.postValue(
@@ -326,8 +318,11 @@ class ExerciseService : Service() {
         startForeground(1, notificationBuilder.build())
     }
 
+    @SuppressLint("MissingPermission")
     override fun onDestroy() {
         super.onDestroy()
         coroutineScope.cancel()
+        connection?.disconnect()
+        stopForeground(STOP_FOREGROUND_REMOVE)
     }
 }

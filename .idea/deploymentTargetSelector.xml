@@ -46,10 +46,10 @@
       </SelectionState>
       <SelectionState runConfigName="exercise">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-10-08T23:05:38.281831600Z">
+        <DropdownSelection timestamp="2024-10-10T04:07:45.402805700Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\olivi\.android\avd\Wear_OS.avd" />
+              <DeviceId pluginId="Default" identifier="serial=10.0.0.128:45055;connection=7b8554d8" />
             </handle>
           </Target>
         </DropdownSelection>
