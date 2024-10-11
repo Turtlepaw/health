@@ -175,6 +175,7 @@
         <!-- Exercise -->
         <service
             android:name=".apps.exercise.manager.ExerciseService"
+            android:enabled="true"
             android:foregroundServiceType="health|location" />
         <activity
             android:name=".apps.exercise.presentation.MainActivity"

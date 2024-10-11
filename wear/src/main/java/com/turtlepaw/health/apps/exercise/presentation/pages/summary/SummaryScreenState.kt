@@ -8,7 +8,8 @@ data class SummaryScreenState(
     val totalCalories: Double?,
     val elapsedTime: Duration,
     val maxHeartRate: Int?,
-    val steps: Long? = null
+    val steps: Long? = null,
+    val heartRateSimilarity: Double? = null
 )
 
 const val averageHeartRateArg = "averageHeartRate"

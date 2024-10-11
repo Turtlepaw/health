@@ -1,6 +1,7 @@
 package com.turtlepaw.health.apps.exercise.presentation.pages
 
 import android.app.Application
+import android.content.Intent
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.activity.ComponentActivity
@@ -12,16 +13,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MyLocation
+import androidx.compose.runtime.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.health.services.client.HealthServices
 import androidx.health.services.client.data.LocationAvailability
+import androidx.health.services.client.endExercise
 import androidx.wear.compose.foundation.CurvedModifier
 import androidx.wear.compose.foundation.CurvedTextStyle
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
@@ -34,17 +39,22 @@ import androidx.wear.compose.material.curvedText
 import androidx.wear.compose.ui.tooling.preview.WearPreviewSmallRound
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
+import com.turtlepaw.health.apps.exercise.manager.ExerciseService
 import com.turtlepaw.health.apps.exercise.manager.ExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.FakeExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.HeartRateModel
 import com.turtlepaw.health.apps.exercise.presentation.Routes
 import com.turtlepaw.health.apps.exercise.presentation.components.StartButton
+import com.turtlepaw.health.apps.sunlight.presentation.pages.isServiceRunning
+import com.turtlepaw.health.components.ErrorPage
 import com.turtlepaw.health.components.Page
 import com.turtlepaw.heart_connection.Exercise
 import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 @OptIn(ExperimentalHorologistApi::class, ExperimentalWearFoundationApi::class)
 @Composable
@@ -61,18 +71,34 @@ fun ExerciseConfiguration(
     ExerciseTheme {
         val coroutineScope = rememberCoroutineScope()
         val progress = remember { Animatable(0f) }
+        val timeRemaining = remember { Animatable(3f) }
         val availability = exerciseViewModel.availabilities.observeAsState()
         val location =
             availability.value?.values?.filterIsInstance<LocationAvailability>()?.firstOrNull()
+        var error by remember { mutableStateOf<String?>(null) }
 
         LaunchedEffect(Unit) {
-            exerciseViewModel.warmExerciseSession(exercise, context)
             try {
+                exerciseViewModel.warmExerciseSession(exercise, context)
                 heartRateModel.attemptConnectSaved(context)
             } catch (e: Exception) {
+                error = e.message
                 e.printStackTrace()
             }
         }
+
+        if (error != null) ErrorPage(error!!, action = {
+            coroutineScope.launch {
+                try {
+                    HealthServices.getClient(context).exerciseClient.endExercise()
+                    context.stopService(
+                        Intent(context, ExerciseService::class.java)
+                    )
+                } catch (e: Exception) {
+                    error = e.message
+                }
+            }
+        }, actionText = "End Exercise")
 
         Page(
             startTimeTextLinear = if (exercise.useGps) {
@@ -111,25 +137,59 @@ fun ExerciseConfiguration(
                 )
             }
             item {
-                StartButton(progress) {
+                StartButton(progress, timeRemaining) {
                     coroutineScope.launch {
                         val vibrator = context.getSystemService(Vibrator::class.java)
                         progress.snapTo(1f)
 
-                        // Initial "Tick"
+                        // Initial custom tick vibration
                         if (vibrator != null && vibrator.hasVibrator()) {
                             vibrator.vibrate(
                                 VibrationEffect.startComposition().addPrimitive(
-                                    VibrationEffect.Composition.PRIMITIVE_TICK, 1f
+                                    VibrationEffect.Composition.PRIMITIVE_SLOW_RISE, 1f
+                                ).addPrimitive(
+                                    VibrationEffect.Composition.PRIMITIVE_QUICK_RISE, 1f, 400
                                 ).compose()
                             )
                         }
 
-                        progress.animateTo(
-                            targetValue = 0f,
-                            animationSpec = tween(durationMillis = 3500)
-                        )
+                        val totalDurationMillis = 5000 // 5 seconds countdown
+                        val intervalMillis = 1000 // Click every 0.5 seconds
 
+                        withTimeoutOrNull(totalDurationMillis.toLong()) {
+                            // Launch timeRemaining animation concurrently
+                            launch {
+                                timeRemaining.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = tween(durationMillis = totalDurationMillis)
+                                )
+                            }
+
+                            // Launch progress animation concurrently
+                            launch {
+                                progress.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = tween(durationMillis = totalDurationMillis)
+                                )
+                            }
+
+                            // Launch clicks at regular intervals (every 0.5 seconds)
+                            launch {
+                                while (isActive) {
+                                    delay(intervalMillis.toLong())
+                                    // Vibration or click sound
+                                    if (vibrator != null && vibrator.hasVibrator()) {
+                                        vibrator.vibrate(
+                                            VibrationEffect.startComposition().addPrimitive(
+                                                VibrationEffect.Composition.PRIMITIVE_TICK, 1f
+                                            ).compose()
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Final custom vibration pattern after countdown ends
                         if (vibrator != null && vibrator.hasVibrator()) {
                             vibrator.vibrate(
                                 VibrationEffect.startComposition().addPrimitive(
@@ -143,6 +203,7 @@ fun ExerciseConfiguration(
                         delay(100)
                         onStart()
                     }
+
                 }
             }
             item {
@@ -192,6 +253,11 @@ fun ExerciseConfiguration(
                         )
                     }
                 )
+            }
+            if (isServiceRunning(ExerciseService::class.java, context)) {
+                item {
+                    Text("Existing service still running")
+                }
             }
         }
     }

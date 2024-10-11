@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.style.TextAlign
+import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
@@ -11,7 +12,7 @@ import com.google.android.horologist.annotations.ExperimentalHorologistApi
 
 @OptIn(ExperimentalHorologistApi::class)
 @Composable
-fun ErrorPage(message: String) {
+fun ErrorPage(message: String, action: (() -> Unit)? = null, actionText: String? = "Retry") {
     Page {
         item {
             Icon(
@@ -22,6 +23,13 @@ fun ErrorPage(message: String) {
         }
         item {
             Text(message, textAlign = TextAlign.Center)
+        }
+        if (action != null) {
+            item {
+                Button(onClick = action ?: {}) {
+                    Text(actionText ?: "Retry")
+                }
+            }
         }
     }
 }

@@ -37,6 +37,7 @@ import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.HeartConnection
 import com.turtlepaw.heart_connection.createGattCallback
 import kotlinx.coroutines.*
+import java.time.LocalTime
 
 enum class HeartRateSource {
     HeartRateMonitor,
@@ -54,14 +55,17 @@ class ExerciseService : Service() {
         private const val ONGOING_STATUS_TEMPLATE = "Ongoing Exercise #duration#"
     }
 
-    private val heartRateHistoryLiveData = MutableLiveData<List<Int>>(emptyList())
+    private val heartRateHistoryLiveData = MutableLiveData<List<Pair<LocalTime, Int>>>(emptyList())
+    private val deviceHrHistoryLiveData = MutableLiveData<List<Pair<LocalTime, Int>>>(emptyList())
+    private val externalHistoryLiveData = MutableLiveData<List<Pair<LocalTime, Int>>>(emptyList())
+
     private val heartRateLiveData = MutableLiveData<Int>()
     private val caloriesLiveData = MutableLiveData<Double>()
     private val distanceLiveData = MutableLiveData<Double>()
     private val stepsLiveData = MutableLiveData<Long>()
     private val durationLiveData = MutableLiveData<Long>()
     private val heartRateSourceData = MutableLiveData<HeartRateSource>(HeartRateSource.Device)
-    private val rawData = MutableLiveData<ExerciseUpdate>()
+    private val rawData = MutableLiveData<ExerciseUpdate?>(null)
     private val availabilities = MutableLiveData<Map<DataType<*, *>, Availability>>(emptyMap())
 
     private var exerciseClient: ExerciseClient? = null
@@ -100,6 +104,18 @@ class ExerciseService : Service() {
     }
 
     suspend fun startExerciseSession(exercise: Exercise) {
+        // Clear any existing data
+        heartRateHistoryLiveData.postValue(emptyList())
+        deviceHrHistoryLiveData.postValue(emptyList())
+        externalHistoryLiveData.postValue(emptyList())
+        caloriesLiveData.postValue(0.0)
+        distanceLiveData.postValue(0.0)
+        stepsLiveData.postValue(0)
+        durationLiveData.postValue(0)
+        heartRateSourceData.postValue(HeartRateSource.Device)
+        availabilities.postValue(emptyMap())
+        rawData.postValue(null)
+
         Log.d(
             "ExerciseService",
             "Starting exercise session with data types: ${
@@ -129,6 +145,7 @@ class ExerciseService : Service() {
         }
         Log.d("ExerciseService", "Stopping exercise session")
         delay(1000)
+        coroutineScope.cancel()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -157,7 +174,12 @@ class ExerciseService : Service() {
                     heartRateLiveData.postValue(it)
                     heartRateSourceData.postValue(HeartRateSource.HeartRateMonitor)
                     heartRateHistoryLiveData.postValue(
-                        (heartRateHistoryLiveData.value ?: emptyList()).plus(it)
+                        (heartRateHistoryLiveData.value ?: emptyList()).plus(LocalTime.now() to it)
+                    )
+                    externalHistoryLiveData.postValue(
+                        (
+                                externalHistoryLiveData.value ?: emptyList()
+                                ).plus(LocalTime.now() to it)
                     )
                 },
                 applicationContext,
@@ -217,15 +239,22 @@ class ExerciseService : Service() {
                         ?.lastOrNull()?.value?.toInt()
                 if (heartRate != null) heartRateLiveData.postValue(heartRate!!)
                 heartRateSourceData.postValue(HeartRateSource.Device)
-
                 heartRateHistoryLiveData.postValue(
                     update.latestMetrics.getData(DataType.HEART_RATE_BPM).map {
-                        it.value.toInt()
+                        LocalTime.now() to it.value.toInt()
                     }.plus(
-                        heartRateHistoryLiveData.value ?: emptyList<Int>()
+                        heartRateHistoryLiveData.value ?: emptyList()
                     )
                 )
             }
+
+            deviceHrHistoryLiveData.postValue(
+                update.latestMetrics.getData(DataType.HEART_RATE_BPM).map {
+                    LocalTime.now() to it.value.toInt()
+                }.plus(
+                    deviceHrHistoryLiveData.value ?: emptyList()
+                )
+            )
 
             val _calories = update.latestMetrics.getData(DataType.CALORIES)
             if (_calories.isNotEmpty()) {
@@ -263,11 +292,15 @@ class ExerciseService : Service() {
     fun getCaloriesLiveData(): LiveData<Double> = caloriesLiveData
     fun getDistanceLiveData(): LiveData<Double> = distanceLiveData
     fun getDurationLiveData(): LiveData<Long> = durationLiveData
-    fun getRawDataLiveData(): LiveData<ExerciseUpdate> = rawData
+    fun getRawDataLiveData(): LiveData<ExerciseUpdate?> = rawData
     fun getHeartRateSourceData(): LiveData<HeartRateSource> = heartRateSourceData
     fun getAvailability(): LiveData<Map<DataType<*, *>, Availability>> = availabilities
     fun getStepsLiveData(): LiveData<Long> = stepsLiveData
-    fun getHeartRateHistoryLiveData(): LiveData<List<Int>> = heartRateHistoryLiveData
+    fun getHeartRateHistoryLiveData(): LiveData<List<Pair<LocalTime, Int>>> =
+        heartRateHistoryLiveData
+
+    fun getDeviceHrHistoryLiveData(): LiveData<List<Pair<LocalTime, Int>>> = deviceHrHistoryLiveData
+    fun getExternalHistoryLiveData(): LiveData<List<Pair<LocalTime, Int>>> = externalHistoryLiveData
 
     private fun startForegroundService(exercise: Exercise) {
         // Make an intent that will take the user straight to the exercise UI.
@@ -323,6 +356,7 @@ class ExerciseService : Service() {
         super.onDestroy()
         coroutineScope.cancel()
         connection?.disconnect()
+        exerciseClient?.clearUpdateCallbackAsync(exerciseUpdateListener)
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 }

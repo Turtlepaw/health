@@ -388,10 +388,9 @@ fun WearPages(
                                 }
 
                                 swipeToDismissEnabled = true
-                                val maxHR = exerciseViewModel.heartRateHistory.value?.maxOrNull()
                                 navController.navigateToTopLevel(
                                     Routes.SUMMARY,
-                                    "${Routes.SUMMARY.getRoute()}/${summary.averageHeartRate?.toInt()}/${summary.totalDistance?.toInt()}/${summary.totalCalories?.toInt()}/${summary.elapsedTime.seconds}/${maxHR ?: 0}/${summary.steps}"
+                                    "${Routes.SUMMARY.getRoute()}/${summary.averageHeartRate?.toInt()}/${summary.totalDistance?.toInt()}/${summary.totalCalories?.toInt()}/${summary.elapsedTime.seconds}/${summary.maxHeartRate}/${summary.steps}"
                                 )
                             },
                             onRestart = {

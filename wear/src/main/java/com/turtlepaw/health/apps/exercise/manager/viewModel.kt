@@ -26,7 +26,10 @@ import androidx.lifecycle.asFlow
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryScreenState
 import com.turtlepaw.heart_connection.Exercise
 import com.turtlepaw.heart_connection.Exercises
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import java.time.LocalTime
+import kotlin.math.abs
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
@@ -47,8 +50,14 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
     val _heartRate = MutableLiveData<Int>()
     val heartRate: LiveData<Int> get() = _heartRate
 
-    val _heartRateHistory = MutableLiveData<List<Int>>()
-    val heartRateHistory: LiveData<List<Int>> get() = _heartRateHistory
+    val _heartRateHistory = MutableLiveData<List<Pair<LocalTime, Int>>>()
+    val heartRateHistory: LiveData<List<Pair<LocalTime, Int>>> get() = _heartRateHistory
+
+    val _deviceHrHistory = MutableLiveData<List<Pair<LocalTime, Int>>>()
+    val deviceHrHistory: LiveData<List<Pair<LocalTime, Int>>> get() = _deviceHrHistory
+
+    val _externalHrHistory = MutableLiveData<List<Pair<LocalTime, Int>>>()
+    val externalHrHistory: LiveData<List<Pair<LocalTime, Int>>> get() = _externalHrHistory
 
     val _calories = MutableLiveData<Double>()
     val calories: LiveData<Double> get() = _calories
@@ -59,8 +68,8 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
     val _duration = MutableLiveData<Long>()
     val duration: LiveData<Long> get() = _duration
 
-    val _rawState = MutableLiveData<ExerciseUpdate>()
-    val rawState: LiveData<ExerciseUpdate> get() = _rawState
+    val _rawState = MutableLiveData<ExerciseUpdate?>()
+    val rawState: LiveData<ExerciseUpdate?> get() = _rawState
 
     val _heartRateSource = MutableLiveData<HeartRateSource>()
     val heartRateSource: LiveData<HeartRateSource> get() = _heartRateSource
@@ -89,13 +98,17 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
                 service.getStepsLiveData().observeForever { _steps.postValue(it) }
                 service.getHeartRateHistoryLiveData()
                     .observeForever { _heartRateHistory.postValue(it) }
+                service.getDeviceHrHistoryLiveData()
+                    .observeForever { _deviceHrHistory.postValue(it) }
+                service.getExternalHistoryLiveData()
+                    .observeForever { _externalHrHistory.postValue(it) }
             }
 
             _isBound.postValue(true)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            isBound = false
+            _isBound.postValue(false)
         }
     }
 
@@ -114,9 +127,13 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
 
     override fun onCleared() {
         super.onCleared()
-        if (isBound) {
-            getApplication<Application>().unbindService(serviceConnection)
-            isBound = false
+        if (_isBound.value == true) {
+            try {
+                getApplication<Application>().unbindService(serviceConnection)
+                _isBound.postValue(false)
+            } catch (e: Exception) {
+                Log.e("ExerciseViewModel", "Error unbinding service", e)
+            }
         }
     }
 
@@ -124,7 +141,35 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
         exerciseService?.attemptToReconnect()
     }
 
+    /**
+     * Resets all live data values to their initial or empty states.
+     * This effectively clears all stored workout data.
+     */
+    suspend fun flushData() {
+        // Clear existing data
+        _heartRateHistory.postValue(emptyList())
+        _deviceHrHistory.postValue(emptyList())
+        _externalHrHistory.postValue(emptyList())
+        _calories.postValue(0.0)
+        _distance.postValue(0.0)
+        _steps.postValue(0)
+        _duration.postValue(0)
+        _heartRateSource.postValue(HeartRateSource.Device)
+        _availabilities.postValue(emptyMap())
+        _rawState.postValue(null)
+        _isEnded.postValue(false)
+        _isEnding.postValue(false)
+        _isPaused.postValue(false)
+    }
+
     open suspend fun startExercise(exercise: Exercise) {
+        flushData()
+        getApplication<Application>().stopService(
+            Intent(getApplication(), ExerciseService::class.java)
+        )
+
+        delay(100)
+
         bindService(exercise)
         _isBound.asFlow().first { it }
         exerciseService!!.startExerciseSession(exercise)
@@ -134,6 +179,9 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
         _isEnding.postValue(true)
         exerciseService?.stopExerciseSession()
         getApplication<Application>().unbindService(serviceConnection)
+        getApplication<Application>().stopService(
+            Intent(getApplication(), ExerciseService::class.java)
+        )
         _isEnded.postValue(true)
     }
 
@@ -188,14 +236,90 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
         exerciseClient.setUpdateCallback(exerciseUpdateListener)
     }
 
+    open fun compareHeartRates(
+        deviceList: List<Pair<LocalTime, Int>>,
+        externalList: List<Pair<LocalTime, Int>>,
+        timeThreshold: Long = 60 // Time difference threshold in seconds
+    ): Pair<Double, List<Pair<LocalTime, Int>>> {
+
+        var matchingCount = 0
+        var totalCount = 0
+        val differences = mutableListOf<Pair<LocalTime, Int>>() // To store differences for analysis
+
+        // Iterate through each time-heart rate pair in the device list
+        for ((deviceTime, deviceRate) in deviceList) {
+            // Find the closest time in the external list within the threshold
+            val closestMatch = externalList.minByOrNull { (externalTime, _) ->
+                abs(java.time.Duration.between(deviceTime, externalTime).seconds)
+            }
+
+            closestMatch?.let { (externalTime, externalRate) ->
+                val timeDifference =
+                    abs(java.time.Duration.between(deviceTime, externalTime).seconds)
+                if (timeDifference <= timeThreshold) {
+                    // Calculate the difference in heart rate values
+                    val rateDifference = abs(deviceRate - externalRate)
+                    differences.add(deviceTime to rateDifference)
+
+                    if (rateDifference == 0) matchingCount++
+                    totalCount++
+                }
+            }
+        }
+
+        // Calculate the percentage similarity based on matching heart rate values
+        val similarity = if (totalCount > 0) (matchingCount.toDouble() / totalCount) * 100 else 0.0
+
+        return similarity to differences
+    }
+
+    fun canCompareHeartRates(
+        minOverlapMinutes: Long = 5
+    ): Boolean {
+        val deviceList = deviceHrHistory.value ?: emptyList()
+        val externalList = externalHrHistory.value ?: emptyList()
+
+        // Check if both lists contain data
+        if (deviceList.isEmpty() || externalList.isEmpty()) {
+            return false
+        }
+
+        // Find the minimum and maximum times for both lists
+        val deviceStart = deviceList.minByOrNull { it.first }?.first
+        val deviceEnd = deviceList.maxByOrNull { it.first }?.first
+        val externalStart = externalList.minByOrNull { it.first }?.first
+        val externalEnd = externalList.maxByOrNull { it.first }?.first
+
+        // Ensure that both lists have valid time ranges
+        if (deviceStart != null && deviceEnd != null && externalStart != null && externalEnd != null) {
+            // Calculate the overlap between the device and external time ranges
+            val overlapStart = maxOf(deviceStart, externalStart)
+            val overlapEnd = minOf(deviceEnd, externalEnd)
+
+            val overlapDuration = java.time.Duration.between(overlapStart, overlapEnd).toMinutes()
+
+            // Check if the overlap is at least the minimum required
+            return overlapDuration >= minOverlapMinutes
+        }
+
+        return false
+    }
+
     open fun toSummary(): SummaryScreenState {
         return SummaryScreenState(
-            averageHeartRate = heartRateHistory.value?.average()?.toDouble() ?: 0.0,
+            averageHeartRate = heartRateHistory.value?.map { it.second }?.average()?.toDouble()
+                ?: 0.0,
             totalCalories = calories.value ?: 0.0,
             totalDistance = distance.value ?: 0.0,
             elapsedTime = calculateDuration(),
-            maxHeartRate = heartRateHistory.value?.maxOrNull() ?: 0.toInt(),
-            steps = steps.value ?: 0
+            maxHeartRate = heartRateHistory.value?.map { it.second }?.maxOrNull() ?: 0.toInt(),
+            steps = steps.value ?: 0,
+            heartRateSimilarity = 90.0
+//            if(canCompareHeartRates()){
+//                compareHeartRates(deviceHrHistory.value ?: emptyList(), externalHrHistory.value ?: emptyList()).first
+//            } else {
+//                null
+//            }
         )
     }
 
@@ -237,7 +361,7 @@ class FakeExerciseViewModel(application: Application) : ExerciseViewModel(applic
 
     init {
         _heartRate.value = 120
-        _heartRateHistory.value = listOf(110, 115, 120, 125, 130)
+        _heartRateHistory.value = listOf(110, 115, 120, 125, 130).map { LocalTime.now() to it }
         _calories.value = 250.5
         _distance.value = 1200.7
         _duration.value = 3600

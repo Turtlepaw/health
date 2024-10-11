@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -37,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
@@ -176,6 +179,51 @@ fun SummaryScreen(
                 )
             }
             item {
+                ResponsiveListHeader(contentColor = MaterialTheme.colors.primary) {
+                    Text(text = "Heart Rate")
+                }
+            }
+            item {
+                CompactStatCard(
+                    icon = {
+                        Icon(
+                            painter = painterResource(R.drawable.text_compare),
+                            contentDescription = "Compare"
+                        )
+                    }
+                ) {
+                    if (uiState.heartRateSimilarity == null) {
+                        Text("No data to compare", style = MaterialTheme.typography.body1)
+                    } else {
+                        val progress = uiState.heartRateSimilarity.toFloat() / 100f
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = String.format(
+                                        "%.1f%%",
+                                        uiState.heartRateSimilarity
+                                    ) + " similarity",
+                                    style = MaterialTheme.typography.title3,
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                CircularProgressIndicator(
+                                    progress = progress,
+                                    strokeWidth = 2.5.dp,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
+                            Text(
+                                text = "Between external device and current device",
+                                style = MaterialTheme.typography.caption3.copy(MaterialTheme.colors.onSurfaceVariant)
+                            )
+                        }
+                    }
+                }
+            }
+            item {
                 Box(modifier = Modifier.padding(top = 5.dp)) {
                     CompleteButton {
                         onCompleteClick()
@@ -305,7 +353,8 @@ fun SummaryScreenPreview() {
             totalDistance = 2000.0,
             totalCalories = 100.0,
             elapsedTime = Duration.ofMinutes(17).plusSeconds(1),
-            maxHeartRate = 183
+            maxHeartRate = 183,
+            heartRateSimilarity = 90.0
         ),
         onCompleteClick = {},
     )
@@ -320,7 +369,8 @@ fun Preview() {
             totalDistance = 2000.0,
             totalCalories = 100.0,
             elapsedTime = Duration.ofMinutes(17).plusSeconds(1),
-            maxHeartRate = 186
+            maxHeartRate = 186,
+            heartRateSimilarity = 90.0
         ),
         onCompleteClick = {},
     )

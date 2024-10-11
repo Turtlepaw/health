@@ -21,12 +21,15 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Icon
+import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material.Text
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.turtlepaw.health.R
 
 @Composable
 fun StartButton(
     progress: Animatable<Float, AnimationVector1D>? = null,
+    timeRemaining: Animatable<Float, AnimationVector1D>? = null,
     onClick: () -> Unit
 ) {
     Button(
@@ -35,6 +38,7 @@ fun StartButton(
                 onClick()
         }
     ) {
+        // Circular progress indicator
         if (progress != null) {
             CircularProgressIndicator(
                 progress = progress.value,
@@ -47,11 +51,19 @@ fun StartButton(
                     .padding(3.dp)
             )
         }
-        Icon(
-            imageVector = Icons.Rounded.PlayArrow,
-            contentDescription = "Play Arrow",
-            modifier = Modifier.size(32.dp)
-        )
+
+        if (progress?.value == 0f) {
+            Icon(
+                imageVector = Icons.Rounded.PlayArrow,
+                contentDescription = "Play Arrow",
+                modifier = Modifier.size(32.dp)
+            )
+        } else {
+            Text(
+                text = (timeRemaining?.value?.toInt()?.plus(1)).toString(),
+                style = MaterialTheme.typography.title2,
+            )
+        }
     }
 }
 
@@ -108,12 +120,18 @@ fun CompleteButton(
     }
 }
 
-@Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
+@Preview(
+    device = WearDevices.SMALL_ROUND,
+    showSystemUi = true,
+    showBackground = true,
+    backgroundColor = 0xff000000
+)
 @Composable
 fun ButtonsPreview() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize()
     ) {
         StartButton {}
         EndButton(false) {}
