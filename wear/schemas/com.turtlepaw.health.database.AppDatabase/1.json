@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "ce1df765e468440a86299f8887808e0f",
+    "identityHash": "6a8eb9cdf53b84da0742f6c49e13156e",
     "entities": [
       {
         "tableName": "sleep_day",
@@ -180,14 +180,8 @@
       },
       {
         "tableName": "exercise",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` TEXT NOT NULL, `bpm` TEXT NOT NULL, `type` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` TEXT NOT NULL, `exercise` INTEGER NOT NULL, `averageHeartRate` REAL, `totalDistance` REAL, `totalCalories` REAL, `elapsedTime` INTEGER NOT NULL, `maxHeartRate` INTEGER, `steps` INTEGER, `heartRateSimilarity` REAL, `heartRateHistory` TEXT NOT NULL, `sunlight` INTEGER NOT NULL, PRIMARY KEY(`timestamp`))",
         "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
           {
             "fieldPath": "timestamp",
             "columnName": "timestamp",
@@ -195,22 +189,70 @@
             "notNull": true
           },
           {
-            "fieldPath": "bpm",
-            "columnName": "bpm",
+            "fieldPath": "exercise",
+            "columnName": "exercise",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "averageHeartRate",
+            "columnName": "averageHeartRate",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "totalDistance",
+            "columnName": "totalDistance",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "totalCalories",
+            "columnName": "totalCalories",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "elapsedTime",
+            "columnName": "elapsedTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxHeartRate",
+            "columnName": "maxHeartRate",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "steps",
+            "columnName": "steps",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "heartRateSimilarity",
+            "columnName": "heartRateSimilarity",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "heartRateHistory",
+            "columnName": "heartRateHistory",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "type",
-            "columnName": "type",
+            "fieldPath": "sunlight",
+            "columnName": "sunlight",
             "affinity": "INTEGER",
             "notNull": true
           }
         ],
         "primaryKey": {
-          "autoGenerate": true,
+          "autoGenerate": false,
           "columnNames": [
-            "id"
+            "timestamp"
           ]
         },
         "indices": [],
@@ -252,7 +294,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ce1df765e468440a86299f8887808e0f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6a8eb9cdf53b84da0742f6c49e13156e')"
     ]
   }
 }

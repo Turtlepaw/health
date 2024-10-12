@@ -102,12 +102,14 @@ import com.turtlepaw.health.utils.formatCalories
 import com.turtlepaw.health.utils.formatDistanceKm
 import com.turtlepaw.health.utils.formatElapsedTime
 import com.turtlepaw.health.utils.formatSteps
+import com.turtlepaw.health.utils.formatSunlight
 import com.turtlepaw.heart_connection.CaloriesMetric
 import com.turtlepaw.heart_connection.DistanceMetric
 import com.turtlepaw.heart_connection.ElapsedTimeMetric
 import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.HeartRateMetric
 import com.turtlepaw.heart_connection.StepsMetric
+import com.turtlepaw.heart_connection.SunlightMetric
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
 import kotlinx.coroutines.launch
 
@@ -346,6 +348,7 @@ fun Exercise(
                                     HeartRateMetric -> HeartRateRow(uiState, bluetoothHeartRate)
                                     CaloriesMetric -> CalorieRow(uiState)
                                     StepsMetric -> StepsRow(uiState)
+                                    SunlightMetric -> SunlightRow(uiState)
                                 }
                             }
                         }
@@ -702,6 +705,31 @@ private fun StepsRow(uiState: ExerciseViewModel) {
 
         Text(
             text = "steps",
+            color = getSecondaryTextColor(),
+            modifier = getSecondaryTextModifier(),
+            style = getSecondaryTextStyle()
+        )
+    }
+}
+
+@Composable
+private fun SunlightRow(uiState: ExerciseViewModel) {
+    val sunlight by uiState.sunlightData.observeAsState()
+    DataRow {
+        Icon(
+            painter = painterResource(id = com.turtlepaw.heart_connection.R.drawable.sunlight),
+            contentDescription = "Sunlight",
+            modifier = getIconModifier()
+        )
+        Text(
+            text = if (sunlight == null)
+                NO_DATA else if (sunlight == (-1)) "Disabled" else
+                formatSunlight(sunlight!!).toString(),
+            style = getTextStyle()
+        )
+
+        Text(
+            text = "sunlight min",
             color = getSecondaryTextColor(),
             modifier = getSecondaryTextModifier(),
             style = getSecondaryTextStyle()

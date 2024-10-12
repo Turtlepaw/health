@@ -56,9 +56,12 @@ import com.turtlepaw.health.apps.exercise.presentation.pages.summary.maxHeartRat
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.stepsArg
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.totalCaloriesArg
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.totalDistanceArg
+import com.turtlepaw.health.apps.sunlight.presentation.pages.isServiceRunning
 import com.turtlepaw.health.components.ErrorPage
 import com.turtlepaw.health.database.AppDatabase
+import com.turtlepaw.health.database.ServiceType
 import com.turtlepaw.health.database.exercise.Preference
+import com.turtlepaw.health.services.LightWorker
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
 import com.turtlepaw.heart_connection.Exercises
@@ -75,10 +78,6 @@ import com.turtlepaw.heartconnect.presentation.pages.summary.SummaryRoute
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.Duration
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
-import kotlin.time.toJavaDuration
 
 enum class Routes(private val route: String) {
     HOME("/home"),
@@ -262,6 +261,7 @@ fun WearPages(
         val isAlwaysOnScreen =
             currentScreen?.destination?.route?.startsWith(Routes.EXERCISE.getRoute()) == true
         var swipeToDismissEnabled by remember { mutableStateOf(true) }
+        var latestSummary by remember { mutableStateOf<SummaryScreenState?>(null) }
 
         AmbientAware(
             isAlwaysOnScreen = isAlwaysOnScreen
@@ -347,6 +347,24 @@ fun WearPages(
                         coroutineScope
                         swipeToDismissEnabled = false
                         coroutineScope.launch {
+                            launch {
+                                val isEnabled = dao.serviceDao()
+                                    .getService(ServiceType.SUNLIGHT.serviceName)?.isEnabled == true
+
+                                if (isEnabled && !isServiceRunning(
+                                        LightWorker::class.java,
+                                        context
+                                    )
+                                ) {
+                                    context.startForegroundService(
+                                        Intent(
+                                            context,
+                                            LightWorker::class.java
+                                        )
+                                    )
+                                }
+                            }
+
                             exerciseViewModel.startExercise(exercise)
                         }
                         navController.navigate(Routes.EXERCISE.getRoute(id.toString())) {
@@ -388,6 +406,7 @@ fun WearPages(
                                 }
 
                                 swipeToDismissEnabled = true
+                                latestSummary = summary
                                 navController.navigateToTopLevel(
                                     Routes.SUMMARY,
                                     "${Routes.SUMMARY.getRoute()}/${summary.averageHeartRate?.toInt()}/${summary.totalDistance?.toInt()}/${summary.totalCalories?.toInt()}/${summary.elapsedTime.seconds}/${summary.maxHeartRate}/${summary.steps}"
@@ -416,20 +435,16 @@ fun WearPages(
                         navArgument(stepsArg) { type = NavType.LongType }
                     )
                 ) {
-                    SummaryRoute(
-                        uiState = SummaryScreenState(
-                            averageHeartRate = it.arguments?.getInt(averageHeartRateArg)
-                                ?.toDouble(),
-                            totalDistance = it.arguments?.getInt(totalDistanceArg)?.toDouble(),
-                            totalCalories = it.arguments?.getInt(totalCaloriesArg)?.toDouble(),
-                            elapsedTime = it.arguments?.getInt(elapsedTimeArg)?.toDuration(
-                                DurationUnit.SECONDS
-                            )?.toJavaDuration() ?: Duration.ofSeconds(-1),
-                            maxHeartRate = it.arguments?.getInt(maxHeartRateArg),
-                            steps = it.arguments?.getLong(stepsArg)
-                        )
-                    ) {
-                        navController.navigateToTopLevel(Routes.HOME)
+                    if (latestSummary != null) {
+                        SummaryRoute(
+                            uiState = latestSummary!!
+                        ) {
+                            navController.navigateToTopLevel(Routes.HOME)
+                        }
+                    } else {
+                        ErrorPage(message = "Failed to retrieve latest summary", action = {
+                            navController.navigateToTopLevel(Routes.HOME)
+                        }, actionText = "Home")
                     }
                 }
                 composable(Routes.METRIC_EDITOR.getRoute("{id}")) {

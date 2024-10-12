@@ -52,7 +52,7 @@ fun StartButton(
             )
         }
 
-        if (progress?.value == 0f) {
+        if (progress?.value == 0f || progress?.value == null) {
             Icon(
                 imageVector = Icons.Rounded.PlayArrow,
                 contentDescription = "Play Arrow",
@@ -60,7 +60,7 @@ fun StartButton(
             )
         } else {
             Text(
-                text = (timeRemaining?.value?.toInt()?.plus(1)).toString(),
+                text = (timeRemaining?.value?.toInt()).toString(),
                 style = MaterialTheme.typography.title2,
             )
         }
@@ -78,11 +78,23 @@ fun EndButton(
             onClick()
         }
     ) {
-        Icon(
-            imageVector = Icons.Rounded.Close,
-            contentDescription = "Close",
-            modifier = Modifier.size(32.dp)
-        )
+        if (isEnding) {
+            CircularProgressIndicator(
+                indicatorColor = Color.Black,
+                trackColor = Color.Black.copy(
+                    alpha = 0.18f
+                ),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(15.dp)
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Rounded.Close,
+                contentDescription = "Close",
+                modifier = Modifier.size(32.dp)
+            )
+        }
     }
 }
 

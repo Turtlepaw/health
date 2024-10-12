@@ -52,7 +52,6 @@ import com.turtlepaw.heart_connection.Exercise
 import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -71,7 +70,7 @@ fun ExerciseConfiguration(
     ExerciseTheme {
         val coroutineScope = rememberCoroutineScope()
         val progress = remember { Animatable(0f) }
-        val timeRemaining = remember { Animatable(3f) }
+        val timeRemaining = remember { Animatable(2f) }
         val availability = exerciseViewModel.availabilities.observeAsState()
         val location =
             availability.value?.values?.filterIsInstance<LocationAvailability>()?.firstOrNull()
@@ -85,9 +84,17 @@ fun ExerciseConfiguration(
                 error = e.message
                 e.printStackTrace()
             }
+
+            if (isServiceRunning(
+                    ExerciseService::class.java,
+                    context
+                ) && error == null
+            ) {
+                error = "Exercise is already running"
+            }
         }
 
-        if (error != null) ErrorPage(error!!, action = {
+        if (error != null) return@ExerciseTheme ErrorPage(error!!, action = {
             coroutineScope.launch {
                 try {
                     HealthServices.getClient(context).exerciseClient.endExercise()
@@ -98,7 +105,7 @@ fun ExerciseConfiguration(
                     error = e.message
                 }
             }
-        }, actionText = "End Exercise")
+        }, actionText = "Force Quit")
 
         Page(
             startTimeTextLinear = if (exercise.useGps) {
@@ -142,7 +149,7 @@ fun ExerciseConfiguration(
                         val vibrator = context.getSystemService(Vibrator::class.java)
                         progress.snapTo(1f)
 
-                        // Initial custom tick vibration
+                        // Initial custom tick vibration (at start)
                         if (vibrator != null && vibrator.hasVibrator()) {
                             vibrator.vibrate(
                                 VibrationEffect.startComposition().addPrimitive(
@@ -153,43 +160,44 @@ fun ExerciseConfiguration(
                             )
                         }
 
-                        val totalDurationMillis = 5000 // 5 seconds countdown
-                        val intervalMillis = 1000 // Click every 0.5 seconds
+                        val totalDurationMillis = 4000 // 3 seconds visible, 1 second hidden
+                        val intervalMillis = 1000 // 1 second interval
 
+                        // Launching a discrete countdown manually
                         withTimeoutOrNull(totalDurationMillis.toLong()) {
-                            // Launch timeRemaining animation concurrently
-                            launch {
-                                timeRemaining.animateTo(
-                                    targetValue = 0f,
-                                    animationSpec = tween(durationMillis = totalDurationMillis)
-                                )
-                            }
+                            for (i in 3 downTo 1) {
+                                // Update the timeRemaining for each second (3 -> 2 -> 1)
+                                timeRemaining.snapTo(i.toFloat())
 
-                            // Launch progress animation concurrently
-                            launch {
-                                progress.animateTo(
-                                    targetValue = 0f,
-                                    animationSpec = tween(durationMillis = totalDurationMillis)
-                                )
-                            }
-
-                            // Launch clicks at regular intervals (every 0.5 seconds)
-                            launch {
-                                while (isActive) {
-                                    delay(intervalMillis.toLong())
-                                    // Vibration or click sound
-                                    if (vibrator != null && vibrator.hasVibrator()) {
-                                        vibrator.vibrate(
-                                            VibrationEffect.startComposition().addPrimitive(
-                                                VibrationEffect.Composition.PRIMITIVE_TICK, 1f
-                                            ).compose()
-                                        )
-                                    }
+                                // Vibration for each second
+                                if (vibrator != null && vibrator.hasVibrator()) {
+                                    vibrator.vibrate(
+                                        VibrationEffect.startComposition().addPrimitive(
+                                            VibrationEffect.Composition.PRIMITIVE_TICK, 1f
+                                        ).compose()
+                                    )
                                 }
+
+                                // Progress animation for each second
+                                launch {
+                                    progress.animateTo(
+                                        targetValue = i / 3f, // Progress decreases with time
+                                        animationSpec = tween(durationMillis = intervalMillis)
+                                    )
+                                }
+
+                                delay(intervalMillis.toLong()) // Wait for 1 second before next update
                             }
+
+                            // After showing 1... wait for 1 more second (not showing anything to the user)
+                            delay(intervalMillis.toLong()) // Invisible final second
+
+                            // Set final state to 0 after countdown finishes
+                            timeRemaining.snapTo(0f)
+                            progress.snapTo(0f)
                         }
 
-                        // Final custom vibration pattern after countdown ends
+                        // Final vibration pattern after countdown ends
                         if (vibrator != null && vibrator.hasVibrator()) {
                             vibrator.vibrate(
                                 VibrationEffect.startComposition().addPrimitive(
@@ -203,7 +211,6 @@ fun ExerciseConfiguration(
                         delay(100)
                         onStart()
                     }
-
                 }
             }
             item {

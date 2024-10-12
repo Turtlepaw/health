@@ -3,11 +3,9 @@ package com.turtlepaw.health.apps.sunlight.tile
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders.argb
+import androidx.wear.protolayout.DeviceParametersBuilders
 import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.LayoutElementBuilders
@@ -26,26 +24,22 @@ import androidx.wear.protolayout.material.layouts.EdgeContentLayout
 import androidx.wear.tiles.EventBuilders
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
+import androidx.wear.tiles.tooling.preview.Preview
+import androidx.wear.tiles.tooling.preview.TilePreviewData
+import androidx.wear.tiles.tooling.preview.TilePreviewHelper
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.tools.LayoutRootPreview
-import com.google.android.horologist.compose.tools.buildDeviceParameters
 import com.google.android.horologist.tiles.SuspendingTileService
 import com.turtlepaw.health.R
-import com.turtlepaw.health.apps.health.tile.FontStyle
-import com.turtlepaw.health.apps.health.tile.MainTileService
-import com.turtlepaw.health.apps.health.tile.TileColors
 import com.turtlepaw.health.apps.sunlight.presentation.MainActivity
 import com.turtlepaw.health.database.AppDatabase
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
-import com.turtlepaw.health.utils.TimeManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 
@@ -135,11 +129,13 @@ class MainTileService : SuspendingTileService() {
                         )
                         .addContent(
                             if(today == 0) noDataLayout(
-                                this
+                                this,
+                                requestParams.deviceConfiguration
                             ).build() else tileLayout(
                                 this,
                                 today,
-                                goal
+                                goal,
+                                requestParams.deviceConfiguration
                             ).build()
                         )
                         .build()
@@ -170,9 +166,9 @@ class MainTileService : SuspendingTileService() {
 }
 
 private fun noDataLayout(
-    context: Context
+    context: Context,
+    deviceParameters: DeviceParametersBuilders.DeviceParameters
 ): EdgeContentLayout.Builder {
-    val deviceParameters = buildDeviceParameters(context.resources)
     return EdgeContentLayout.Builder(deviceParameters)
         .setPrimaryLabelTextContent(
             Text.Builder(context, "Sunlight")
@@ -186,7 +182,7 @@ private fun noDataLayout(
                         "No data. Wear your watch in the sun."
                     ).setTypography(Typography.TYPOGRAPHY_BODY2)
                         .setColor(argb(TileColors.White))
-                        .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE_END)
+                        .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE)
                         .setMaxLines(2)
                         .setMultilineAlignment(LayoutElementBuilders.TEXT_ALIGN_CENTER)
                         .setModifiers(
@@ -225,11 +221,12 @@ private fun noDataLayout(
 private fun tileLayout(
     context: Context,
     today: Int,
-    goal: Int
+    goal: Int,
+    deviceParameters: DeviceParametersBuilders.DeviceParameters
 ): EdgeContentLayout.Builder {
     DateTimeFormatter.ofPattern("h:mma")
-    val deviceParameters = buildDeviceParameters(context.resources)
     return EdgeContentLayout.Builder(deviceParameters)
+        .setResponsiveContentInsetEnabled(true)
         .setEdgeContent(
             CircularProgressIndicator.Builder()
                 .setProgress(today.toFloat() / goal.toFloat())
@@ -321,38 +318,60 @@ private fun tileLayout(
         )
 }
 
-@Preview(
-    device = WearDevices.SMALL_ROUND,
-    showSystemUi = true,
-    backgroundColor = 0xff000000,
-    showBackground = true
-)
-@Composable
-fun TilePreview() {
-    val timeManager = TimeManager()
-    val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0))
-    timeManager.calculateSleepQuality(timeDifference)
+@Preview(device = WearDevices.SMALL_ROUND)
+@Preview(device = WearDevices.SMALL_ROUND, fontScale = 1.24f)
+@Preview(device = WearDevices.LARGE_ROUND)
+@Preview(device = WearDevices.LARGE_ROUND, fontScale = 1.24f)
+fun tilePreview(context: Context) =
+    TilePreviewData(
+        onTileResourceRequest = {
+            ResourceBuilders.Resources.Builder()
+                .setVersion(RESOURCES_VERSION)
+                .addIdToImageMapping(
+                    com.turtlepaw.health.apps.health.tile.Images.STEPS.getId(),
+                    ResourceBuilders.ImageResource.Builder()
+                        .setAndroidResourceByResId(
+                            ResourceBuilders.AndroidImageResourceByResId.Builder()
+                                .setResourceId(com.turtlepaw.heart_connection.R.drawable.steps)
+                                .build()
+                        ).build()
+                ).build()
+        }
+    ) {
+        TilePreviewHelper.singleTimelineEntryTileBuilder(
+            tileLayout(
+                context,
+                25,
+                15,
+                it.deviceConfiguration
+            ).build()
+        ).build()
+    }
 
-    LayoutRootPreview(root = tileLayout(
-        LocalContext.current,
-        15,
-        Settings.GOAL.getDefaultAsInt()
-    ).build())
-}
-
-@Preview(
-    device = WearDevices.SMALL_ROUND,
-    showSystemUi = true,
-    backgroundColor = 0xff000000,
-    showBackground = true
-)
-@Composable
-fun NoDataPreview() {
-    val timeManager = TimeManager()
-    val timeDifference = timeManager.calculateTimeDifference(LocalTime.of(5, 0))
-    timeManager.calculateSleepQuality(timeDifference)
-
-    LayoutRootPreview(root = noDataLayout(
-        LocalContext.current
-    ).build())
-}
+@Preview(device = WearDevices.SMALL_ROUND)
+@Preview(device = WearDevices.SMALL_ROUND, fontScale = 1.24f)
+@Preview(device = WearDevices.LARGE_ROUND)
+@Preview(device = WearDevices.LARGE_ROUND, fontScale = 1.24f)
+fun noDataPreview(context: Context) =
+    TilePreviewData(
+        onTileResourceRequest = {
+            ResourceBuilders.Resources.Builder()
+                .setVersion(RESOURCES_VERSION)
+                .addIdToImageMapping(
+                    com.turtlepaw.health.apps.health.tile.Images.STEPS.getId(),
+                    ResourceBuilders.ImageResource.Builder()
+                        .setAndroidResourceByResId(
+                            ResourceBuilders.AndroidImageResourceByResId.Builder()
+                                .setResourceId(com.turtlepaw.heart_connection.R.drawable.steps)
+                                .build()
+                        ).build()
+                ).build()
+        }
+    ) {
+        TilePreviewHelper.singleTimelineEntryTileBuilder(
+            noDataLayout(
+                context,
+                it.deviceConfiguration
+            ).build()
+        ).build()
+    }

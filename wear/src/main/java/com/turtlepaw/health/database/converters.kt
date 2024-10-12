@@ -5,8 +5,10 @@ import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
 import com.turtlepaw.heart_connection.Metric
 import com.turtlepaw.heart_connection.Metrics
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 class Converters {
@@ -85,5 +87,28 @@ class Converters {
     fun toIntList(data: String): List<Int> {
         if (data.isEmpty()) return emptyList()
         return data.split(",").map { it.toInt() }
+    }
+
+    @TypeConverter
+    fun fromDuration(value: Duration?): Long? {
+        return value?.toMillis()
+    }
+
+    @TypeConverter
+    fun toDuration(value: Long?): Duration? {
+        return value?.let { Duration.ofMillis(it) }
+    }
+
+    @TypeConverter
+    fun fromHeartRateHistory(value: List<Pair<LocalTime, Int>>?): String? {
+        val gson = Gson()
+        return gson.toJson(value)
+    }
+
+    @TypeConverter
+    fun toHeartRateHistory(value: String?): List<Pair<LocalTime, Int>>? {
+        val gson = Gson()
+        val type = object : TypeToken<List<Pair<LocalTime, Int>>>() {}.type
+        return gson.fromJson(value, type)
     }
 }

@@ -6,7 +6,6 @@ import androidx.wear.protolayout.DimensionBuilders.SpProp
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.FontWeightProp
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental
-import com.turtlepaw.health.apps.health.tile.TileColors
 
 enum class FontStyle(private val fontSize: Float) {
     PrimaryFontSize(33f),

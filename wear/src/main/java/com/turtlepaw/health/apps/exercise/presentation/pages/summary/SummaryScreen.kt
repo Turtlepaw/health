@@ -179,6 +179,23 @@ fun SummaryScreen(
                 )
             }
             item {
+                CompactStatCard(
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = com.turtlepaw.heart_connection.R.drawable.sunlight),
+                            contentDescription = "Sunlight"
+                        )
+                    },
+                    content = if (uiState.sunlight == null) {
+                        NO_DATA
+                    } else if (uiState.sunlight == (-1)) {
+                        "Disabled"
+                    } else {
+                        "${String.format("%,d", uiState.sunlight)} sun min"
+                    }
+                )
+            }
+            item {
                 ResponsiveListHeader(contentColor = MaterialTheme.colors.primary) {
                     Text(text = "Heart Rate")
                 }
@@ -192,11 +209,11 @@ fun SummaryScreen(
                         )
                     }
                 ) {
-                    if (uiState.heartRateSimilarity == null) {
-                        Text("No data to compare", style = MaterialTheme.typography.body1)
-                    } else {
-                        val progress = uiState.heartRateSimilarity.toFloat() / 100f
-                        Column {
+                    Column {
+                        if (uiState.heartRateSimilarity == null) {
+                            Text("No data to compare", style = MaterialTheme.typography.body1)
+                        } else {
+                            val progress = uiState.heartRateSimilarity.toFloat() / 100f
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -215,11 +232,11 @@ fun SummaryScreen(
                                     modifier = Modifier.size(13.dp)
                                 )
                             }
-                            Text(
-                                text = "Between external device and current device",
-                                style = MaterialTheme.typography.caption3.copy(MaterialTheme.colors.onSurfaceVariant)
-                            )
                         }
+                        Text(
+                            text = "Between external device and current device",
+                            style = MaterialTheme.typography.caption3.copy(MaterialTheme.colors.onSurfaceVariant)
+                        )
                     }
                 }
             }
@@ -354,7 +371,10 @@ fun SummaryScreenPreview() {
             totalCalories = 100.0,
             elapsedTime = Duration.ofMinutes(17).plusSeconds(1),
             maxHeartRate = 183,
-            heartRateSimilarity = 90.0
+            heartRateSimilarity = 90.0,
+            steps = 1000,
+            sunlight = 15,
+            heartRate = emptyList()
         ),
         onCompleteClick = {},
     )
@@ -370,7 +390,10 @@ fun Preview() {
             totalCalories = 100.0,
             elapsedTime = Duration.ofMinutes(17).plusSeconds(1),
             maxHeartRate = 186,
-            heartRateSimilarity = 90.0
+            heartRateSimilarity = 90.0,
+            steps = 1000,
+            sunlight = 15,
+            heartRate = emptyList()
         ),
         onCompleteClick = {},
     )

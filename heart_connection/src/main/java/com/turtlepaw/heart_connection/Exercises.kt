@@ -16,7 +16,7 @@ data class Metric(
  * Note that [ElapsedTimeMetric] will always be available
  */
 fun Metric.isAvailableFor(exercise: Exercise): Boolean {
-    return if (this == ElapsedTimeMetric) true
+    return if (this.dataType == null) true
     else exercise.dataTypes.contains(dataType)
 }
 
@@ -54,12 +54,19 @@ val StepsMetric = Metric(
     dataType = DataType.STEPS
 )
 
+val SunlightMetric = Metric(
+    id = 6,
+    name = "Sunlight",
+    icon = R.drawable.sunlight
+)
+
 val Metrics = listOf(
     ElapsedTimeMetric,
     HeartRateMetric,
     DistanceMetric,
     CaloriesMetric,
-    StepsMetric
+    StepsMetric,
+    SunlightMetric
 )
 
 data class Exercise(
@@ -134,3 +141,7 @@ val Exercises = listOf(
     Running,
     Walking
 )
+
+fun Exercise.getId(): Int {
+    return Exercises.indexOf(this)
+}

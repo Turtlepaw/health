@@ -161,6 +161,18 @@ fun formatSteps(steps: Long?) = buildAnnotatedString {
     }
 }
 
+@Composable
+fun formatSunlight(sunlight: Int) = buildAnnotatedString {
+    if (sunlight == null) {
+        append(NO_DATA)
+    } else {
+        val formattedSunlight = AnnotatedString.Builder().apply {
+            append(String.format("%,d", sunlight))
+        }.toAnnotatedString()
+        append(formattedSunlight)
+    }
+}
+
 /** Format a distance to two decimals with a "km" suffix. */
 @Composable
 fun formatDistanceKm(meters: Double?) = buildAnnotatedString {
