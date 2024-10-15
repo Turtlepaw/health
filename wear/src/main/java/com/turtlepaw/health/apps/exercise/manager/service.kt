@@ -199,7 +199,7 @@ class ExerciseService : Service() {
                         compareHeartRates(
                             deviceHrHistoryLiveData.value ?: emptyList(),
                             externalHistoryLiveData.value ?: emptyList()
-                        ).first
+                        )
                     } else {
                         null
                     },

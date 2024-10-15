@@ -2,6 +2,7 @@ package com.turtlepaw.health.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.turtlepaw.health.MAX_HEARING
 import java.time.LocalTime
 
 enum class Settings(private val key: String, private val default: Any?) {
@@ -14,7 +15,9 @@ enum class Settings(private val key: String, private val default: Any?) {
     GOAL_NOTIFICATIONS("goal_notify", false),
     STATUS("status", false),
     DEFAULT_DEVICE("default_device", null),
-    INTRODUCTION_COMPLETE("introduction_complete", false);
+    INTRODUCTION_COMPLETE("introduction_complete", false),
+    SAMPLING_RATE("sampling_rate", 5),
+    NOISE_THRESHOLD("threshold", MAX_HEARING);
 
     fun getKey(): String {
         return key

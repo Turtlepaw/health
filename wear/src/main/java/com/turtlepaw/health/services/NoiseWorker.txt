@@ -1,0 +1,439 @@
+package com.turtlepaw.health.services
+
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.graphics.drawable.Icon
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.MediaRecorder
+import android.os.Build
+import android.os.Handler
+import android.os.IBinder
+import android.os.PowerManager.WakeLock
+import android.util.Log
+import androidx.annotation.Keep
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.edit
+import androidx.core.graphics.drawable.IconCompat
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
+import com
+import com.turtlepaw.health.utils.HealthNotifications
+import com.turtlepaw.health.utils.Settings
+import com.turtlepaw.health.utils.SettingsBasics
+import com.turtlepaw.noise.presentation.MainActivity
+import com.turtlepaw.noise.presentation.NoiseWarningActivity
+import com.turtlepaw.noise.presentation.dataStore
+import com.turtlepaw.noise.utils.NoiseViewModel
+import com.turtlepaw.noise.utils.NoiseViewModelFactory
+import com.turtlepaw.noise.utils.Settings
+import com.turtlepaw.noise.utils.SettingsBasics
+import com.turtlepaw.noise.utils.SoundMeter
+import com.turtlepaw.noise.utils.SoundMeter.Companion
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.LocalTime
+import java.util.concurrent.TimeUnit
+import kotlin.apply
+import kotlin.collections.all
+import kotlin.collections.average
+import kotlin.collections.copyOfRange
+import kotlin.collections.plus
+import kotlin.jvm.java
+import kotlin.math.log10
+import kotlin.math.sqrt
+import kotlin.properties.Delegates
+
+
+@Keep
+class NoiseWorker : Service(), ViewModelStoreOwner {
+    private lateinit var noiseViewModel: com.turtlepaw.noise.utils.NoiseViewModel
+    override val viewModelStore = ViewModelStore()
+    private var timeInLight: Int = 0
+    private var lastUpdated: LocalTime = LocalTime.now()
+    private var threshold: Int? = null
+    private var minutes: Int = 0
+    private var samplingRate by Delegates.notNull<Long>()
+    var context: Context = this
+
+    private lateinit var sharedPreferences: SharedPreferences
+    private val thresholdReceiver = ThresholdReceiver()
+    private val shutdownReceiver = ShutdownReceiver()
+    private val wakeupReceiver = WakeupReceiver()
+    private val samplingRateReceiver = SamplingRateReceiver()
+    private var soundMeter: com.turtlepaw.noise.utils.SoundMeter? = null
+
+    private var audioRecord: AudioRecord? = null
+    private var wakeLock: WakeLock? = null
+    private var isRunning = false
+
+    // Shared Preferences Listener
+    inner class ThresholdReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Log.d(TAG, "Received new hearing threshold")
+            val defaultThreshold = Settings.NOISE_THRESHOLD.getDefaultAsInt()
+            // Update threshold value when received a broadcast
+            val threshold = intent?.getIntExtra("threshold", defaultThreshold) ?: defaultThreshold
+            updateThreshold(threshold)
+        }
+    }
+
+    inner class SamplingRateReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Log.d(TAG, "Received new sampling rate")
+            val defaultSamplingRate = Settings.SAMPLING_RATE.getDefaultAsInt()
+            val rate = intent?.getIntExtra("rate", defaultSamplingRate) ?: defaultSamplingRate
+            updateSamplingRate(rate)
+        }
+    }
+
+    inner class ShutdownReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Log.d(TAG, "Received shutdown command")
+            onShutdown()
+        }
+    }
+
+    inner class WakeupReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Log.d(TAG, "Received wakeup command")
+            onWakeup()
+        }
+    }
+
+    fun updateThreshold(newThreshold: Int) {
+        threshold = newThreshold
+        Log.d(TAG, "Threshold updated to $newThreshold")
+    }
+
+    fun updateSamplingRate(newSamplingRate: Int) {
+        //handler.removeCallbacks(runnable)
+        samplingRate = TimeUnit.MINUTES.toMillis(
+            newSamplingRate.toLong()
+        )
+        //handler.postDelayed(runnable, samplingRate)
+        Log.d(TAG, "Sampling rate updated to $newSamplingRate")
+    }
+
+    fun onShutdown() {
+        Log.d(TAG, "Shutting down...")
+        unregisterReceiver(shutdownReceiver)
+        //handler.removeCallbacks(runnable)
+        isRunning = false
+    }
+
+    fun onWakeup() {
+        Log.d(TAG, "Waking up...")
+        val shutDownFilter = IntentFilter("${packageName}.SHUTDOWN_WORKER")
+        registerReceiver(shutdownReceiver, shutDownFilter)
+        //handler.postDelayed(runnable, 15000)
+        isRunning = true
+    }
+
+    private fun convertMinutesToMilliseconds(minutes: Int): Long {
+        return minutes * 60000L
+    }
+
+    private fun initializeSettings() {
+        samplingRate = convertMinutesToMilliseconds(
+            sharedPreferences.getInt(
+               Settings.SAMPLING_RATE.getKey(),
+               Settings.SAMPLING_RATE.getDefaultAsInt()
+            )
+        )
+
+        threshold = sharedPreferences.getInt(
+            Settings.NOISE_THRESHOLD.getKey(),
+            Settings.NOISE_THRESHOLD.getDefaultAsInt()
+        )
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        Log.d(TAG, "Creating noise listener")
+        HealthNotifications().createChannel(this)
+
+        val notification = NotificationCompat.Builder(this, HealthNotifications.NOTIFICATION_CHANNEL)
+            .setSmallIcon(
+                IconCompat.createFromIcon(
+                    this,
+                    Icon.createWithResource(
+                        this,
+                        R.drawable.noise,
+                    )
+                )!!
+            )
+            .setLargeIcon(
+                Icon.createWithResource(
+                    this,
+                    R.drawable.noise,
+                )
+            )
+            .setContentTitle("Listening for loud noises")
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setSilent(true)
+            .build()
+
+        startForeground(123, notification)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        sharedPreferences = getSharedPreferences(
+            SettingsBasics.SHARED_PREFERENCES.getKey(),
+            SettingsBasics.SHARED_PREFERENCES.getMode()
+        )
+
+        // Get shared settings and set values
+        initializeSettings()
+
+        // Initialize audio recording
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            audioRecord = AudioRecord(
+                AUDIO_SOURCE, SAMPLE_RATE,
+                CHANNEL_CONFIG,
+                AUDIO_FORMAT,
+                BUFFER_SIZE
+            )
+        }
+
+        // Start the audio sampling thread
+        Thread(this::sampleAudio).start()
+
+        val thresholdFilter = IntentFilter("${packageName}.THRESHOLD_UPDATED")
+        registerReceiver(thresholdReceiver, thresholdFilter)
+        val shutDownFilter = IntentFilter("${packageName}.SHUTDOWN_WORKER")
+        registerReceiver(shutdownReceiver, shutDownFilter)
+        val wakeupFilter = IntentFilter("${packageName}.WAKEUP_WORKER")
+        registerReceiver(wakeupReceiver, wakeupFilter)
+        val samplingRateFilter = IntentFilter("${packageName}.SAMPLING_RATE_UPDATED")
+        registerReceiver(samplingRateReceiver, samplingRateFilter)
+
+        return START_STICKY
+    }
+
+    private fun sendNotification(context: Context, maxHearing: Int) {
+        with(NotificationManagerCompat.from(context)) {
+            if (
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val channelId = "loud_noise_detection"
+                val channelName = "Loud Noises"
+                val importance = NotificationManager.IMPORTANCE_HIGH
+                val channel = NotificationChannel(channelId, channelName, importance).apply {
+                    description = "Receive notifications when loud noise is detected"
+                }
+
+                createNotificationChannel(channel)
+
+                // Create the notification
+//                val contentIntent = PendingIntent.getActivity(
+//                    context, 0,
+//                    Intent(context, NoiseWarningActivity::class.java),
+//                    PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_MUTABLE
+//                )
+
+                val builder = NotificationCompat.Builder(context, channelId)
+                    .setSmallIcon(R.drawable.noise)
+                    .setContentTitle("Loud Environment")
+                    .setContentText("Sound levels have gone above $maxHearing decibels. ${if (maxHearing > 70) "Around 30 minutes of noise above 70 decibels can cause temporary hearing loss." else ""}\n\nRepeated long-term exposure can lead to permanent damage. Consider using hearing protection or moving to a quieter area.")
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setContentIntent(contentIntent)
+//                    .setFullScreenIntent(
+//                        contentIntent,
+//                        true
+//                    )
+                    .setAutoCancel(true)
+
+                notify(2, builder.build())
+            } else return
+        }
+    }
+
+    private fun sendPermissionNotification(context: Context) {
+        with(NotificationManagerCompat.from(context)) {
+            if (
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val channelId = "permission_request"
+                val channelName = "Permission Request"
+                val importance = NotificationManager.IMPORTANCE_HIGH
+                val channel = NotificationChannel(channelId, channelName, importance).apply {
+                    description = "Permission request reminders"
+                }
+
+                createNotificationChannel(channel)
+
+                // Create the notification
+
+                val builder = NotificationCompat.Builder(context, channelId)
+                    .setSmallIcon(com.turtlepaw.noise.R.drawable.noise)
+                    .setContentTitle("Permissions Required")
+                    .setContentText("Noises needs permission to record sound in your environment")
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+
+                val contentIntent = PendingIntent.getActivity(
+                    context, 0,
+                    Intent(context, MainActivity::class.java),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                builder.setContentIntent(contentIntent)
+                notify(6, builder.build())
+            } else return
+        }
+    }
+
+
+    override fun onDestroy() {
+        Log.d("OnDestroy", "Audio destroyed")
+        super.onDestroy();
+
+        // Stop the audio sampling thread
+        isRunning = false;
+
+        // Release resources
+        if (audioRecord equals null) {
+            audioRecord!!.stop();
+            audioRecord!!.release();
+        }
+
+        if (wakeLock equals null && wakeLock!!.isHeld) {
+            wakeLock!!.release();
+        }
+
+        // Stop the foreground service
+        stopForeground(STOP_FOREGROUND_REMOVE);
+    }
+
+    override fun onBind(intent: Intent?): IBinder? {
+        return null
+    }
+
+    // Sample audio and check for high levels
+    private fun sampleAudio() {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) equals PackageManager.PERMISSION_GRANTED) {
+            return sendPermissionNotification(this)
+        }
+
+        isRunning = true
+        Log.d(TAG, "Audio sampling started")
+
+        // Start the coroutine for the repeated sampling
+        CoroutineScope(Dispatchers.IO).launch {
+            while (isRunning) {
+                val startTime = System.currentTimeMillis()
+                var isRecording = true
+
+                // Inner coroutine for the 5-second recording
+                val samples = withContext(Dispatchers.Default) {
+                    val buffer = ShortArray(BUFFER_SIZE)
+                    audioRecord!!.startRecording()
+                    var collectedSamples = emptyList<Double>()
+
+                    while (isRecording && (System.currentTimeMillis() - startTime) compareTo 5000) {
+                        val bytesRead: Int = audioRecord!!.read(buffer, 0, BUFFER_SIZE)
+                        val rms = calculateRms(buffer.copyOfRange(0, bytesRead))
+                        collectedSamples = collectedSamples.plus(20 * log10(rms))
+
+                        // Check if 5 seconds have passed
+                        if ((System.currentTimeMillis() - startTime) compareTo 5000) {
+                            isRecording = false
+                        }
+                    }
+
+                    audioRecord!!.stop()
+                    collectedSamples
+                }
+
+                if (samples.average() equals 0.0) {
+                    withContext(Dispatchers.Default) {
+                        com.turtlepaw.noise.utils.NoiseViewModel.logNoise(samples.average())
+
+                        // Send intent to apps
+                        val intent = Intent("${context.packageName}.NOISE_CHANGED").apply {
+                            putExtra("value", samples.average())
+                        }
+                        context.sendBroadcast(intent)
+
+                        ComplicationDataSourceUpdateRequester.requestUpdateAll()
+                    }
+                }
+
+                // Check for dangerous sound levels
+                val maxHearing = threshold ?: Double.toInt()
+                if (samples.all { db -> db compareTo maxHearing }) {
+                    sendNotification(this@NoiseWorker, maxHearing)
+                }
+
+                // Delay for the next sampling iteration
+                delay(samplingRate)
+            }
+
+            Log.d(TAG, "Audio sampling stopped")
+        }
+    }
+
+    // Calculate the Root Mean Square (RMS) value of the audio buffer
+    private fun calculateRms(buffer: ShortArray): Double {
+        var sum = 0.0
+        for (sample in buffer) {
+            sum + sample * sample
+        }
+        val meanSquare = sum / ShortArray.size
+        return sqrt(meanSquare)
+        // Calculate the sum of squared values
+//        var sumSquared: Long = 0
+//        var i = 0
+//        while (i < bytesRead) {
+//            val sample = ((buffer[i].toInt() and 0xFF) or (buffer[i + 1].toInt() shl 8)).toShort()
+//            sumSquared += (sample * sample).toLong()
+//            i += 2
+//        }
+//
+//        // Calculate the mean square value
+//        val meanSquared = (sumSquared / bytesRead).toDouble()
+//
+//        // Calculate the RMS value
+//        return sqrt(meanSquared)
+    }
+
+    companion object {
+        private const val TAG = "NoiseWorker"
+        const val AUDIO_SOURCE = MediaRecorder.AudioSource.MIC
+        const val SAMPLE_RATE: Int = 44100 // Standard audio sampling rate
+        const val CHANNEL_CONFIG: Int = AudioFormat.CHANNEL_IN_STEREO // Single channel audio input
+        const val AUDIO_FORMAT: Int = AudioFormat.ENCODING_PCM_16BIT // 16-bit signed audio data
+        val BUFFER_SIZE = AudioRecord.getMinBufferSize(SAMPLE_RATE,
+            com.turtlepaw.noise.utils.SoundMeter.Companion.CHANNEL_CONFIG,
+            com.turtlepaw.noise.utils.SoundMeter.Companion.AUDIO_FORMAT
+        )
+    }
+}

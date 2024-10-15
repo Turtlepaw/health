@@ -32,16 +32,17 @@ import java.time.Duration
 import java.time.LocalTime
 import kotlin.math.abs
 
-
 fun compareHeartRates(
     deviceList: List<Pair<LocalTime, Int>>,
     externalList: List<Pair<LocalTime, Int>>,
     timeThreshold: Long = 60 // Time difference threshold in seconds
-): Pair<Double, List<Pair<LocalTime, Int>>> {
+): Double {
 
-    var matchingCount = 0
     var totalCount = 0
-    val differences = mutableListOf<Pair<LocalTime, Int>>() // To store differences for analysis
+    var exactMatchCount = 0
+    var veryCloseCount = 0
+    var closeCount = 0
+    var inaccurateCount = 0
 
     // Iterate through each time-heart rate pair in the device list
     for ((deviceTime, deviceRate) in deviceList) {
@@ -51,29 +52,42 @@ fun compareHeartRates(
         }
 
         closestMatch?.let { (externalTime, externalRate) ->
-            val timeDifference =
-                abs(Duration.between(deviceTime, externalTime).seconds)
+            val timeDifference = abs(Duration.between(deviceTime, externalTime).seconds)
             if (timeDifference <= timeThreshold) {
                 // Calculate the difference in heart rate values
                 val rateDifference = abs(deviceRate - externalRate)
-                differences.add(deviceTime to rateDifference)
 
-                if (rateDifference == 0) matchingCount++
+                // Categorize based on difference ranges
+                when {
+                    rateDifference == 0 -> exactMatchCount++
+                    rateDifference <= 1 -> veryCloseCount++
+                    rateDifference <= 5 -> closeCount++
+                    else -> inaccurateCount++
+                }
+
                 totalCount++
             }
         }
     }
 
-    // Calculate the percentage similarity based on matching heart rate values
-    val similarity = if (totalCount > 0) (matchingCount.toDouble() / totalCount) * 100 else 0.0
+    // Calculate percentage of matches in each category
+    val exactMatchPercentage =
+        if (totalCount > 0) (exactMatchCount.toDouble() / totalCount) * 100 else 0.0
+    val veryClosePercentage =
+        if (totalCount > 0) (veryCloseCount.toDouble() / totalCount) * 100 else 0.0
+    val closePercentage = if (totalCount > 0) (closeCount.toDouble() / totalCount) * 100 else 0.0
+    val inaccuratePercentage =
+        if (totalCount > 0) (inaccurateCount.toDouble() / totalCount) * 100 else 0.0
 
-    return similarity to differences
+    // Calculate the overall accuracy as a weighted score
+    return (exactMatchPercentage * 1.0) + (veryClosePercentage * 0.9) + (closePercentage * 0.7) + (inaccuratePercentage * 0.0)
 }
+
 
 fun canCompareHeartRates(
     deviceList: List<Pair<LocalTime, Int>>,
     externalList: List<Pair<LocalTime, Int>>,
-    minOverlapMinutes: Long = 5
+    minOverlapMinutes: Long = 1
 ): Boolean {
     // Check if both lists contain data
     if (deviceList.isEmpty() || externalList.isEmpty()) {
@@ -323,12 +337,12 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
             heartRateSimilarity = if (canCompareHeartRates(
                     deviceHrHistory.value ?: emptyList(),
                     externalHrHistory.value ?: emptyList()
-                )
+                ) == true
             ) {
                 compareHeartRates(
                     deviceHrHistory.value ?: emptyList(),
                     externalHrHistory.value ?: emptyList()
-                ).first
+                )
             } else {
                 null
             }

@@ -48,6 +48,12 @@ data class Day(
     val goal: Int
 )
 
+@Entity(tableName = "noise_reading")
+data class NoiseReading(
+    @PrimaryKey val date: LocalDateTime,
+    val value: Double
+)
+
 enum class ServiceType(val serviceName: String) {
     SLEEP("sleep"),
     SUNLIGHT("sunlight"),

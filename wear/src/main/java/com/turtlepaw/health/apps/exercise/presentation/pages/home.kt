@@ -1,4 +1,4 @@
-package com.turtlepaw.heartconnect.presentation.pages
+package com.turtlepaw.health.apps.exercise.presentation.pages
 
 import android.Manifest
 import androidx.annotation.RequiresPermission
@@ -32,8 +32,6 @@ import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.exercise.presentation.Routes
 import com.turtlepaw.health.components.Page
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
-
-const val MAX_HEARING = 70.0
 
 @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
 @OptIn(ExperimentalHorologistApi::class, ExperimentalWearFoundationApi::class)

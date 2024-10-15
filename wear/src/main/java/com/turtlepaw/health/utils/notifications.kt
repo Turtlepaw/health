@@ -15,7 +15,7 @@ class HealthNotifications {
         private const val EXERCISE_NOTIFICATION_CHANNEL_DISPLAY = "Exercises"
     }
 
-    /*
+    /**
         Creates a unified notification channel for foreground notifications
      */
     fun createChannel(context: Context) {
@@ -31,9 +31,9 @@ class HealthNotifications {
         notificationManager.createNotificationChannel(channel)
     }
 
-    /*
+    /**
     Creates a unified notification channel for exercise foreground notifications
- */
+     */
     fun createExerciseChannel(context: Context) {
         val channel = NotificationChannel(
             EXERCISE_NOTIFICATION_CHANNEL,
