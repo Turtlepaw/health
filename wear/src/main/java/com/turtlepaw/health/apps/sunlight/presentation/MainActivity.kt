@@ -41,6 +41,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import com.google.android.gms.wearable.Wearable
 import com.turtlepaw.health.apps.sunlight.SunlightViewModel
 import com.turtlepaw.health.apps.sunlight.presentation.pages.ClockworkToolkit
 import com.turtlepaw.health.apps.sunlight.presentation.pages.History
@@ -92,6 +93,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private var lightSensor: Sensor? = null
     private var sunlightLx = mutableFloatStateOf(0f)
     private val tag = "MainSunlightActivity"
+    private val dataClient by lazy { Wearable.getDataClient(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()

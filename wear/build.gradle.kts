@@ -118,6 +118,9 @@ dependencies {
     // Wear Tiles
     implementation(libs.androidx.tiles.tooling.preview)
 
+    // Shared
+    implementation(project(":shared"))
+
     //wearApp(project(":wear"))
 }
 

@@ -2,19 +2,19 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
+    id("com.google.devtools.ksp")
 }
 
 android {
-    namespace = "com.turtlepaw.sunlight"
+    namespace = "com.turtlepaw.health"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.turtlepaw.sunlight"
+        applicationId = "com.turtlepaw.health"
         minSdk = 30
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -34,16 +34,49 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    buildFeatures {
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.11" // Replace with your Compose version
+    }
 }
 
 dependencies {
+    // Room
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.kotlinx.coroutines.play.services)
+
+    // AndroidX and core libraries
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.play.services.wearable)
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
+
+    // Testing libraries
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    //wearApp(project(":wear"))
+
+    // Compose BOM and related libraries
+    implementation(platform("androidx.compose:compose-bom:2024.09.02"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.02"))
+
+    // Jetpack Compose dependencies
+    implementation("androidx.compose.runtime:runtime")
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.foundation:foundation-layout")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.runtime:runtime-livedata")
+    implementation("androidx.compose.ui:ui-tooling")
+    implementation(libs.androidx.activity.compose)
+    implementation(project(":shared"))
+
+    // Icons
+    implementation(libs.material.icons.extended)
+
+    implementation(libs.androidx.lifecycle.viewmodel.android)
 }

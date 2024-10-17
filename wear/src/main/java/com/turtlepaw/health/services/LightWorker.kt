@@ -27,6 +27,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.edit
 import androidx.core.graphics.drawable.IconCompat
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.PutDataRequest
+import com.google.android.gms.wearable.Wearable
 import com.turtlepaw.health.apps.health.complication.MainComplicationService
 import com.turtlepaw.health.database.AppDatabase
 import com.turtlepaw.health.database.ServiceType
@@ -34,6 +37,8 @@ import com.turtlepaw.health.database.SunlightDay
 import com.turtlepaw.health.utils.HealthNotifications
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
+import com.turtlepaw.shared.SUNLIGHT_DATA_PATH
+import com.turtlepaw.shared.SUNLIGHT_VALUE_NAME
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -66,6 +71,7 @@ class LightWorker : Service(), SensorEventListener {
     private val shutdownReceiver = ShutdownReceiver()
     private val wakeupReceiver = WakeupReceiver()
     private val goalReceiver = GoalReceiver()
+    private val dataClient by lazy { Wearable.getDataClient(this) }
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -372,6 +378,13 @@ class LightWorker : Service(), SensorEventListener {
                             putExtra("value", minutes)
                         }
                         context.sendBroadcast(intent)
+
+                        val putDataReq: PutDataRequest =
+                            PutDataMapRequest.create(SUNLIGHT_DATA_PATH).run {
+                                dataMap.putInt(SUNLIGHT_VALUE_NAME, minutes)
+                                asPutDataRequest()
+                            }.setUrgent()
+                        dataClient.putDataItem(putDataReq)
 
                         if (minutes == goal) {
                             if (

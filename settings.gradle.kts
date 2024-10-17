@@ -1,5 +1,8 @@
 import java.net.URI
 
+include(":shared")
+
+
 pluginManagement {
     repositories {
         google {
@@ -32,4 +35,5 @@ rootProject.name = "Health"
 include(":mobile")
 include(":wear")
 include(":heart_connection")
+include(":shared")
  
