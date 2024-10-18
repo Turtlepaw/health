@@ -7,6 +7,7 @@ import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
 import com.turtlepaw.shared.SUNLIGHT_DATA_PATH
+import com.turtlepaw.shared.SUNLIGHT_GOAL_NAME
 import com.turtlepaw.shared.SUNLIGHT_VALUE_NAME
 import com.turtlepaw.shared.database.AppDatabase
 import com.turtlepaw.shared.database.SunlightDay
@@ -27,6 +28,7 @@ class SyncService : WearableListenerService() {
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
+        val sharedPrefs = SharedPrefs(this)
         dataEvents.forEach { event ->
             // DataItem changed
             if (event.type == DataEvent.TYPE_CHANGED) {
@@ -34,6 +36,7 @@ class SyncService : WearableListenerService() {
                     if (item.uri.path?.compareTo(SUNLIGHT_DATA_PATH) == 0) {
                         DataMapItem.fromDataItem(item).dataMap.apply {
                             updateData(getInt(SUNLIGHT_VALUE_NAME))
+                            sharedPrefs.setSunlightGoal(getInt(SUNLIGHT_GOAL_NAME))
                         }
                     }
                 }
@@ -41,6 +44,8 @@ class SyncService : WearableListenerService() {
                 // DataItem deleted
             }
         }
+
+        sharedPrefs.setLastSynced()
     }
 
     fun updateData(data: Int) {

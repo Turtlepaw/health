@@ -38,6 +38,7 @@ import com.turtlepaw.health.utils.HealthNotifications
 import com.turtlepaw.health.utils.Settings
 import com.turtlepaw.health.utils.SettingsBasics
 import com.turtlepaw.shared.SUNLIGHT_DATA_PATH
+import com.turtlepaw.shared.SUNLIGHT_GOAL_NAME
 import com.turtlepaw.shared.SUNLIGHT_VALUE_NAME
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -357,11 +358,23 @@ class LightWorker : Service(), SensorEventListener {
                             minutes + (timeInLight / 1000 / 60).toInt()
                         }
 
+                        Log.d(TAG, "Minutes before tamper: $minutes")
+
                         saveMinutes(
                             minutes
                         )
 
-                        minutes += (timeInLight / 1000 / 60).toInt()
+                        Log.d(TAG, "Minutes: $minutes")
+
+                        val putDataReq: PutDataRequest =
+                            PutDataMapRequest.create(SUNLIGHT_DATA_PATH).run {
+                                dataMap.putInt(SUNLIGHT_VALUE_NAME, minutes)
+                                dataMap.putInt(SUNLIGHT_GOAL_NAME, goal)
+                                asPutDataRequest()
+                            }.setUrgent()
+                        dataClient.putDataItem(putDataReq)
+
+//                        minutes += (timeInLight / 1000 / 60).toInt()
                         timeInLight = 0
 
                         ComplicationDataSourceUpdateRequester
@@ -378,13 +391,6 @@ class LightWorker : Service(), SensorEventListener {
                             putExtra("value", minutes)
                         }
                         context.sendBroadcast(intent)
-
-                        val putDataReq: PutDataRequest =
-                            PutDataMapRequest.create(SUNLIGHT_DATA_PATH).run {
-                                dataMap.putInt(SUNLIGHT_VALUE_NAME, minutes)
-                                asPutDataRequest()
-                            }.setUrgent()
-                        dataClient.putDataItem(putDataReq)
 
                         if (minutes == goal) {
                             if (

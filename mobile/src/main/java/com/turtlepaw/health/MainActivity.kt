@@ -1,6 +1,7 @@
 package com.turtlepaw.health
 
 import android.app.Application
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -35,6 +36,9 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.ViewModelProvider
 import com.turtlepaw.shared.database.SunlightViewModel
+import java.time.Duration
+import java.time.LocalTime
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,7 +56,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val sunlightViewModel = ViewModelProvider(this).get(SunlightViewModel::class.java)
             HomePage(
-                sunlightViewModel
+                sunlightViewModel,
+                context = this
             )
         }
     }
@@ -60,8 +65,18 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomePage(viewModel: SunlightViewModel) {
+fun HomePage(viewModel: SunlightViewModel, context: Context) {
     val sunlight by viewModel.sunlightData.collectAsState()
+    var isLoading by remember { mutableStateOf(true) }
+    var lastSynced by remember { mutableStateOf<LocalTime?>(null) }
+    var sunlightGoal by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        val prefs = SharedPrefs(context)
+        lastSynced = prefs.getLastSynced()
+        sunlightGoal = prefs.getSunlightGoal()
+        isLoading = false
+    }
 
     Scaffold(
         topBar = {
@@ -78,7 +93,13 @@ fun HomePage(viewModel: SunlightViewModel) {
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(
-                        progress = { 0.7f },
+                        progress = {
+                            if (sunlight != 0) {
+                                sunlight.toFloat() / sunlightGoal.toFloat()
+                            } else {
+                                0f
+                            }
+                        },
                         strokeCap = StrokeCap.Round,
                         strokeWidth = 15.dp,
                         modifier = Modifier.size(150.dp)
@@ -104,7 +125,6 @@ fun HomePage(viewModel: SunlightViewModel) {
                 }
 
                 OutlinedCard(
-
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 10.dp, horizontal = 15.dp)
@@ -123,7 +143,14 @@ fun HomePage(viewModel: SunlightViewModel) {
                             Text("Last Synced", style = MaterialTheme.typography.titleMedium)
                         }
                         Spacer(modifier = Modifier.height(5.dp))
-                        Text("15m ago", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            if (isLoading == true)
+                                "Loading..."
+                            else if (lastSynced == null)
+                                "Never synced"
+                            else formatLocalTimeAsRelativeTime(lastSynced!!).capitalize(Locale.ROOT),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
             }
@@ -135,6 +162,33 @@ fun HomePage(viewModel: SunlightViewModel) {
 @Composable
 fun HomePagePreview() {
     HomePage(
-        SunlightViewModel(Application())
+        SunlightViewModel(Application()), Application()
     )
+}
+
+fun formatLocalTimeAsRelativeTime(localTime: LocalTime): String {
+    val now = LocalTime.now()
+    val duration = Duration.between(localTime, now)
+
+    val hours = duration.toHours()
+    val minutes = duration.toMinutes() % 60
+    val seconds = duration.seconds % 60
+
+    val builder = StringBuilder()
+    if (hours > 0) {
+        builder.append("$hours hours")
+    }
+    if (minutes > 0) {
+        if (builder.isNotEmpty()) builder.append(", ")
+        builder.append("$minutes minutes")
+    }
+    if (seconds > 0 && builder.isEmpty()) { // Show seconds only if other units are 0
+        builder.append("$seconds seconds")
+    }
+
+    if (builder.isEmpty()) {
+        return "just now"
+    } else {
+        return builder.append(" ago").toString()
+    }
 }
