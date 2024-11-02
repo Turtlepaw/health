@@ -107,21 +107,6 @@ fun SummaryScreen(
                 CompactStatCard(
                     icon = {
                         Icon(
-                            painter = painterResource(id = R.drawable.heart),
-                            contentDescription = "Heart"
-                        )
-                    },
-                    content = if (uiState.averageHeartRate == null || uiState.averageHeartRate.isNaN()) {
-                        NO_DATA
-                    } else {
-                        "${uiState.averageHeartRate.roundToInt()} bpm avg"
-                    }
-                )
-            }
-            item {
-                CompactStatCard(
-                    icon = {
-                        Icon(
                             painter = painterResource(id = R.drawable.distance),
                             contentDescription = "Distance"
                         )
@@ -145,21 +130,6 @@ fun SummaryScreen(
                         NO_DATA
                     } else {
                         "${uiState.totalCalories.roundToInt()} cals"
-                    }
-                )
-            }
-            item {
-                CompactStatCard(
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.heart),
-                            contentDescription = "Calorie"
-                        )
-                    },
-                    content = if (uiState.maxHeartRate == null) {
-                        NO_DATA
-                    } else {
-                        "${uiState.maxHeartRate.toInt()} max bpm"
                     }
                 )
             }
@@ -199,6 +169,36 @@ fun SummaryScreen(
                 ResponsiveListHeader(contentColor = MaterialTheme.colors.primary) {
                     Text(text = "Heart Rate")
                 }
+            }
+            item {
+                CompactStatCard(
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.hr_avg),
+                            contentDescription = "Heart"
+                        )
+                    },
+                    content = if (uiState.averageHeartRate == null || uiState.averageHeartRate.isNaN()) {
+                        NO_DATA
+                    } else {
+                        "${uiState.averageHeartRate.roundToInt()} bpm avg"
+                    }
+                )
+            }
+            item {
+                CompactStatCard(
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.max_hr),
+                            contentDescription = "Calorie"
+                        )
+                    },
+                    content = if (uiState.maxHeartRate == null) {
+                        NO_DATA
+                    } else {
+                        "${uiState.maxHeartRate.toInt()} max bpm"
+                    }
+                )
             }
             item {
                 CompactStatCard(

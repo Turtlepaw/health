@@ -235,7 +235,7 @@ fun WearPages(
                 }
             }
             if (!permissionState.isAllGranted()) {
-                delay(1000)
+                delay(1500)
                 if (navController.currentDestination?.route != Routes.APP_INTRODUCTION.getRoute()) navController.navigate(
                     Routes.PERMISSIONS_INTRODUCTION.getRoute()
                 )

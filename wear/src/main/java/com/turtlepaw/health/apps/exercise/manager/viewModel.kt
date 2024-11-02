@@ -189,6 +189,7 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
                 service.getExternalHistoryLiveData()
                     .observeForever { _externalHrHistory.postValue(it) }
                 service.getSunlightLiveData().observeForever { _sunlightData.postValue(it) }
+                service.getPauseLiveData().observeForever { _isPaused.postValue(it) }
             }
 
             _isBound.postValue(true)
@@ -266,6 +267,7 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
         _isEnding.postValue(true)
         exerciseService?.stopExerciseSession()
         getApplication<Application>().unbindService(serviceConnection)
+        _isBound.postValue(false)
         getApplication<Application>().stopService(
             Intent(getApplication(), ExerciseService::class.java)
         )
@@ -274,12 +276,10 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
 
     open suspend fun pauseExercise() {
         exerciseService?.pauseExerciseSession()
-        _isPaused.postValue(true)
     }
 
     open suspend fun resumeExercise() {
         exerciseService?.resumeExerciseSession()
-        _isPaused.postValue(false)
     }
 
     open fun reconnectHeartRateMonitor() {

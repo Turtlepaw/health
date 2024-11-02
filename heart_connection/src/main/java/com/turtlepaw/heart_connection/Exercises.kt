@@ -73,6 +73,7 @@ data class Exercise(
     val name: String,
     val defaultMetrics: List<Metric>,
     val icon: Int,
+    val animatedIcon: Int? = null,
     val mapped: ExerciseType,
     val useGps: Boolean = false,
     val dataTypes: Set<DataType<*, *>>
@@ -105,6 +106,7 @@ val Running = Exercise(
         ElapsedTimeMetric
     ),
     icon = R.drawable.run,
+    animatedIcon = R.drawable.animated_walk,
     mapped = ExerciseType.RUNNING,
     useGps = true,
     dataTypes = setOf(
@@ -124,6 +126,7 @@ val Walking = Exercise(
         DistanceMetric,
         ElapsedTimeMetric
     ),
+    //animatedIcon = R.drawable.animated_walk,
     icon = R.drawable.walk,
     mapped = ExerciseType.WALKING,
     useGps = true,

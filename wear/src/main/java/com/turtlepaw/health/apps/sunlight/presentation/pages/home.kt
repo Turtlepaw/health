@@ -2,6 +2,7 @@ package com.turtlepaw.health.apps.sunlight.presentation.pages
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseInOutCubic
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -11,6 +12,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,13 +21,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -48,14 +51,71 @@ import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.health.presentation.Routes
+import com.turtlepaw.health.apps.sunlight.presentation.theme.SunlightTheme
 import com.turtlepaw.health.components.Page
 import com.turtlepaw.health.utils.Settings
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.defaultShimmerTheme
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+
+@Composable
+fun ExplodingRotatingIcon() {
+    val initialExplosionSize = 0.1f  // Scale factor for the initial explosion
+    val normalSize = 1.0f  // Scale factor for the normal state
+
+    // State to manage the scale of the icon
+    var iconScale = remember {
+        Animatable(
+            initialValue = initialExplosionSize
+        )
+    }
+
+    // Animate the continuous gentle rotation
+    val rotation by rememberInfiniteTransition().animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 6000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        )
+    )
+
+    // Trigger the initial explosion effect
+    LaunchedEffect(Unit) {
+        delay(200)
+        iconScale.animateTo(
+            targetValue = normalSize,
+            animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing)
+        )
+    }
+
+    // Layout with the exploding and rotating icon
+    Box {
+        Image(
+            painter = painterResource(id = R.drawable.material_sun),
+            contentDescription = "Sun",
+            modifier = Modifier
+                .size(70.dp)
+                .align(Alignment.Center)
+                .scale(iconScale.value)  // Applies initial explosion scale
+                .rotate(rotation)  // Applies continuous rotation
+        )
+
+        Icon(
+            painter = painterResource(id = R.drawable.sunlight_gold),
+            contentDescription = "sunlight",
+            tint = MaterialTheme.colors.onPrimary,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(35.dp)
+                .scale(iconScale.value)
+        )
+    }
+}
 
 @OptIn(ExperimentalHorologistApi::class, ExperimentalWearFoundationApi::class)
 @Composable
@@ -80,11 +140,6 @@ fun WearHome(
         label = "Icon Pulse"
     )
 
-    val fadeInAnimation by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(durationMillis = 1000)
-    )
-
     LaunchedEffect(today) {
         coroutineScope.launch {
 //                animatedGoal.snapTo(
@@ -106,46 +161,51 @@ fun WearHome(
     ) {
         item {
             val size = 69.dp
-            val iconSize = 30.dp
 
-            Box(
-                modifier = Modifier
-                    .size(size)
-                    .padding(
-                        //top = 35.dp,
-                    )
-            ) {
-                CircularProgressIndicator(
-                    trackColor = MaterialTheme.colors.surface,
-                    progress = animateFloatAsState(
-                        targetValue = animatedGoal.value / goal.toFloat(),
-                        label = "GoalProgress"
-                    ).value, // Adjust this value to change the progress
+            if (today >= goal) {
+                35.dp
+                ExplodingRotatingIcon()
+            } else {
+                val iconSize = 30.dp
+                Box(
                     modifier = Modifier
                         .size(size)
-                )
-                Icon(
-                    painter = painterResource(
-                        id = if (today == 0) R.drawable.cloudy_day
-                        else R.drawable.sunlight_gold
-                    ),
-                    contentDescription = if (today == 0)
-                        "cloud" else "sunlight",
-                    tint = when {
+                        .padding(
+                            //top = 35.dp,
+                        )
+                ) {
+                    CircularProgressIndicator(
+                        trackColor = MaterialTheme.colors.surface,
+                        progress = animateFloatAsState(
+                            targetValue = animatedGoal.value / goal.toFloat(),
+                            label = "GoalProgress"
+                        ).value, // Adjust this value to change the progress
+                        modifier = Modifier
+                            .size(size)
+                    )
+                    Icon(
+                        painter = painterResource(
+                            id = if (today == 0) R.drawable.cloudy_day
+                            else R.drawable.sunlight_gold
+                        ),
+                        contentDescription = if (today == 0)
+                            "cloud" else "sunlight",
+                        tint = when {
 //                                today == 0 -> MaterialTheme.colors.primary.copy(0.6f)
 //                                    .compositeOver(Color.Gray)
 
-                        else -> MaterialTheme.colors.primary
-                    },
-                    modifier = Modifier
-                        .size(iconSize)
-                        .align(Alignment.Center)
-                        .then(
-                            if (sunlightLx >= threshold)
-                                Modifier.scale(pulseAnimation)
-                            else Modifier
-                        )
-                )
+                            else -> MaterialTheme.colors.primary
+                        },
+                        modifier = Modifier
+                            .size(iconSize)
+                            .align(Alignment.Center)
+                            .then(
+                                if (sunlightLx >= threshold)
+                                    Modifier.scale(pulseAnimation)
+                                else Modifier
+                            )
+                    )
+                }
             }
         }
         item {
@@ -354,35 +414,41 @@ fun WearHome(
 @Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
 @Composable
 fun EarningMinutes() {
-    WearHome(
-        navigate = {},
-        Settings.GOAL.getDefaultAsInt(),
-        2,
-        5000f,
-        Settings.SUN_THRESHOLD.getDefaultAsInt()
-    )
+    SunlightTheme {
+        WearHome(
+            navigate = {},
+            Settings.GOAL.getDefaultAsInt(),
+            2,
+            5000f,
+            Settings.SUN_THRESHOLD.getDefaultAsInt()
+        )
+    }
 }
 
 @Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
 @Composable
 fun DefaultPreview() {
-    WearHome(
-        navigate = {},
-        Settings.GOAL.getDefaultAsInt(),
-        30,
-        2000f,
-        Settings.SUN_THRESHOLD.getDefaultAsInt()
-    )
+    SunlightTheme {
+        WearHome(
+            navigate = {},
+            Settings.GOAL.getDefaultAsInt(),
+            30,
+            2000f,
+            Settings.SUN_THRESHOLD.getDefaultAsInt()
+        )
+    }
 }
 
 @Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
 @Composable
 fun CloudyDay() {
-    WearHome(
-        navigate = {},
-        Settings.GOAL.getDefaultAsInt(),
-        0,
-        2000f,
-        Settings.SUN_THRESHOLD.getDefaultAsInt()
-    )
+    SunlightTheme {
+        WearHome(
+            navigate = {},
+            Settings.GOAL.getDefaultAsInt(),
+            0,
+            2000f,
+            Settings.SUN_THRESHOLD.getDefaultAsInt()
+        )
+    }
 }

@@ -1,8 +1,10 @@
 package com.turtlepaw.health.components
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.Icon
@@ -25,8 +27,9 @@ fun ErrorPage(message: String, action: (() -> Unit)? = null, actionText: String?
             Text(message, textAlign = TextAlign.Center)
         }
         if (action != null) {
+            item {}
             item {
-                Button(onClick = action ?: {}) {
+                Button(onClick = action ?: {}, modifier = Modifier.fillMaxWidth()) {
                     Text(actionText ?: "Retry")
                 }
             }

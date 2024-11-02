@@ -1,8 +1,8 @@
 package com.turtlepaw.health.database
 
 import androidx.room.TypeConverter
-import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.turtlepaw.heart_connection.Metric
 import com.turtlepaw.heart_connection.Metrics
 import java.time.Duration

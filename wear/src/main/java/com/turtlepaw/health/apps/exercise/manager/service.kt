@@ -2,18 +2,23 @@ package com.turtlepaw.health.apps.exercise.manager
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.bluetooth.BluetoothManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import android.os.SystemClock
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.health.services.client.ExerciseClient
 import androidx.health.services.client.ExerciseUpdateCallback
 import androidx.health.services.client.HealthServices
@@ -80,17 +85,18 @@ class ExerciseService : Service() {
     private val rawData = MutableLiveData<ExerciseUpdate?>(null)
     private val availabilities = MutableLiveData<Map<DataType<*, *>, Availability>>(emptyMap())
     private val sunlightLiveData = MutableLiveData<Int>()
+    private val isPaused = MutableLiveData<Boolean>(false)
+    private var isInProgress = MutableLiveData<Boolean>(false)
 
     private var exerciseClient: ExerciseClient? = null
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private val binder = LocalBinder()
     private var exerciseType: Exercise? = null
-    private var isInProgress = false
     private var connection: HeartConnection? = null
     private var startTime: LocalDateTime? = null
     private var zeroStartTime: Long? = null
     private var preferences: Preference? = null
-    private var database = AppDatabase.getDatabase(this)
+    private lateinit var database: AppDatabase
 
     inner class LocalBinder : Binder() {
         fun getService(): ExerciseService = this@ExerciseService
@@ -102,6 +108,7 @@ class ExerciseService : Service() {
         super.onCreate()
         val healthServicesClient = HealthServices.getClient(this)
         exerciseClient = healthServicesClient.exerciseClient
+        database = AppDatabase.getDatabase(this)
 
         //startForegroundService()
     }
@@ -170,11 +177,12 @@ class ExerciseService : Service() {
                 .setIsGpsEnabled(exercise.useGps == true).build()
         )
         startHeartRateTracking()
-        isInProgress = true
+        isInProgress.postValue(true)
     }
 
     @SuppressLint("MissingPermission")
     suspend fun stopExerciseSession() {
+        safelyWait()
         exerciseClient?.endExercise()
         try {
             AppDatabase.getDatabase(this).exerciseDao().insertExercise(
@@ -209,26 +217,55 @@ class ExerciseService : Service() {
             Log.e("ExerciseService", "Error inserting exercise data", e)
         }
 
-        isInProgress = false
+        isInProgress.postValue(true)
         try {
             connection?.disconnect()
         } catch (e: Exception) {
             Log.e("ExerciseService", "Error disconnecting from device", e)
         }
         Log.d("ExerciseService", "Stopping exercise session")
+        // Delay to ensure all operations are completed
         delay(1000)
+
+        // Cancel the notification explicitly
         NotificationManagerCompat.from(this).cancel(NOTIFICATION_ID)
-        coroutineScope.cancel()
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+
+        // Stop the foreground service
+        stopForeground(true) // Use true to remove the notification immediately
+        stopSelf() // Stop the service
     }
 
+    fun hapticClick() {
+        val vibrator = ContextCompat.getSystemService(this, Vibrator::class.java)
+        vibrator?.let {
+            if (Build.VERSION.SDK_INT >= 26) {
+                it.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+            } else {
+                @Suppress("DEPRECATION")
+                it.vibrate(100)
+            }
+        }
+    }
+
+    suspend fun safelyWait() {
+        while (isInProgress.value != true) {
+            delay(100)
+        }
+
+        return
+    }
     suspend fun pauseExerciseSession() {
+        safelyWait()
+        isPaused.postValue(true)
         exerciseClient?.pauseExercise()
+        hapticClick()
     }
 
     suspend fun resumeExerciseSession() {
+        safelyWait()
+        isPaused.postValue(false)
         exerciseClient?.resumeExercise()
+        hapticClick()
     }
 
     private fun startHeartRateTracking() {
@@ -289,10 +326,6 @@ class ExerciseService : Service() {
 
     fun attemptToReconnect() {
         startHeartRateTracking()
-    }
-
-    fun isExerciseInProgress(): Boolean {
-        return isInProgress
     }
 
     private fun calculateDuration(data: ExerciseUpdate?): Duration {
@@ -388,6 +421,8 @@ class ExerciseService : Service() {
     fun getDeviceHrHistoryLiveData(): LiveData<List<Pair<LocalTime, Int>>> = deviceHrHistoryLiveData
     fun getExternalHistoryLiveData(): LiveData<List<Pair<LocalTime, Int>>> = externalHistoryLiveData
 
+    fun getPauseLiveData(): LiveData<Boolean> = isPaused
+
     private fun startForegroundService(exercise: Exercise) {
         // Make an intent that will take the user straight to the exercise UI.
         val notificationIntent = Intent(applicationContext, MainActivity::class.java)
@@ -412,39 +447,44 @@ class ExerciseService : Service() {
                     exercise.icon
                 )
                 .setContentIntent(pendingIntent)
+                .addAction(
+                    exercise.icon, "Exercise", pendingIntent
+                )
                 .setOngoing(true)
                 .setCategory(NotificationCompat.CATEGORY_WORKOUT)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setPriority(NotificationManager.IMPORTANCE_LOW)
 
         //val startMillis = SystemClock.elapsedRealtime() - duration.toMillis()
         val ongoingActivityStatus = Status.Builder()
             .addTemplate(ONGOING_STATUS_TEMPLATE)
             .addPart("duration", Status.StopwatchPart(zeroStartTime ?: 0L))
             .build()
-        val ongoingActivity =
-            OngoingActivity.Builder(
-                applicationContext,
-                NOTIFICATION_ID, notificationBuilder
-            )
-                .setAnimatedIcon(exercise.icon)
-                .setStaticIcon(exercise.icon)
-                .setTouchIntent(pendingIntent)
-                .setStatus(ongoingActivityStatus)
-                .setCategory(NotificationCompat.CATEGORY_WORKOUT)
-                .build()
+        OngoingActivity.Builder(
+            applicationContext,
+            NOTIFICATION_ID, notificationBuilder
+        )
+            .setAnimatedIcon(exercise.animatedIcon ?: exercise.icon)
+            .setStaticIcon(exercise.icon)
+            .setTouchIntent(pendingIntent)
+            .setStatus(ongoingActivityStatus)
+            .setCategory(NotificationCompat.CATEGORY_WORKOUT)
+            .build()
 
-        ongoingActivity.apply(applicationContext)
+        //ongoingActivity.apply(applicationContext)
 
-        startForeground(1, notificationBuilder.build())
+        startForeground(NOTIFICATION_ID, notificationBuilder.build())
     }
 
     @SuppressLint("MissingPermission")
     override fun onDestroy() {
-        super.onDestroy()
+        Log.d("ExerciseService", "onDestroy called 1")
+        Log.d("ExerciseService", "onDestroy called 2")
         coroutineScope.cancel()
         connection?.disconnect()
         exerciseClient?.clearUpdateCallbackAsync(exerciseUpdateListener)
-        NotificationManagerCompat.from(this).cancel(NOTIFICATION_ID)
+        //NotificationManagerCompat.from(this).cancel(NOTIFICATION_ID)
         stopForeground(STOP_FOREGROUND_REMOVE)
+        super.onDestroy()
     }
 }

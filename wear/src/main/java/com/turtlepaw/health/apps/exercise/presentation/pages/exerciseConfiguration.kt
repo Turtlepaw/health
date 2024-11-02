@@ -90,7 +90,7 @@ fun ExerciseConfiguration(
                     context
                 ) && error == null
             ) {
-                error = "Exercise is already running"
+                error = "An exercise is already running"
             }
         }
 
@@ -101,6 +101,7 @@ fun ExerciseConfiguration(
                     context.stopService(
                         Intent(context, ExerciseService::class.java)
                     )
+                    error = null
                 } catch (e: Exception) {
                     error = e.message
                 }
@@ -165,7 +166,7 @@ fun ExerciseConfiguration(
 
                         // Launching a discrete countdown manually
                         withTimeoutOrNull(totalDurationMillis.toLong()) {
-                            for (i in 3 downTo 1) {
+                            for (i in 3 downTo 0) {
                                 // Update the timeRemaining for each second (3 -> 2 -> 1)
                                 timeRemaining.snapTo(i.toFloat())
 
