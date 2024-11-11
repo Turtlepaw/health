@@ -49,6 +49,12 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.kotlinx.coroutines.play.services)
 
+    implementation("io.github.raamcosta.compose-destinations:core:2.1.0-beta14")
+    ksp("io.github.raamcosta.compose-destinations:ksp:2.1.0-beta14")
+
+    // for bottom sheet destination support, also add
+    implementation("io.github.raamcosta.compose-destinations:bottom-sheet:2.1.0-beta14")
+
     // AndroidX and core libraries
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -80,4 +86,12 @@ dependencies {
     implementation(libs.material.icons.extended)
 
     implementation(libs.androidx.lifecycle.viewmodel.android)
+
+    implementation(libs.accompanist.systemuicontroller)
+}
+
+ksp {
+    arg("compose-destinations.generateNavGraphs", "true") // Enable NavGraphs generation
+    arg("compose-destinations.navGraph.visibility", "internal") // Set visibility (optional)
+    arg("compose-destinations.navGraph.moduleName", "app") // Set module name (optional)
 }

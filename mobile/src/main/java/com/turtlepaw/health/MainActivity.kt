@@ -1,77 +1,85 @@
 package com.turtlepaw.health
 
-import android.app.Application
 import android.content.Context
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.animations.defaults.DefaultFadingTransitions
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.NavHostGraph
+import com.ramcosta.composedestinations.annotation.parameters.CodeGenVisibility
+import com.ramcosta.composedestinations.generated.NavGraphs
+import com.ramcosta.composedestinations.generated.destinations.SettingsPageDestination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.rememberNavHostEngine
 import com.turtlepaw.shared.database.SunlightViewModel
 import java.time.Duration
 import java.time.LocalTime
 import java.util.Locale
 
+@NavHostGraph(
+    defaultTransitions = DefaultFadingTransitions::class,
+    route = "preferred_route",
+    visibility = CodeGenVisibility.PUBLIC,
+)
+annotation class MainGraph
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Set the content to extend into the system bars (status and navigation bars)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        // Make the status bar and navigation bar transparent
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false // Adjust depending on your theme (light/dark)
-            isAppearanceLightNavigationBars = false
-        }
+        // Set flags to hide status bar and navigation bar
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+        )
 
         setContent {
-            val sunlightViewModel = ViewModelProvider(this).get(SunlightViewModel::class.java)
-            HomePage(
-                sunlightViewModel,
-                context = this
-            )
+            AppTheme {
+                val navHostEngine = rememberNavHostEngine()
+                val navigator = navHostEngine.rememberNavController()
+
+                DestinationsNavHost(
+                    navGraph = NavGraphs.preferredRoute,
+                    engine = navHostEngine,
+                    navController = navigator
+                )
+            }
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Destination<MainGraph>(start = true) // HomePage as the starting destination
 @Composable
-fun HomePage(viewModel: SunlightViewModel, context: Context) {
+fun HomePage(navigator: DestinationsNavigator) {
+    val viewModel = viewModel<SunlightViewModel>()
     val sunlight by viewModel.sunlightData.collectAsState()
     var isLoading by remember { mutableStateOf(true) }
     var lastSynced by remember { mutableStateOf<LocalTime?>(null) }
     var sunlightGoal by remember { mutableIntStateOf(0) }
+    val context: Context = LocalContext.current
 
     LaunchedEffect(Unit) {
+        // Load data
         val prefs = SharedPrefs(context)
         lastSynced = prefs.getLastSynced()
         sunlightGoal = prefs.getSunlightGoal()
@@ -80,7 +88,25 @@ fun HomePage(viewModel: SunlightViewModel, context: Context) {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = {})
+            TopAppBar(title = {}, actions = {
+                Icon(
+                    imageVector = Icons.Rounded.Settings,
+                    contentDescription = "Settings",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.large)
+                        .clickable(
+                            onClick = {
+                                navigator.navigate(SettingsPageDestination) // Navigate to Settings
+                            },
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple()
+                        )
+                        .clip(MaterialTheme.shapes.extraLarge)
+                        .padding(5.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+            })
         },
         content = { padding ->
             Column(
@@ -155,14 +181,6 @@ fun HomePage(viewModel: SunlightViewModel, context: Context) {
                 }
             }
         }
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HomePagePreview() {
-    HomePage(
-        SunlightViewModel(Application()), Application()
     )
 }
 
