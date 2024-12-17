@@ -88,6 +88,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.android)
 
     implementation(libs.accompanist.systemuicontroller)
+
+    implementation("androidx.compose.runtime:runtime:1.7.5") // Replace with the latest version
+    implementation("androidx.compose.runtime:runtime-livedata:1.7.5")
 }
 
 ksp {

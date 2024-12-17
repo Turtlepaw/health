@@ -1,8 +1,7 @@
-package com.turtlepaw.health.utils
+package com.turtlepaw.shared
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.turtlepaw.health.MAX_HEARING
 import java.time.LocalTime
 
 enum class Settings(private val key: String, private val default: Any?) {
@@ -94,6 +93,36 @@ enum class Settings(private val key: String, private val default: Any?) {
 
     fun getStringWith(sharedPreferences: SharedPreferences): String {
         return sharedPreferences.getString(key, (default ?: "").toString()).toString()
+    }
+
+    fun writeToSharedPreferences(sharedPreferences: SharedPreferences, value: Any?) {
+        val editor = sharedPreferences.edit()
+
+        when (default) {
+            is Boolean -> editor.putBoolean(key, value as Boolean)
+            is Int -> editor.putInt(key, value as Int)
+            is String -> editor.putString(key, value as String)
+            is Float -> editor.putFloat(key, value as Float)
+            is Long -> editor.putLong(key, value as Long)
+            is LocalTime -> editor.putString(key, (value as LocalTime).toString())
+            else -> throw IllegalArgumentException("Unsupported type")
+        }
+
+        editor.apply() // Commit the changes asynchronously
+    }
+
+    fun readFromSharedPreferences(sharedPreferences: SharedPreferences): Any? {
+        return when (default) {
+            is Boolean -> sharedPreferences.getBoolean(key, default)
+            is Int -> sharedPreferences.getInt(key, default)
+            is String -> sharedPreferences.getString(key, default)
+            is Float -> sharedPreferences.getFloat(key, default)
+            is Long -> sharedPreferences.getLong(key, default)
+            is LocalTime -> sharedPreferences.getString(key, default.toString())
+                ?.let { LocalTime.parse(it) }
+
+            else -> throw IllegalArgumentException("Unsupported type")
+        }
     }
 }
 

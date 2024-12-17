@@ -39,7 +39,7 @@ import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
 import com.patrykandpatrick.vico.core.entry.entryOf
 import com.turtlepaw.health.apps.sunlight.presentation.theme.SunlightTheme
 import com.turtlepaw.health.components.ItemsListWithModifier
-import com.turtlepaw.health.utils.Settings
+import com.turtlepaw.shared.Settings
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.WeekFields
@@ -55,8 +55,8 @@ fun WearHistory(
     SunlightTheme {
         val focusRequester = rememberActiveFocusRequester()
         val scalingLazyListState = rememberScalingLazyListState()
-        val dayFormatter = DateTimeFormatter.ofPattern("E d")
-        val timeFormatter = DateTimeFormatter.ofPattern("h:mm a")
+        DateTimeFormatter.ofPattern("E d")
+        DateTimeFormatter.ofPattern("h:mm a")
 
         Box(
             modifier = Modifier
@@ -91,7 +91,6 @@ fun WearHistory(
                     val daysOfWeek = listOf("S", "M", "T", "W", "T", "F", "S")
                     val bottomAxisValueFormatter =
                         AxisValueFormatter<AxisPosition.Horizontal.Bottom> { x, _ -> daysOfWeek[x.toInt() % daysOfWeek.size] }
-                    val maxValue = 10f
                     val currentWeekNumber = LocalDate.now().get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear())
                     val unfilteredWeek = history.filterNotNull().filter { sleepDate ->
                         val sleepWeekNumber = sleepDate.first.get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear())

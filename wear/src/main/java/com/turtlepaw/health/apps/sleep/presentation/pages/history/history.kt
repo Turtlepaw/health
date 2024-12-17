@@ -47,8 +47,8 @@ import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
 import com.patrykandpatrick.vico.core.entry.entryOf
 import com.turtlepaw.health.apps.sleep.presentation.Routes
 import com.turtlepaw.health.components.Page
-import com.turtlepaw.health.database.BedtimeSensor
-import com.turtlepaw.health.database.SleepDay
+import com.turtlepaw.shared.database.BedtimeSensor
+import com.turtlepaw.shared.database.SleepDay
 import com.turtlepaw.sleeptools.utils.TimeManager
 import java.time.DayOfWeek
 import java.time.Duration

@@ -32,8 +32,8 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import com
 import com.turtlepaw.health.utils.HealthNotifications
-import com.turtlepaw.health.utils.Settings
-import com.turtlepaw.health.utils.SettingsBasics
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.SettingsBasics
 import com.turtlepaw.noise.presentation.MainActivity
 import com.turtlepaw.noise.presentation.NoiseWarningActivity
 import com.turtlepaw.noise.presentation.dataStore

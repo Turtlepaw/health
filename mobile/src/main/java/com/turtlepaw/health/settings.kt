@@ -18,18 +18,24 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.turtlepaw.shared.WearableSettingsSyncViewModel
+import com.turtlepaw.shared.database.ServiceType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination<MainGraph>
 @Composable
 fun SettingsPage(navigator: DestinationsNavigator) {
+    val viewModel = viewModel<WearableSettingsSyncViewModel>()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -49,6 +55,12 @@ fun SettingsPage(navigator: DestinationsNavigator) {
             )
         }
     ) { padding ->
+        val isServiceReady by viewModel.isServiceReady.collectAsState()
+        if (!isServiceReady) {
+            return@Scaffold Text("Loading...")
+        }
+        val sunlightEnabled by viewModel.wearableSettingsSyncService.getState<Boolean>(ServiceType.SUNLIGHT.serviceName)
+            .collectAsState()
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -72,7 +84,7 @@ fun SettingsPage(navigator: DestinationsNavigator) {
                 },
                 trailingContent = {
                     Switch(
-                        checked = true,
+                        checked = sunlightEnabled == true,
                         onCheckedChange = null
                     )
                 },
@@ -81,7 +93,10 @@ fun SettingsPage(navigator: DestinationsNavigator) {
                     .clip(MaterialTheme.shapes.medium)
                     .clickable(
                         onClick = {
-                            //...
+                            viewModel.wearableSettingsSyncService.putService(
+                                ServiceType.SUNLIGHT,
+                                sunlightEnabled != true
+                            )
                         },
                         interactionSource = remember { MutableInteractionSource() },
                         indication = ripple()

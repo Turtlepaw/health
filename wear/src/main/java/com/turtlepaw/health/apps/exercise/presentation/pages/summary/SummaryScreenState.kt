@@ -12,7 +12,8 @@ data class SummaryScreenState(
     val maxHeartRate: Int?,
     val steps: Long? = null,
     val heartRateSimilarity: Double? = null,
-    val sunlight: Int
+    val sunlight: Int,
+    val locationData: List<Pair<Double, Double>>
 )
 
 const val averageHeartRateArg = "averageHeartRate"

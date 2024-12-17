@@ -52,7 +52,7 @@ import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.health.presentation.Routes
 import com.turtlepaw.health.apps.health.presentation.theme.HealthTheme
 import com.turtlepaw.health.components.ItemsListWithModifier
-import com.turtlepaw.health.utils.Settings
+import com.turtlepaw.shared.Settings
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
 @Composable

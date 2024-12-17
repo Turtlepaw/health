@@ -2,7 +2,7 @@ package com.turtlepaw.health.apps.sleep.utils
 
 import android.content.Context
 import android.util.Log
-import com.turtlepaw.health.database.BedtimeSensor
+import com.turtlepaw.shared.database.BedtimeSensor
 import com.turtlepaw.sleeptools.utils.TimeManager
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter

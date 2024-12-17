@@ -17,8 +17,8 @@ import androidx.wear.compose.material.Text
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
 import com.turtlepaw.health.components.Page
-import com.turtlepaw.health.database.AppDatabase
-import com.turtlepaw.health.database.Reflection
+import com.turtlepaw.shared.database.AppDatabase
+import com.turtlepaw.shared.database.Reflection
 
 @OptIn(ExperimentalHorologistApi::class)
 @Composable

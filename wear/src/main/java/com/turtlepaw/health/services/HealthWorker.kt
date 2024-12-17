@@ -18,10 +18,10 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import com.turtlepaw.health.database.AppDatabase
-import com.turtlepaw.health.database.Day
-import com.turtlepaw.health.utils.Settings
-import com.turtlepaw.health.utils.getDefaultSharedSettings
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.database.AppDatabase
+import com.turtlepaw.shared.database.Day
+import com.turtlepaw.shared.getDefaultSharedSettings
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

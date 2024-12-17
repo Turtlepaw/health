@@ -49,6 +49,7 @@ import com.turtlepaw.health.apps.exercise.manager.HeartRateModel
 import com.turtlepaw.health.apps.exercise.presentation.pages.BluetoothSearch
 import com.turtlepaw.health.apps.exercise.presentation.pages.ExerciseConfiguration
 import com.turtlepaw.health.apps.exercise.presentation.pages.ExerciseRoute
+import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryRoute
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryScreenState
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.averageHeartRateArg
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.elapsedTimeArg
@@ -58,12 +59,7 @@ import com.turtlepaw.health.apps.exercise.presentation.pages.summary.totalCalori
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.totalDistanceArg
 import com.turtlepaw.health.apps.sunlight.presentation.pages.isServiceRunning
 import com.turtlepaw.health.components.ErrorPage
-import com.turtlepaw.health.database.AppDatabase
-import com.turtlepaw.health.database.ServiceType
-import com.turtlepaw.health.database.exercise.Preference
 import com.turtlepaw.health.services.LightWorker
-import com.turtlepaw.health.utils.Settings
-import com.turtlepaw.health.utils.SettingsBasics
 import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.HeartConnection
 import com.turtlepaw.heart_connection.Metric
@@ -74,8 +70,12 @@ import com.turtlepaw.heartconnect.presentation.pages.ExerciseList
 import com.turtlepaw.heartconnect.presentation.pages.MetricEditor
 import com.turtlepaw.heartconnect.presentation.pages.MetricSelector
 import com.turtlepaw.heartconnect.presentation.pages.PermissionsIntroduction
-import com.turtlepaw.heartconnect.presentation.pages.summary.SummaryRoute
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.SettingsBasics
+import com.turtlepaw.shared.database.AppDatabase
+import com.turtlepaw.shared.database.ServiceType
+import com.turtlepaw.shared.database.exercise.Preference
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -226,9 +226,15 @@ fun WearPages(
         }
 
         LaunchedEffect(Unit) {
+            val routes = listOf(
+                Routes.APP_INTRODUCTION.getRoute(),
+                Routes.PERMISSIONS_INTRODUCTION.getRoute()
+            )
             if (!introComplete) {
                 navController.graph.setStartDestination(Routes.APP_INTRODUCTION.getRoute())
-                navController.navigate(Routes.APP_INTRODUCTION.getRoute()) {
+                if (!routes.contains(navController.currentDestination?.route)) navController.navigate(
+                    Routes.APP_INTRODUCTION.getRoute()
+                ) {
                     popUpTo(Routes.HOME.getRoute()) {
                         inclusive = true
                     }
@@ -236,7 +242,7 @@ fun WearPages(
             }
             if (!permissionState.isAllGranted()) {
                 delay(1500)
-                if (navController.currentDestination?.route != Routes.APP_INTRODUCTION.getRoute()) navController.navigate(
+                if (!routes.contains(navController.currentDestination?.route)) navController.navigate(
                     Routes.PERMISSIONS_INTRODUCTION.getRoute()
                 )
             }

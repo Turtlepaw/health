@@ -25,10 +25,10 @@ import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.health.presentation.dataStore
-import com.turtlepaw.health.utils.Settings
-import com.turtlepaw.health.utils.SettingsBasics
 import com.turtlepaw.health.utils.SunlightViewModel
 import com.turtlepaw.health.utils.SunlightViewModelFactory
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.SettingsBasics
 import java.time.LocalDate
 
 

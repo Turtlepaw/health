@@ -7,8 +7,8 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.Keep
-import com.turtlepaw.health.utils.Settings
-import com.turtlepaw.health.utils.SettingsBasics
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.SettingsBasics
 
 @Keep
 class SunlightContentProvider : ContentProvider() {

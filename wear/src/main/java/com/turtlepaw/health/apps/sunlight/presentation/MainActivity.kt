@@ -52,15 +52,15 @@ import com.turtlepaw.health.apps.sunlight.presentation.pages.settings.WearNotice
 import com.turtlepaw.health.apps.sunlight.presentation.pages.settings.WearSettings
 import com.turtlepaw.health.apps.sunlight.presentation.theme.SunlightTheme
 import com.turtlepaw.health.components.Introduction
-import com.turtlepaw.health.database.AppDatabase
-import com.turtlepaw.health.database.Service
-import com.turtlepaw.health.database.ServiceType
-import com.turtlepaw.health.database.SunlightDay
 import com.turtlepaw.health.services.LightWorker
 import com.turtlepaw.health.services.SensorReceiver
 import com.turtlepaw.health.services.scheduleResetWorker
-import com.turtlepaw.health.utils.Settings
-import com.turtlepaw.health.utils.SettingsBasics
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.SettingsBasics
+import com.turtlepaw.shared.database.AppDatabase
+import com.turtlepaw.shared.database.Service
+import com.turtlepaw.shared.database.ServiceType
+import com.turtlepaw.shared.database.SunlightDay
 import kotlinx.coroutines.launch
 
 

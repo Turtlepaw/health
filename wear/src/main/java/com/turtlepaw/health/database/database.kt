@@ -1,16 +1,6 @@
 package com.turtlepaw.health.database
 
-import android.content.Context
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
-import com.turtlepaw.health.database.exercise.DayDao
-import com.turtlepaw.health.database.exercise.Exercise
-import com.turtlepaw.health.database.exercise.ExerciseDao
-import com.turtlepaw.health.database.exercise.Preference
-import com.turtlepaw.health.database.exercise.PreferenceDao
-
+/*
 @Database(
     entities = [SleepDay::class, SunlightDay::class, Service::class, Reflection::class, CoachingProgram::class, Preference::class, Exercise::class, Day::class],
     version = 1
@@ -42,4 +32,4 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
     }
-}
+}*/

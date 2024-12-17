@@ -5,8 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.turtlepaw.health.database.AppDatabase
-import com.turtlepaw.health.database.ServiceType
+import com.turtlepaw.shared.database.AppDatabase
+import com.turtlepaw.shared.database.ServiceType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

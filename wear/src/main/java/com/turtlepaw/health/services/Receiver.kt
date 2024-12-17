@@ -12,7 +12,7 @@ import androidx.annotation.Keep
 import androidx.core.content.getSystemService
 import com.turtlepaw.health.apps.sleep.services.BedtimeModeReceiver
 import com.turtlepaw.health.apps.sleep.services.ChargingReceiver
-import com.turtlepaw.health.utils.SettingsBasics
+import com.turtlepaw.shared.SettingsBasics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -39,8 +39,8 @@ class Receiver : BroadcastReceiver() {
             )
 
             val batterySaver = sharedPreferences.getBoolean(
-                com.turtlepaw.health.utils.Settings.BATTERY_SAVER.getKey(),
-                com.turtlepaw.health.utils.Settings.BATTERY_SAVER.getDefaultAsBoolean()
+                com.turtlepaw.shared.Settings.BATTERY_SAVER.getKey(),
+                com.turtlepaw.shared.Settings.BATTERY_SAVER.getDefaultAsBoolean()
             )
 
             val powerManager = context.getSystemService<PowerManager>()!!

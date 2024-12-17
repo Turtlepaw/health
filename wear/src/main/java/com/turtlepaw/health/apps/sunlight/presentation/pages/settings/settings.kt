@@ -41,7 +41,7 @@ import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.sunlight.presentation.Routes
 import com.turtlepaw.health.components.Page
-import com.turtlepaw.health.utils.Settings
+import com.turtlepaw.shared.Settings
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
 @Composable

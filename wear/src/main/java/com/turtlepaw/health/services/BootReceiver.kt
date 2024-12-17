@@ -8,8 +8,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.annotation.Keep
-import com.turtlepaw.health.utils.Settings
-import com.turtlepaw.health.utils.SettingsBasics
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.SettingsBasics
 import java.time.LocalTime
 import java.time.format.DateTimeParseException
 import java.util.Calendar

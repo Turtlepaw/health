@@ -8,9 +8,9 @@ import android.util.Log
 import androidx.annotation.Keep
 import com.turtlepaw.health.apps.sleep.utils.Settings
 import com.turtlepaw.health.apps.sleep.utils.SettingsBasics
-import com.turtlepaw.health.database.AppDatabase
-import com.turtlepaw.health.database.BedtimeSensor
-import com.turtlepaw.health.database.SleepDay
+import com.turtlepaw.shared.database.AppDatabase
+import com.turtlepaw.shared.database.BedtimeSensor
+import com.turtlepaw.shared.database.SleepDay
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeParseException

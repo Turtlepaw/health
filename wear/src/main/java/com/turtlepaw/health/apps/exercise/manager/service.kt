@@ -37,19 +37,23 @@ import androidx.lifecycle.MutableLiveData
 import androidx.wear.ongoing.OngoingActivity
 import androidx.wear.ongoing.Status
 import com.turtlepaw.health.apps.exercise.presentation.MainActivity
-import com.turtlepaw.health.database.AppDatabase
-import com.turtlepaw.health.database.ServiceType
-import com.turtlepaw.health.database.exercise.Preference
 import com.turtlepaw.health.utils.HealthNotifications
-import com.turtlepaw.health.utils.Settings
-import com.turtlepaw.health.utils.SettingsBasics
 import com.turtlepaw.heart_connection.Exercise
 import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.HeartConnection
 import com.turtlepaw.heart_connection.SunlightMetric
 import com.turtlepaw.heart_connection.createGattCallback
 import com.turtlepaw.heart_connection.getId
-import kotlinx.coroutines.*
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.SettingsBasics
+import com.turtlepaw.shared.database.AppDatabase
+import com.turtlepaw.shared.database.ServiceType
+import com.turtlepaw.shared.database.exercise.Preference
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -85,6 +89,7 @@ class ExerciseService : Service() {
     private val rawData = MutableLiveData<ExerciseUpdate?>(null)
     private val availabilities = MutableLiveData<Map<DataType<*, *>, Availability>>(emptyMap())
     private val sunlightLiveData = MutableLiveData<Int>()
+    private val locationLiveData = MutableLiveData<List<Pair<Double, Double>>>(emptyList())
     private val isPaused = MutableLiveData<Boolean>(false)
     private var isInProgress = MutableLiveData<Boolean>(false)
 
@@ -157,9 +162,17 @@ class ExerciseService : Service() {
         startTime = LocalDateTime.now()
         zeroStartTime = SystemClock.elapsedRealtime()
         preferences = getPreferences(exercise)
+        sunlightLiveData.postValue(-1)
+        locationLiveData.postValue(emptyList())
 
+        Log.d(
+            "ExerciseService",
+            "Collecting sunlight..."
+        )
         if (preferences?.metrics?.contains(SunlightMetric) == true) {
-            collectSunlight()
+            coroutineScope.launch {
+                collectSunlight()
+            }
         }
 
         Log.d(
@@ -176,17 +189,22 @@ class ExerciseService : Service() {
                 )
                 .setIsGpsEnabled(exercise.useGps == true).build()
         )
-        startHeartRateTracking()
         isInProgress.postValue(true)
+        startHeartRateTracking()
     }
 
     @SuppressLint("MissingPermission")
     suspend fun stopExerciseSession() {
         safelyWait()
         exerciseClient?.endExercise()
+        Log.d("ExerciseService", "Location entires: ${locationLiveData.value?.size}")
         try {
+            if (durationLiveData.value != null && (durationLiveData.value!!.seconds < 15)) throw Exception(
+                "Exercise too short"
+            )
+
             AppDatabase.getDatabase(this).exerciseDao().insertExercise(
-                com.turtlepaw.health.database.exercise.Exercise(
+                com.turtlepaw.shared.database.exercise.Exercise(
                     timestamp = startTime ?: LocalDateTime.now(),
                     exercise = (exerciseType ?: Exercises.first()).getId(),
                     averageHeartRate = heartRateHistoryLiveData.value?.map { it.second }?.average()
@@ -211,13 +229,14 @@ class ExerciseService : Service() {
                     } else {
                         null
                     },
+                    location = locationLiveData.value ?: emptyList()
                 )
             )
         } catch (e: Exception) {
             Log.e("ExerciseService", "Error inserting exercise data", e)
         }
 
-        isInProgress.postValue(true)
+        isInProgress.postValue(false)
         try {
             connection?.disconnect()
         } catch (e: Exception) {
@@ -231,7 +250,7 @@ class ExerciseService : Service() {
         NotificationManagerCompat.from(this).cancel(NOTIFICATION_ID)
 
         // Stop the foreground service
-        stopForeground(true) // Use true to remove the notification immediately
+        stopForeground(STOP_FOREGROUND_REMOVE) // Use true to remove the notification immediately
         stopSelf() // Stop the service
     }
 
@@ -250,6 +269,7 @@ class ExerciseService : Service() {
     suspend fun safelyWait() {
         while (isInProgress.value != true) {
             delay(100)
+            Log.d("ExerciseService", "Waiting for inProgress to be true")
         }
 
         return
@@ -396,6 +416,19 @@ class ExerciseService : Service() {
             durationLiveData.postValue(duration)
 
             rawData.postValue(update)
+
+            if (update.latestMetrics.getData(DataType.LOCATION).isNotEmpty()) {
+                val location = update.latestMetrics.getData(DataType.LOCATION).first()
+                locationLiveData.postValue(
+                    locationLiveData.value?.plus(
+                        Pair(
+                            location.value.latitude,
+                            location.value.longitude
+                        )
+                    )
+                        ?: listOf(Pair(location.value.latitude, location.value.longitude))
+                )
+            }
         }
 
         override fun onLapSummaryReceived(lapSummary: ExerciseLapSummary) {}
@@ -417,6 +450,7 @@ class ExerciseService : Service() {
     fun getHeartRateHistoryLiveData(): LiveData<List<Pair<LocalTime, Int>>> =
         heartRateHistoryLiveData
     fun getSunlightLiveData(): LiveData<Int> = sunlightLiveData
+    fun getLocationLiveData(): LiveData<List<Pair<Double, Double>>> = locationLiveData
 
     fun getDeviceHrHistoryLiveData(): LiveData<List<Pair<LocalTime, Int>>> = deviceHrHistoryLiveData
     fun getExternalHistoryLiveData(): LiveData<List<Pair<LocalTime, Int>>> = externalHistoryLiveData
@@ -460,7 +494,7 @@ class ExerciseService : Service() {
             .addTemplate(ONGOING_STATUS_TEMPLATE)
             .addPart("duration", Status.StopwatchPart(zeroStartTime ?: 0L))
             .build()
-        OngoingActivity.Builder(
+        val ongoingActivity = OngoingActivity.Builder(
             applicationContext,
             NOTIFICATION_ID, notificationBuilder
         )
@@ -471,7 +505,7 @@ class ExerciseService : Service() {
             .setCategory(NotificationCompat.CATEGORY_WORKOUT)
             .build()
 
-        //ongoingActivity.apply(applicationContext)
+        ongoingActivity.apply(applicationContext)
 
         startForeground(NOTIFICATION_ID, notificationBuilder.build())
     }

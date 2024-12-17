@@ -92,11 +92,11 @@ import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.exercise.manager.ExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.FakeExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.HeartRateSource
+import com.turtlepaw.health.apps.exercise.presentation.MapRoute
 import com.turtlepaw.health.apps.exercise.presentation.components.EndButton
 import com.turtlepaw.health.apps.exercise.presentation.components.PauseButton
 import com.turtlepaw.health.apps.exercise.presentation.components.StartButton
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryScreenState
-import com.turtlepaw.health.database.exercise.Preference
 import com.turtlepaw.health.utils.NO_DATA
 import com.turtlepaw.health.utils.formatCalories
 import com.turtlepaw.health.utils.formatDistanceKm
@@ -111,6 +111,7 @@ import com.turtlepaw.heart_connection.HeartRateMetric
 import com.turtlepaw.heart_connection.StepsMetric
 import com.turtlepaw.heart_connection.SunlightMetric
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
+import com.turtlepaw.shared.database.exercise.Preference
 import kotlinx.coroutines.launch
 
 @Composable
@@ -183,7 +184,8 @@ fun ExerciseRoute(
                 }
             },
             uiState = exerciseViewModel,
-            modifier = modifier
+            modifier = modifier,
+            context = context
         )
     }
 }
@@ -234,12 +236,13 @@ fun Exercise(
     onResumeClick: () -> Unit,
     onStartClick: () -> Unit,
     uiState: ExerciseViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    context: Context
 ) {
     ExerciseTheme {
         //val focusRequester = rememberActiveFocusRequester()
         val scalingLazyListState = rememberScalingLazyListState()
-        val maxPages = 2
+        val maxPages = 3
         var selectedPage by remember { mutableStateOf(0) }
         var finalValue by remember { mutableStateOf(0) }
         var pagerState = rememberPagerState {
@@ -369,6 +372,18 @@ fun Exercise(
                                 onPauseClick
                             )
                         }
+                    }
+                } else if (it == 2) {
+                    val coords by uiState.locationData.observeAsState()
+                    //MapCard(context = context, coordinates = coords)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colors.background)
+                            .padding(25.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        MapRoute(coordinates = coords)
                     }
                 }
             }
@@ -780,6 +795,7 @@ fun ExercisePreview() {
         onResumeClick = {},
         onStartClick = {},
         uiState = ExerciseViewModel(Application()),
+        context = Application()
     )
 }
 
@@ -798,6 +814,7 @@ fun FullExercisePreview() {
         onResumeClick = {},
         onStartClick = {},
         uiState = FakeExerciseViewModel(Application()),
+        context = Application()
     )
 }
 

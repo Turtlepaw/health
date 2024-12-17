@@ -88,6 +88,9 @@ interface ServiceDao {
     @Query("SELECT * FROM services WHERE isEnabled = 1")
     suspend fun getEnabledServices(): List<Service>
 
+    @Query("SELECT * FROM services")
+    suspend fun getAllServices(): List<Service>
+
     @Delete
     suspend fun deleteService(service: Service)
 }

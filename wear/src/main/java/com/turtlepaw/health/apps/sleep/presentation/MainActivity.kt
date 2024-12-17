@@ -47,9 +47,9 @@ import com.turtlepaw.health.apps.sleep.services.RegisterForPassiveDataWorker
 import com.turtlepaw.health.apps.sleep.services.enqueueHealthWorker
 import com.turtlepaw.health.apps.sleep.utils.Settings
 import com.turtlepaw.health.apps.sleep.utils.SettingsBasics
-import com.turtlepaw.health.database.AppDatabase
-import com.turtlepaw.health.database.BedtimeSensor
-import com.turtlepaw.health.database.SleepDay
+import com.turtlepaw.shared.database.AppDatabase
+import com.turtlepaw.shared.database.BedtimeSensor
+import com.turtlepaw.shared.database.SleepDay
 import com.turtlepaw.sleeptools.presentation.theme.SleepTheme
 import com.turtlepaw.sleeptools.utils.AlarmType
 import com.turtlepaw.sleeptools.utils.AlarmsManager

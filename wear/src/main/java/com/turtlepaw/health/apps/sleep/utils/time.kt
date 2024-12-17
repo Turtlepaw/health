@@ -1,7 +1,7 @@
 package com.turtlepaw.sleeptools.utils
 
 import android.util.Log
-import com.turtlepaw.health.database.SleepDay
+import com.turtlepaw.shared.database.SleepDay
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime

@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.turtlepaw.health"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.turtlepaw.health"
@@ -120,6 +120,20 @@ dependencies {
 
     // Shared
     implementation(project(":shared"))
+
+    // Animations
+    implementation(libs.lottie.compose)
+
+    // Maps
+    implementation(libs.mapsforge.map.android)
+    implementation(libs.androidsvg)
+    implementation(libs.mapsforge.themes)
+
+    implementation("com.google.maps.android:maps-compose:6.4.0")
+
+    // Optionally, you can include the Compose utils library for Clustering,
+    // Street View metadata checks, etc.
+    implementation("com.google.maps.android:maps-compose-utils:6.4.0")
 
     //wearApp(project(":wear"))
 }

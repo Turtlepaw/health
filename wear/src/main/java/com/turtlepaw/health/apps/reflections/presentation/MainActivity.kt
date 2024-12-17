@@ -22,10 +22,10 @@ import com.turtlepaw.health.apps.reflections.presentation.pages.History
 import com.turtlepaw.health.apps.reflections.presentation.pages.Reflect
 import com.turtlepaw.health.apps.reflections.presentation.pages.WearHome
 import com.turtlepaw.health.apps.reflections.presentation.theme.ReflectionTheme
-import com.turtlepaw.health.database.AppDatabase
-import com.turtlepaw.health.database.Reflection
-import com.turtlepaw.health.database.ReflectionType
-import com.turtlepaw.health.utils.SettingsBasics
+import com.turtlepaw.shared.SettingsBasics
+import com.turtlepaw.shared.database.AppDatabase
+import com.turtlepaw.shared.database.Reflection
+import com.turtlepaw.shared.database.ReflectionType
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 

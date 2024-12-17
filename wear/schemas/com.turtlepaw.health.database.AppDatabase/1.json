@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "6a8eb9cdf53b84da0742f6c49e13156e",
+    "identityHash": "27fa6b2e6ae2674896806bf768d63850",
     "entities": [
       {
         "tableName": "sleep_day",
@@ -180,7 +180,7 @@
       },
       {
         "tableName": "exercise",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` TEXT NOT NULL, `exercise` INTEGER NOT NULL, `averageHeartRate` REAL, `totalDistance` REAL, `totalCalories` REAL, `elapsedTime` INTEGER NOT NULL, `maxHeartRate` INTEGER, `steps` INTEGER, `heartRateSimilarity` REAL, `heartRateHistory` TEXT NOT NULL, `sunlight` INTEGER NOT NULL, PRIMARY KEY(`timestamp`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` TEXT NOT NULL, `exercise` INTEGER NOT NULL, `averageHeartRate` REAL, `totalDistance` REAL, `totalCalories` REAL, `elapsedTime` INTEGER NOT NULL, `maxHeartRate` INTEGER, `steps` INTEGER, `heartRateSimilarity` REAL, `heartRateHistory` TEXT NOT NULL, `sunlight` INTEGER NOT NULL, `location` TEXT NOT NULL, PRIMARY KEY(`timestamp`))",
         "fields": [
           {
             "fieldPath": "timestamp",
@@ -247,6 +247,12 @@
             "columnName": "sunlight",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "location",
+            "columnName": "location",
+            "affinity": "TEXT",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -294,7 +300,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6a8eb9cdf53b84da0742f6c49e13156e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '27fa6b2e6ae2674896806bf768d63850')"
     ]
   }
 }

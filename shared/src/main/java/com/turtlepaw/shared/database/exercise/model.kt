@@ -25,5 +25,6 @@ data class Exercise(
     val steps: Long? = null,
     val heartRateSimilarity: Double? = null,
     val heartRateHistory: List<Pair<LocalTime, Int>>,
-    val sunlight: Int
+    val sunlight: Int,
+    val location: List<Pair<Double, Double>>
 )

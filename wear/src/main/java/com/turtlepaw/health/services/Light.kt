@@ -17,10 +17,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import com.turtlepaw.health.apps.sunlight.presentation.dataStore
-import com.turtlepaw.health.utils.Settings
-import com.turtlepaw.health.utils.SettingsBasics
 import com.turtlepaw.health.utils.SunlightViewModel
 import com.turtlepaw.health.utils.SunlightViewModelFactory
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.SettingsBasics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

@@ -4,9 +4,9 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.turtlepaw.health.database.Day
 import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.Metric
+import com.turtlepaw.shared.database.Day
 
 @Dao
 interface PreferenceDao {

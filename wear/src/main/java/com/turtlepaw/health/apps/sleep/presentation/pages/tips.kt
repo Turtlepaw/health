@@ -34,8 +34,8 @@ import androidx.wear.compose.material.TitleCard
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.components.Page
-import com.turtlepaw.health.database.BedtimeSensor
-import com.turtlepaw.health.database.SleepDay
+import com.turtlepaw.shared.database.BedtimeSensor
+import com.turtlepaw.shared.database.SleepDay
 import com.turtlepaw.sleeptools.utils.TimeManager
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -189,7 +189,7 @@ fun Tips(
                         if (lastEntry?.bedtime != null && lastEntry?.asleepAt != null) {
                             val difference = timeManager.calculateTimeDifference(
                                 lastEntry.bedtime.toLocalTime(),
-                                lastEntry.asleepAt.toLocalTime()
+                                lastEntry.asleepAt!!.toLocalTime()
                             )
                             Spacer(modifier = Modifier.padding(10.dp))
                             Text(

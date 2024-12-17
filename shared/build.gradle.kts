@@ -1,5 +1,3 @@
-import org.gradle.kotlin.dsl.ksp
-
 plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinAndroid)
@@ -48,12 +46,19 @@ dependencies {
     // Health
     implementation(project(":heart_connection"))
 
+    // Play Services
+    implementation(libs.play.services.wearable)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    implementation("androidx.compose.runtime:runtime:1.7.5") // Replace with the latest version
+    implementation("androidx.compose.runtime:runtime-livedata:1.7.5")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 }
 
 ksp {

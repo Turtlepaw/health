@@ -10,14 +10,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import kotlin.collections.find
-import kotlin.collections.joinToString
-import kotlin.collections.map
-import kotlin.collections.mapNotNull
-import kotlin.let
-import kotlin.text.isEmpty
-import kotlin.text.split
-import kotlin.text.toInt
 
 class Converters {
     private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -76,7 +68,7 @@ class Converters {
 
     @TypeConverter
     fun fromMetricList(metrics: List<Metric>?): String {
-        return metrics?.joinToString(separator = ",") { toString() } ?: ""
+        return metrics?.joinToString(separator = ",") { it.id.toString() } ?: ""
     }
 
     @TypeConverter
@@ -117,5 +109,18 @@ class Converters {
     fun toHeartRateHistory(value: String?): List<Pair<LocalTime, Int>>? {
         val type = object : TypeToken<List<Pair<LocalTime, Int>>>() {}.type
         return Gson().fromJson(value, type)
+    }
+
+    @TypeConverter
+    fun fromPairDoubleList(value: List<Pair<Double, Double>>): String {
+        val gson = Gson()
+        return gson.toJson(value)
+    }
+
+    @TypeConverter
+    fun toPairDoubleList(value: String): List<Pair<Double, Double>> {
+        val gson = Gson()
+        val type = object : TypeToken<List<Pair<Double, Double>>>() {}.type
+        return gson.fromJson(value, type)
     }
 }

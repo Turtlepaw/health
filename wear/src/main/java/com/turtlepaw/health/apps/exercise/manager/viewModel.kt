@@ -166,6 +166,9 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
     val _sunlightData = MutableLiveData<Int>()
     val sunlightData: LiveData<Int> get() = _sunlightData
 
+    val _locationData = MutableLiveData<List<Pair<Double, Double>>>()
+    val locationData: LiveData<List<Pair<Double, Double>>> get() = _locationData
+
     private val _isBound = MutableLiveData<Boolean>(false)
 
     private val serviceConnection = object : ServiceConnection {
@@ -190,6 +193,7 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
                     .observeForever { _externalHrHistory.postValue(it) }
                 service.getSunlightLiveData().observeForever { _sunlightData.postValue(it) }
                 service.getPauseLiveData().observeForever { _isPaused.postValue(it) }
+                service.getLocationLiveData().observeForever { _locationData.postValue(it) }
             }
 
             _isBound.postValue(true)
@@ -248,6 +252,8 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
         _isEnded.postValue(false)
         _isEnding.postValue(false)
         _isPaused.postValue(false)
+        _sunlightData.postValue(0)
+        _locationData.postValue(emptyList())
     }
 
     open suspend fun startExercise(exercise: Exercise) {
@@ -324,6 +330,7 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
     }
 
     open fun toSummary(): SummaryScreenState {
+        Log.d("ExerciseViewModel", "${locationData.value?.size} entries of location")
         return SummaryScreenState(
             averageHeartRate = heartRateHistory.value?.map { it.second }?.average()?.toDouble()
                 ?: 0.0,
@@ -345,7 +352,8 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
                 )
             } else {
                 null
-            }
+            },
+            locationData = locationData.value ?: emptyList()
         )
     }
 
@@ -402,6 +410,7 @@ class FakeExerciseViewModel(application: Application) : ExerciseViewModel(applic
     override fun attemptToReconnect() {}
     override fun reconnectHeartRateMonitor() {}
     override fun toSummary(): SummaryScreenState {
+        Log.d("ExerciseViewModel", "${locationData.value?.size} entries of location")
         return SummaryScreenState(
             averageHeartRate = 0.0,
             totalCalories = 0.0,
@@ -410,7 +419,9 @@ class FakeExerciseViewModel(application: Application) : ExerciseViewModel(applic
             maxHeartRate = 0,
             sunlight = sunlightData.value ?: 0,
             heartRate = heartRateHistory.value ?: emptyList(),
-            steps = steps.value
+            steps = steps.value,
+            heartRateSimilarity = null,
+            locationData = locationData.value ?: emptyList()
         )
     }
 }

@@ -11,10 +11,10 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.clj.fastble.data.BleDevice
-import com.turtlepaw.health.utils.Settings
-import com.turtlepaw.health.utils.SettingsBasics
 import com.turtlepaw.heart_connection.HeartConnection
 import com.turtlepaw.heart_connection.createGattCallback
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.SettingsBasics
 
 open class HeartRateModel(application: Application) : AndroidViewModel(application) {
     val _heartRate = MutableLiveData<Int>(null)

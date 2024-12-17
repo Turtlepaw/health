@@ -30,10 +30,10 @@ import com.turtlepaw.health.apps.health.presentation.pages.coaching.StartCoachin
 import com.turtlepaw.health.apps.health.presentation.pages.settings.WearSettings
 import com.turtlepaw.health.apps.health.presentation.theme.HealthTheme
 import com.turtlepaw.health.apps.sunlight.presentation.pages.StatePicker
-import com.turtlepaw.health.database.AppDatabase
-import com.turtlepaw.health.utils.Settings
-import com.turtlepaw.health.utils.SettingsBasics
-import com.turtlepaw.health.utils.getDefaultSharedSettings
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.SettingsBasics
+import com.turtlepaw.shared.database.AppDatabase
+import com.turtlepaw.shared.getDefaultSharedSettings
 import java.text.NumberFormat
 
 

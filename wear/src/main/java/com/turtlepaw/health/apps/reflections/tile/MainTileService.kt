@@ -36,11 +36,11 @@ import com.google.android.horologist.tiles.SuspendingTileService
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.health.presentation.dataStore
 import com.turtlepaw.health.apps.sunlight.tile.MainTileService
-import com.turtlepaw.health.utils.Settings
-import com.turtlepaw.health.utils.SettingsBasics
 import com.turtlepaw.health.utils.SunlightViewModel
 import com.turtlepaw.health.utils.SunlightViewModelFactory
 import com.turtlepaw.health.utils.TimeManager
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.SettingsBasics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

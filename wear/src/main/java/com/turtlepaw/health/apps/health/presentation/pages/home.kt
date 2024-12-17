@@ -39,9 +39,9 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.apps.health.presentation.Routes
 import com.turtlepaw.health.components.Page
-import com.turtlepaw.health.database.AppDatabase
-import com.turtlepaw.health.database.CoachingType
 import com.turtlepaw.health.services.scheduleHealthWorker
+import com.turtlepaw.shared.database.AppDatabase
+import com.turtlepaw.shared.database.CoachingType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

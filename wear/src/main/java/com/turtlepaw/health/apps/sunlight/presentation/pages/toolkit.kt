@@ -25,10 +25,10 @@ import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.apps.sunlight.presentation.GoalCompleteActivity
 import com.turtlepaw.health.components.Page
-import com.turtlepaw.health.database.SunlightDay
 import com.turtlepaw.health.services.LightLoggerService
 import com.turtlepaw.health.services.LightWorker
 import com.turtlepaw.health.services.SensorReceiver
+import com.turtlepaw.shared.database.SunlightDay
 
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
@@ -38,8 +38,8 @@ fun ClockworkToolkit(
     context: Context,
     history: List<SunlightDay>
 ) {
-        val focusRequester = rememberActiveFocusRequester()
-        val scalingLazyListState = rememberScalingLazyListState()
+    rememberActiveFocusRequester()
+    rememberScalingLazyListState()
         val sensorWorker = PendingIntent.getBroadcast(
             context,
             0,

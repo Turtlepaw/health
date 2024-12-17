@@ -34,6 +34,7 @@ import com.clj.fastble.data.BleDevice
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
 import com.turtlepaw.health.components.Page
+import com.turtlepaw.heart_connection.DeviceScanResult
 import com.turtlepaw.heart_connection.HeartConnection
 import com.turtlepaw.heart_connection.ScanningStatus
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
@@ -109,27 +110,33 @@ fun BluetoothSearch(
                     }
                 }
             } else {
-                val bluetoothDevices = devices.value?.filter { it?.name != null }
+                val bluetoothDevices = devices.value?.filter { it.second.name != null }
                 bluetoothDevices?.let {
                     items(bluetoothDevices.size) {
                         val item = bluetoothDevices.elementAt(it)
-                        val isSelected = item.mac == selected
+                        val isSelected = item.second.mac == selected
 
                         ToggleChip(
                             checked = isSelected,
                             onCheckedChange = {
-                                onSelectionConfirm(item)
+                                onSelectionConfirm(item.second)
                             },
                             label = {
-                                Text(text = item.name)
+                                Text(text = item.second.name)
                             },
                             toggleControl = {
                                 RadioButton(selected = isSelected)
                             },
                             appIcon = {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.ecg_heart),
-                                    contentDescription = "Heart",
+                                    painter = when (item.first) {
+                                        DeviceScanResult.Compatible -> painterResource(id = R.drawable.ecg_heart)
+                                        DeviceScanResult.Unknown -> painterResource(id = R.drawable.bluetooth_device)
+                                    },
+                                    contentDescription = when (item.first) {
+                                        DeviceScanResult.Compatible -> "Compatible"
+                                        DeviceScanResult.Unknown -> "Unknown"
+                                    },
                                     tint = MaterialTheme.colors.onSurfaceVariant
                                 )
                             },
