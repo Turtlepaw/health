@@ -15,6 +15,7 @@ import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
+import androidx.annotation.RequiresPermission
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -344,7 +345,20 @@ class ExerciseService : Service() {
 //        }
     }
 
-    fun attemptToReconnect() {
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    fun onRequestDisconnect() {
+        try {
+            connection?.disconnect()
+            heartRateSourceData.postValue(HeartRateSource.Device)
+        } catch (e: Exception) {
+            Log.e("ExerciseService", "Error disconnecting from device", e)
+        }
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    suspend fun attemptToReconnect() {
+        onRequestDisconnect()
+        delay(1000)
         startHeartRateTracking()
     }
 

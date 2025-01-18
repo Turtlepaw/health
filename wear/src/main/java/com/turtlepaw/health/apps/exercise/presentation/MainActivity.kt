@@ -49,6 +49,7 @@ import com.turtlepaw.health.apps.exercise.manager.HeartRateModel
 import com.turtlepaw.health.apps.exercise.presentation.pages.BluetoothSearch
 import com.turtlepaw.health.apps.exercise.presentation.pages.ExerciseConfiguration
 import com.turtlepaw.health.apps.exercise.presentation.pages.ExerciseRoute
+import com.turtlepaw.health.apps.exercise.presentation.pages.exercise.InExerciseSettings
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryRoute
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.SummaryScreenState
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.averageHeartRateArg
@@ -88,7 +89,8 @@ enum class Routes(private val route: String) {
     EXERCISE_CONFIGURATION("/exercise-configuration"),
     EXERCISE("/exercise"),
     SUMMARY("/summary"),
-    METRIC_EDITOR("/metric/editor");
+    METRIC_EDITOR("/metric/editor"),
+    IN_EXERCISE_SETTINGS("/in-exercise-settings");
 
     fun getRoute(query: String? = null): String {
         return if (query != null) {
@@ -264,14 +266,11 @@ fun WearPages(
 //        )
 
         val currentScreen by navController.currentBackStackEntryAsState()
-        val isAlwaysOnScreen =
-            currentScreen?.destination?.route?.startsWith(Routes.EXERCISE.getRoute()) == true
+        currentScreen?.destination?.route?.startsWith(Routes.EXERCISE.getRoute()) == true
         var swipeToDismissEnabled by remember { mutableStateOf(true) }
         var latestSummary by remember { mutableStateOf<SummaryScreenState?>(null) }
 
-        AmbientAware(
-            isAlwaysOnScreen = isAlwaysOnScreen
-        ) { ambientStateUpdate ->
+        AmbientAware { ambientStateUpdate ->
             SwipeDismissableNavHost(
                 navController = navController,
                 startDestination = Routes.HOME.getRoute(),
@@ -299,15 +298,17 @@ fun WearPages(
                         selectedDevice,
                         context
                     ) {
-                        Log.d("BluetoothSearch", "${it.name} has been selected")
-                        sharedPreferences.edit {
-                            putString(Settings.DEFAULT_DEVICE.getKey(), it.mac)
-                            commit()
+                        coroutineScope.launch {
+                            Log.d("BluetoothSearch", "${it.name} has been selected")
+                            sharedPreferences.edit {
+                                putString(Settings.DEFAULT_DEVICE.getKey(), it.mac)
+                                commit()
+                            }
+                            selectedDevice = it.mac
+                            heartRateModel.connectHeartRateMonitor(context, it)
+                            exerciseViewModel?.reconnectHeartRateMonitor()
+                            navController.popBackStack()
                         }
-                        selectedDevice = it.mac
-                        heartRateModel.connectHeartRateMonitor(context, it)
-                        exerciseViewModel?.reconnectHeartRateMonitor()
-                        navController.popBackStack()
                     }
                 }
                 composable(Routes.APP_INTRODUCTION.getRoute()) {
@@ -395,7 +396,7 @@ fun WearPages(
                             context,
                             preference!!,
                             bluetoothHeartRate = heartRate,
-                            ambientState = ambientStateUpdate.ambientState,
+                            ambientState = ambientStateUpdate,
                             onSummary = { summary ->
                                 val vibrator = context.getSystemService(Vibrator::class.java)
 
@@ -426,7 +427,9 @@ fun WearPages(
                                 }
                             },
                             onFinishActivity = {},
-                            exerciseViewModel = exerciseViewModel
+                            exerciseViewModel = exerciseViewModel,
+                            exercise = exercise,
+                            navController = navController
                         )
                     }
                 }
@@ -500,6 +503,16 @@ fun WearPages(
                             }
                         }
                     }
+                }
+                composable(Routes.IN_EXERCISE_SETTINGS.getRoute("{id}")) {
+                    val id = it.arguments?.getString("id")!!.toInt()
+                    InExerciseSettings(
+                        heartConnection,
+                        exerciseViewModel,
+                        context,
+                        navController,
+                        id
+                    )
                 }
             }
         }

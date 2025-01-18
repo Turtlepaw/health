@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="mobile">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-11-11T22:29:36.025482300Z">
+        <DropdownSelection timestamp="2025-01-12T00:31:43.808710Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\olivi\.android\avd\Pixel_9_Pro_Fold.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=28121FDH300912" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -54,10 +54,10 @@
       </SelectionState>
       <SelectionState runConfigName="exercise">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-12-17T05:33:21.058517800Z">
+        <DropdownSelection timestamp="2025-01-15T23:53:48.145899600Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="Default" identifier="serial=10.0.0.57:33101;connection=169766fd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\olivi\.android\avd\Wear_OS.avd" />
             </handle>
           </Target>
         </DropdownSelection>

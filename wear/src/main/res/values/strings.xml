@@ -12,4 +12,6 @@
     <string name="sunlight_tile_label">Sunlight Today</string>
     <string name="complication_label">Sunlight Today</string>
     <string name="step_streak_tile_label">Step Streak</string>
+
+    <string name="settings">Settings</string>
 </resources>

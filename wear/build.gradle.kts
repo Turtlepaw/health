@@ -135,6 +135,9 @@ dependencies {
     // Street View metadata checks, etc.
     implementation("com.google.maps.android:maps-compose-utils:6.4.0")
 
+    // Media
+    implementation(project(":live_media"))
+
     //wearApp(project(":wear"))
 }
 

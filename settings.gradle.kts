@@ -1,5 +1,8 @@
 import java.net.URI
 
+include(":live_media")
+
+
 include(":shared")
 
 
@@ -36,4 +39,5 @@ include(":mobile")
 include(":wear")
 include(":heart_connection")
 include(":shared")
+include(":live_media")
  

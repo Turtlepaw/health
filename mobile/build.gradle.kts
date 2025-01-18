@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.turtlepaw.health"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.turtlepaw.health"

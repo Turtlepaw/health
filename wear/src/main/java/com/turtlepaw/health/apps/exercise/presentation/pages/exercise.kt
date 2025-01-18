@@ -18,7 +18,10 @@
 package com.turtlepaw.health.apps.exercise.presentation.pages
 
 import android.app.Application
+import android.content.ComponentName
 import android.content.Context
+import android.content.pm.PackageManager
+import android.media.session.MediaSessionManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.compose.animation.core.LinearEasing
@@ -35,6 +38,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,6 +46,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +68,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import androidx.wear.compose.foundation.ArcPaddingValues
 import androidx.wear.compose.foundation.CurvedDirection
 import androidx.wear.compose.foundation.CurvedLayout
@@ -80,6 +87,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.TimeTextDefaults
 import androidx.wear.compose.material.curvedText
 import androidx.wear.compose.material.scrollAway
+import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.composables.ProgressIndicatorSegment
@@ -93,6 +101,7 @@ import com.turtlepaw.health.apps.exercise.manager.ExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.FakeExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.HeartRateSource
 import com.turtlepaw.health.apps.exercise.presentation.MapRoute
+import com.turtlepaw.health.apps.exercise.presentation.Routes
 import com.turtlepaw.health.apps.exercise.presentation.components.EndButton
 import com.turtlepaw.health.apps.exercise.presentation.components.PauseButton
 import com.turtlepaw.health.apps.exercise.presentation.components.StartButton
@@ -106,12 +115,16 @@ import com.turtlepaw.health.utils.formatSunlight
 import com.turtlepaw.heart_connection.CaloriesMetric
 import com.turtlepaw.heart_connection.DistanceMetric
 import com.turtlepaw.heart_connection.ElapsedTimeMetric
+import com.turtlepaw.heart_connection.Exercise
 import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.HeartRateMetric
 import com.turtlepaw.heart_connection.StepsMetric
 import com.turtlepaw.heart_connection.SunlightMetric
+import com.turtlepaw.heart_connection.getId
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
+import com.turtlepaw.live_media.LiveMedia
 import com.turtlepaw.shared.database.exercise.Preference
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -124,7 +137,9 @@ fun ExerciseRoute(
     onSummary: (SummaryScreenState) -> Unit,
     onRestart: () -> Unit,
     onFinishActivity: () -> Unit,
-    exerciseViewModel: ExerciseViewModel
+    exerciseViewModel: ExerciseViewModel,
+    exercise: Exercise,
+    navController: NavHostController
 ) {
     val coroutineScope = rememberCoroutineScope()
 //    val isEnded by exerciseViewModel.isEnded.observeAsState(false)
@@ -185,7 +200,9 @@ fun ExerciseRoute(
             },
             uiState = exerciseViewModel,
             modifier = modifier,
-            context = context
+            context = context,
+            exercise = exercise,
+            navController = navController
         )
     }
 }
@@ -226,6 +243,13 @@ private fun PaddingValues.toArcPadding() = object : ArcPaddingValues {
     ) = calculateLeftPadding(layoutDirection)
 }
 
+enum class Pages {
+    Overview,
+    Controls,
+    Maps,
+    Music
+}
+
 @OptIn(ExperimentalHorologistApi::class)
 @Composable
 fun Exercise(
@@ -237,16 +261,23 @@ fun Exercise(
     onStartClick: () -> Unit,
     uiState: ExerciseViewModel,
     modifier: Modifier = Modifier,
-    context: Context
+    context: Context,
+    exercise: Exercise,
+    navController: NavHostController
 ) {
     ExerciseTheme {
         //val focusRequester = rememberActiveFocusRequester()
         val scalingLazyListState = rememberScalingLazyListState()
-        val maxPages = 3
+        var maxPages = listOf<Pages>(Pages.Music, Pages.Overview, Pages.Controls)
+        val supportsMaps = exercise.useGps
+        if (supportsMaps) {
+            maxPages = maxPages + Pages.Maps
+        }
+
         var selectedPage by remember { mutableStateOf(0) }
         var finalValue by remember { mutableStateOf(0) }
         var pagerState = rememberPagerState {
-            maxPages
+            maxPages.size
         }
 
         val animatedSelectedPage by animateFloatAsState(
@@ -263,7 +294,7 @@ fun Exercise(
                 override val selectedPage: Int
                     get() = finalValue
                 override val pageCount: Int
-                    get() = maxPages
+                    get() = maxPages.size
             }
         }
 
@@ -281,7 +312,8 @@ fun Exercise(
             VerticalPagerScreen(
                 state = pagerState
             ) {
-                if (it == 0) {
+                val selectedPage: Pages = maxPages[it]
+                if (selectedPage == Pages.Overview) {
                     val heartRate by uiState.heartRate.observeAsState()
                     val progress by animateFloatAsState(
                         (heartRate
@@ -356,7 +388,7 @@ fun Exercise(
                             }
                         }
                     }
-                } else if (it == 1) {
+                } else if (selectedPage == Pages.Controls) {
                     Row(
                         modifier = Modifier.fillMaxSize(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -369,11 +401,18 @@ fun Exercise(
                                 onStartClick,
                                 onEndClick,
                                 onResumeClick,
-                                onPauseClick
+                                onPauseClick,
+                                onInExerciseSettings = {
+                                    navController.navigate(
+                                        Routes.IN_EXERCISE_SETTINGS.getRoute(
+                                            exercise.getId().toString()
+                                        )
+                                    )
+                                }
                             )
                         }
                     }
-                } else if (it == 2) {
+                } else if (selectedPage == Pages.Maps) {
                     val coords by uiState.locationData.observeAsState()
                     //MapCard(context = context, coordinates = coords)
                     Box(
@@ -385,6 +424,8 @@ fun Exercise(
                     ) {
                         MapRoute(coordinates = coords)
                     }
+                } else if (selectedPage == Pages.Music) {
+                    Media(context)
                 }
             }
 //            ItemsListWithModifier(
@@ -480,14 +521,15 @@ private fun ExerciseControlButtons(
     onStartClick: () -> Unit,
     onEndClick: () -> Unit,
     onResumeClick: () -> Unit,
-    onPauseClick: () -> Unit
+    onPauseClick: () -> Unit,
+    onInExerciseSettings: () -> Unit
 ) {
-    val source by uiState.heartRateSource.observeAsState()
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize()
     ) {
+        val source by uiState.heartRateSource.observeAsState()
         if (source == HeartRateSource.HeartRateMonitor) {
             Row(
                 modifier = Modifier
@@ -547,6 +589,12 @@ private fun ExerciseControlButtons(
                 )
             }
         }
+
+        com.google.android.horologist.compose.material.CompactChip(
+            label = "Settings",
+            onClick = onInExerciseSettings,
+            modifier = Modifier.padding(top = 5.dp)
+        )
     }
 }
 
@@ -648,9 +696,6 @@ private fun HeartRateRow(
     val heartRate by uiState.heartRate.observeAsState()
     val source by uiState.heartRateSource.observeAsState()
     DataRow {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
             Icon(
                 painter = painterResource(id = R.drawable.heart),
                 contentDescription = "Heart",
@@ -662,6 +707,17 @@ private fun HeartRateRow(
                 style = getTextStyle()
             )
 
+        Text(
+            text = "bpm",
+            color = getSecondaryTextColor(),
+            modifier = getSecondaryTextModifier(),
+            style = getSecondaryTextStyle()
+        )
+
+        Row(
+            modifier = Modifier.fillMaxHeight(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             if (source == HeartRateSource.HeartRateMonitor) {
                 Box(modifier = Modifier.padding(start = 5.dp)) {
                     Icon(
@@ -795,7 +851,9 @@ fun ExercisePreview() {
         onResumeClick = {},
         onStartClick = {},
         uiState = ExerciseViewModel(Application()),
-        context = Application()
+        context = Application(),
+        exercise = Exercises.first(),
+        navController = rememberSwipeDismissableNavController()
     )
 }
 
@@ -814,7 +872,9 @@ fun FullExercisePreview() {
         onResumeClick = {},
         onStartClick = {},
         uiState = FakeExerciseViewModel(Application()),
-        context = Application()
+        context = Application(),
+        exercise = Exercises.first(),
+        navController = rememberSwipeDismissableNavController()
     )
 }
 
@@ -831,8 +891,9 @@ fun ExerciseControls() {
         ) {
             Column {
                 ExerciseControlButtons(
-                    true,
+                    false,
                     FakeExerciseViewModel(Application()),
+                    {},
                     {},
                     {},
                     {},
@@ -842,3 +903,91 @@ fun ExerciseControls() {
         }
     }
 }
+
+@Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
+@Composable
+fun ExerciseControlsConnected() {
+    ExerciseTheme {
+        Row(
+            modifier = Modifier
+                .background(MaterialTheme.colors.background)
+                .fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Column {
+                ExerciseControlButtons(
+                    true,
+                    FakeExerciseViewModel(Application()),
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun Media(
+    context: Context,
+    liveMedia: LiveMedia = LiveMedia(context, getActiveMediaServiceComponent(context)!!)
+) {
+    val title = remember { mutableStateOf<String?>(null) }
+    val artist = remember { mutableStateOf<String?>(null) }
+    val isPlaying = remember { mutableStateOf(false) }
+
+    // Use a side effect to observe changes from LiveMedia
+    LaunchedEffect(Unit) {
+        liveMedia.connect()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            liveMedia.disconnect()
+        }
+    }
+
+    LaunchedEffect(liveMedia) {
+        while (true) {
+            title.value = liveMedia.title
+            artist.value = liveMedia.artist
+            isPlaying.value = liveMedia.isPlaying
+            delay(500) // Poll the media state periodically
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(25.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            if (isPlaying.value == true && title.value != null)
+                title.value!! else "No Media",
+        )
+    }
+}
+
+fun getActiveMediaServiceComponent(context: Context): ComponentName? {
+    val mediaSessionManager =
+        context.getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
+    val activeSessions =
+        mediaSessionManager.getActiveSessions(null) // Requires Notification Listener access
+    return activeSessions.firstOrNull()?.packageName?.let { packageName ->
+        try {
+            val packageManager = context.packageManager
+            val serviceInfo = packageManager.getServiceInfo(
+                ComponentName(packageName, "com.spotify.music.media.browser.MediaBrowserService"),
+                0
+            )
+            ComponentName(packageName, serviceInfo.name)
+        } catch (e: PackageManager.NameNotFoundException) {
+            null
+        }
+    }
+}
+

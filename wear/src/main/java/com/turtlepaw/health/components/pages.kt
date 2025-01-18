@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
@@ -29,7 +30,11 @@ fun ErrorPage(message: String, action: (() -> Unit)? = null, actionText: String?
         if (action != null) {
             item {}
             item {
-                Button(onClick = action ?: {}, modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = action ?: {},
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.secondaryButtonColors()
+                ) {
                     Text(actionText ?: "Retry")
                 }
             }

@@ -1,5 +1,6 @@
 package com.turtlepaw.health.apps.exercise.manager
 
+import android.Manifest
 import android.app.Application
 import android.content.ComponentName
 import android.content.Context
@@ -7,6 +8,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
+import androidx.annotation.RequiresPermission
 import androidx.health.services.client.ExerciseUpdateCallback
 import androidx.health.services.client.HealthServices
 import androidx.health.services.client.data.Availability
@@ -229,7 +231,8 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    open fun attemptToReconnect() {
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    open suspend fun attemptToReconnect() {
         exerciseService?.attemptToReconnect()
     }
 
@@ -288,7 +291,8 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
         exerciseService?.resumeExerciseSession()
     }
 
-    open fun reconnectHeartRateMonitor() {
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    open suspend fun reconnectHeartRateMonitor() {
         exerciseService?.attemptToReconnect()
     }
 
@@ -388,6 +392,12 @@ open class ExerciseViewModel(application: Application) : AndroidViewModel(applic
             return false to null
         }
     }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    suspend fun onRequestDisconnect() {
+        exerciseService?.onRequestDisconnect()
+        heartRateSource.asFlow().first { it == HeartRateSource.Device }
+    }
 }
 
 class FakeExerciseViewModel(application: Application) : ExerciseViewModel(application) {
@@ -407,8 +417,8 @@ class FakeExerciseViewModel(application: Application) : ExerciseViewModel(applic
     override suspend fun pauseExercise() {}
     override suspend fun resumeExercise() {}
     override suspend fun warmExerciseSession(exercise: Exercise, context: Context) {}
-    override fun attemptToReconnect() {}
-    override fun reconnectHeartRateMonitor() {}
+    override suspend fun attemptToReconnect() {}
+    override suspend fun reconnectHeartRateMonitor() {}
     override fun toSummary(): SummaryScreenState {
         Log.d("ExerciseViewModel", "${locationData.value?.size} entries of location")
         return SummaryScreenState(

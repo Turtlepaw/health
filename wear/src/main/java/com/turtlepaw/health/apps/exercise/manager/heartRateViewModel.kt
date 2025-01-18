@@ -1,11 +1,13 @@
 package com.turtlepaw.health.apps.exercise.manager
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Application
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
+import androidx.annotation.RequiresPermission
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -20,6 +22,7 @@ open class HeartRateModel(application: Application) : AndroidViewModel(applicati
     val _heartRate = MutableLiveData<Int>(null)
     val heartRate: LiveData<Int> get() = _heartRate
     val isConnected = false
+    private var heartConnection: HeartConnection? = null
 
     fun connectHeartRateMonitor(context: ComponentActivity, device: BleDevice) {
         connectHeartRateMonitor(context, device.device)
@@ -31,7 +34,7 @@ open class HeartRateModel(application: Application) : AndroidViewModel(applicati
                 Manifest.permission.BLUETOOTH_CONNECT
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            val connection = HeartConnection(
+            heartConnection = HeartConnection(
                 createGattCallback {
                     _heartRate.postValue(it)
                 },
@@ -39,8 +42,16 @@ open class HeartRateModel(application: Application) : AndroidViewModel(applicati
                 context.application
             )
 
-            connection.connectToDevice(device)
+            heartConnection!!.connectToDevice(device)
         }
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    @SuppressLint("NullSafeMutableLiveData")
+    fun onRequestDisconnect() {
+        _heartRate.postValue(null)
+        heartConnection?.disconnect()
+        heartConnection = null
     }
 
     fun attemptConnectSaved(context: ComponentActivity) {
