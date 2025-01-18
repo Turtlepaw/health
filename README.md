@@ -1,5 +1,3 @@
-<img src="./wear/src/main/ic_launcher-playstore.png" width="50" style="border-radius: 50px;"/>
-
 # Health
 
 ### Advanced insights into your health
