@@ -3,6 +3,7 @@ package com.turtlepaw.health.apps.exercise.presentation.pages
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,11 +34,11 @@ import androidx.wear.compose.material.ToggleChip
 import com.clj.fastble.data.BleDevice
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
-import com.turtlepaw.health.components.Page
 import com.turtlepaw.heart_connection.DeviceScanResult
 import com.turtlepaw.heart_connection.HeartConnection
 import com.turtlepaw.heart_connection.ScanningStatus
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
+import com.turtlepaw.shared.components.Page
 
 data class SelectionItem(
     val id: String,
@@ -101,7 +102,7 @@ fun BluetoothSearch(
                         if (state.value == ScanningStatus.Disabled) {
                             CompactChip(onClick = {
                                 val intentOpenBluetoothSettings = Intent()
-                                intentOpenBluetoothSettings.setAction(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+                                intentOpenBluetoothSettings.setAction(Settings.ACTION_BLUETOOTH_SETTINGS)
                                 context.startActivity(intentOpenBluetoothSettings)
                             }, label = {
                                 Text(text = "Settings")

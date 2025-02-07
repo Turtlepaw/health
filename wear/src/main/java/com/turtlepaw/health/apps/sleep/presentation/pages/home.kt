@@ -41,7 +41,7 @@ import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.sleep.presentation.Routes
-import com.turtlepaw.health.components.Page
+import com.turtlepaw.shared.components.Page
 import com.turtlepaw.sleeptools.utils.AlarmType
 import com.turtlepaw.sleeptools.utils.TimeManager
 import kotlinx.coroutines.delay
@@ -57,7 +57,7 @@ fun WearHome(
     bedtimeGoal: LocalTime?
 ) {
     val formatter = timeManager.getTimeFormatter(false)
-    val formatterWithDetails = timeManager.getTimeFormatter()
+    timeManager.getTimeFormatter()
     var timeDifference by remember {
         mutableStateOf(timeManager.calculateTimeDifference(wakeTime.first))
     }

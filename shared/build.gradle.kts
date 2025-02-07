@@ -31,6 +31,17 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+    buildFeatures {
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.12"
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
 }
 
 dependencies {
@@ -59,6 +70,25 @@ dependencies {
     implementation("androidx.compose.runtime:runtime:1.7.5") // Replace with the latest version
     implementation("androidx.compose.runtime:runtime-livedata:1.7.5")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+
+    // Compose
+    implementation(libs.androidx.compose.material)
+    implementation(libs.androidx.compose.foundation)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+
+    // Horologist
+    implementation(libs.horologist.health.composables)
+    implementation(libs.horologist.compose.material)
+    implementation(libs.horologist.compose.layout)
+    implementation(libs.horologist.composables)
+    implementation(libs.horologist.compose.tools)
+
+    // Animations
+    implementation(libs.lottie.compose)
+
+    // Icons
+    implementation(libs.material.icons.extended)
 }
 
 ksp {

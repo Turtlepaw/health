@@ -18,7 +18,7 @@ import androidx.wear.compose.material.RadioButton
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.ToggleChip
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.turtlepaw.health.components.Page
+import com.turtlepaw.shared.components.Page
 import com.turtlepaw.shared.database.AppDatabase
 import com.turtlepaw.shared.database.CoachingProgram
 import com.turtlepaw.shared.database.CoachingType

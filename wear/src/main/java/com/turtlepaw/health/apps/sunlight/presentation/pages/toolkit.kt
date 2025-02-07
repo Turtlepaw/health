@@ -24,10 +24,10 @@ import androidx.wear.compose.material.Text
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.apps.sunlight.presentation.GoalCompleteActivity
-import com.turtlepaw.health.components.Page
 import com.turtlepaw.health.services.LightLoggerService
 import com.turtlepaw.health.services.LightWorker
 import com.turtlepaw.health.services.SensorReceiver
+import com.turtlepaw.shared.components.Page
 import com.turtlepaw.shared.database.SunlightDay
 
 

@@ -40,4 +40,5 @@ include(":wear")
 include(":heart_connection")
 include(":shared")
 include(":live_media")
+include(":smartalarm")
  

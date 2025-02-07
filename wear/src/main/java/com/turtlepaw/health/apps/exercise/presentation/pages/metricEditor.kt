@@ -14,12 +14,12 @@ import androidx.wear.compose.material.RadioButton
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.ToggleChip
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.turtlepaw.health.components.Page
 import com.turtlepaw.heart_connection.Exercise
 import com.turtlepaw.heart_connection.Metric
 import com.turtlepaw.heart_connection.Metrics
 import com.turtlepaw.heart_connection.isAvailableFor
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
+import com.turtlepaw.shared.components.Page
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
 @Composable

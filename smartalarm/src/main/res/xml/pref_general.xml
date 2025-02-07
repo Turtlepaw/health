@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?><!--<PreferenceScreen-->
+<!--    xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
+<!--    >-->
+
+<!--    <PreferenceScreen-->
+<!--        android:title='Smart Alarm'-->
+<!--        android:icon='@mipmap/ic_launcher_foreground'>-->
+
+<!--        <SwitchPreference-->
+<!--            android:key="smartalarm_use"-->
+<!--            android:title="@string/smartalarm_settings_title"-->
+<!--            android:summaryOn="@string/smartalarm_summary_on"-->
+<!--            android:summaryOff="@string/smartalarm_summary_off"-->
+<!--            app:wear_iconOn="@drawable/ic_bell"-->
+<!--            app:wear_iconOff="@drawable/ic_bell_off"-->
+<!--            android:defaultValue="true" />-->
+
+<!--        <TimePreference-->
+<!--            android:key="smartalarm_time"-->
+<!--            android:title="Alarm Latest"-->
+<!--            android:defaultValue="700"-->
+<!--            android:icon="@drawable/ic_clock"-->
+<!--            />-->
+
+<!--        <NumberPreference-->
+<!--            android:key="smartalarm_window"-->
+<!--            android:title="@string/smartalarm_settings_window"-->
+<!--            android:min="0"-->
+<!--            android:max="59"-->
+<!--            android:defaultValue="30"-->
+<!--            />-->
+
+<!--        <NumberPreference-->
+<!--            android:key="smartalarm_snooze"-->
+<!--            android:title="@string/smartalarm_settings_snooze"-->
+<!--            android:min="0"-->
+<!--            android:max="59"-->
+<!--            android:defaultValue="5"-->
+<!--            android:icon="@drawable/ic_snooze"-->
+<!--            />-->
+
+<!--        <SwitchPreference-->
+<!--            android:key="smartalarm_dismiss_action"-->
+<!--            android:title="@string/smartalarm_settings_dismiss_action"-->
+<!--            android:summaryOn="@string/smartalarm_snooze"-->
+<!--            android:summaryOff="@string/smartalarm_done"-->
+<!--            app:wear_iconOn="@drawable/ic_snooze"-->
+<!--            app:wear_iconOff="@drawable/ic_check_white"-->
+<!--            android:defaultValue="true"-->
+<!--            />-->
+<!--    </PreferenceScreen>-->
+
+<!--    <PreferenceScreen-->
+<!--        android:title="Export &amp; IFTTT"-->
+<!--        android:icon="@drawable/ic_link">-->
+<!--        <TextPreference-->
+<!--            android:key="email"-->
+<!--            android:title="Export Email"-->
+<!--            android:defaultValue=""-->
+<!--            android:icon="@drawable/ic_mail"-->
+<!--            />-->
+<!--        <SwitchPreference-->
+<!--            android:title="@string/confirmation_resend"-->
+<!--            android:summaryOn=""-->
+<!--            android:summaryOff=""-->
+<!--            android:key="resend-confirm"-->
+<!--            android:defaultValue="false" />-->
+
+<!--        <SwitchPreference-->
+<!--            android:key="auto_export"-->
+<!--            android:title="@string/auto_export_title"-->
+<!--            android:summaryOn="@string/auto_export_summary_on"-->
+<!--            android:summaryOff="@string/auto_export_summary_off"-->
+<!--            app:wear_iconOn="@drawable/ic_check_white"-->
+<!--            app:wear_iconOff="@drawable/ic_cross_white"-->
+<!--            android:defaultValue="true"-->
+<!--            />-->
+
+<!--        <TextPreference-->
+<!--            android:key="ifttt_key"-->
+<!--            android:title="IFTTT Maker Key"-->
+<!--            android:defaultValue=""-->
+<!--            android:icon="@drawable/ic_ifttt"-->
+<!--            />-->
+
+<!--        <TextPreference-->
+<!--            android:key="export_server"-->
+<!--            android:title="Email Server"-->
+<!--            android:defaultValue="https://smartalarm.fridgecow.com"-->
+<!--            android:icon="@drawable/ic_server"-->
+<!--            />-->
+<!--    </PreferenceScreen>-->
+
+<!--    <PreferenceScreen-->
+<!--        android:title="Tracking"-->
+<!--        android:icon="@drawable/ic_settings">-->
+<!--        <PreferenceScreen-->
+<!--            android:title="Auto Start">-->
+<!--            <SwitchPreference-->
+<!--                android:key="autostart_use"-->
+<!--                android:title="@string/autostart_title"-->
+<!--                android:summaryOn="@string/autostart_summary_on"-->
+<!--                android:summaryOff="@string/autostart_summary_off"-->
+<!--                app:wear_iconOn="@drawable/ic_check_white"-->
+<!--                app:wear_iconOff="@drawable/ic_cross_white"-->
+<!--                android:defaultValue="false"-->
+<!--                />-->
+
+<!--            <TimePreference-->
+<!--                android:key="autostart_time"-->
+<!--                android:title="@string/autostart_time"-->
+<!--                android:defaultValue="1900"-->
+<!--                android:icon="@drawable/ic_clock"/>-->
+<!--        </PreferenceScreen>-->
+
+<!--        <ListPreference-->
+<!--            android:key="acc_polling_rate"-->
+<!--            android:title="@string/acc_polling_rate_title"-->
+<!--            android:entries="@array/polling_rates"-->
+<!--            android:entryValues="@array/polling_rates_values"-->
+<!--            android:defaultValue="3" />-->
+
+<!--        <NumberPreference-->
+<!--            android:key="datapoint_rate"-->
+<!--            android:title="@string/datapoint_rate_title"-->
+<!--            android:min="1"-->
+<!--            android:max="60"-->
+<!--            android:defaultValue="1" />-->
+
+<!--        <SwitchPreference-->
+<!--            android:key="datapoint_forceaccurate"-->
+<!--            android:title="@string/datapoint_forceaccurate_title"-->
+<!--            android:summaryOn="@string/datapoint_forceaccurate_on"-->
+<!--            android:summaryOff="@string/datapoint_forceaccurate_off"-->
+<!--            app:wear_iconOn="@drawable/ic_check_white"-->
+<!--            app:wear_iconOff="@drawable/ic_cross_white"-->
+<!--            android:defaultValue="true"-->
+<!--            />-->
+
+<!--        <PreferenceScreen-->
+<!--            android:title="Heart Rate Monitor"-->
+<!--            android:icon="@drawable/ic_heart">-->
+
+<!--            <SwitchPreference-->
+<!--                android:key="hrm_use"-->
+<!--                android:title="@string/hrm_settings_title"-->
+<!--                android:summaryOn="@string/hrm_summary_on"-->
+<!--                android:summaryOff="@string/hrm_summary_off"-->
+<!--                app:wear_iconOn="@drawable/ic_heart"-->
+<!--                app:wear_iconOff="@drawable/ic_heart_off"-->
+<!--                android:defaultValue="true"-->
+<!--                />-->
+
+<!--            <SwitchPreference-->
+<!--                android:key="hrm_smart"-->
+<!--                android:title="@string/hrm_smart_title"-->
+<!--                android:summaryOn="@string/hrm_summary_on"-->
+<!--                android:summaryOff="@string/hrm_summary_off"-->
+<!--                app:wear_iconOn="@drawable/ic_check_white"-->
+<!--                app:wear_iconOff="@drawable/ic_cross_white"-->
+<!--                android:defaultValue="true"-->
+<!--                />-->
+
+<!--            <ListPreference-->
+<!--                android:key="hrm_polling_rate"-->
+<!--                android:title="@string/hrm_polling_rate_title"-->
+<!--                android:entries="@array/polling_rates"-->
+<!--                android:entryValues="@array/polling_rates_values"-->
+<!--                android:defaultValue="3"-->
+<!--                android:dependency="hrm_use"/>-->
+
+<!--        </PreferenceScreen>-->
+<!--    </PreferenceScreen>-->
+<!--    <PreferenceScreen-->
+<!--        android:title="About"-->
+<!--        android:icon="@drawable/ic_info">-->
+
+<!--            &lt;!&ndash;suppress AndroidDomInspection &ndash;&gt;-->
+<!--            <intent-->
+<!--                android:title="Version"-->
+<!--                android:summary="@string/versionName"-->
+<!--                android:action="changelog"-->
+<!--                android:key="null"/>-->
+
+<!--            <intent android:title="Privacy Policy" android:action="privacypolicy" android:key="null" />-->
+
+<!--    </PreferenceScreen>-->
+<!--</PreferenceScreen>-->
+<PreferenceScreen />

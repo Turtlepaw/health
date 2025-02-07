@@ -52,8 +52,8 @@ import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.health.presentation.Routes
 import com.turtlepaw.health.apps.sunlight.presentation.theme.SunlightTheme
-import com.turtlepaw.health.components.Page
 import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.components.Page
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.defaultShimmerTheme
 import com.valentinilk.shimmer.rememberShimmer

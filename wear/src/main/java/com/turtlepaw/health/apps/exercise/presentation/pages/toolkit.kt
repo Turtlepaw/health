@@ -19,8 +19,8 @@ import androidx.wear.compose.material.Text
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.apps.exercise.manager.ExerciseService
-import com.turtlepaw.health.components.Page
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
+import com.turtlepaw.shared.components.Page
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
 @Composable

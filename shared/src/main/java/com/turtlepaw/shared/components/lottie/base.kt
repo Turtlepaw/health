@@ -1,4 +1,4 @@
-package com.turtlepaw.health.components.lottie
+package com.turtlepaw.shared.components.lottie
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue

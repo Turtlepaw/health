@@ -20,8 +20,8 @@ import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.apps.health.presentation.Routes
-import com.turtlepaw.health.components.Page
 import com.turtlepaw.heart_connection.R
+import com.turtlepaw.shared.components.Page
 import java.text.NumberFormat
 
 @SuppressLint("InlinedApi")

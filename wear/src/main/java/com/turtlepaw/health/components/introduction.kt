@@ -26,6 +26,7 @@ import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import com.turtlepaw.shared.components.Page
 
 @Composable
 @OptIn(ExperimentalHorologistApi::class)

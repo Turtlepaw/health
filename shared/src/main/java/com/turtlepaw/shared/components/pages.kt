@@ -1,4 +1,4 @@
-package com.turtlepaw.health.components
+package com.turtlepaw.shared.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons

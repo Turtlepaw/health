@@ -25,7 +25,7 @@ import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
-import com.turtlepaw.health.components.Page
+import com.turtlepaw.shared.components.Page
 import com.turtlepaw.shared.database.AppDatabase
 import com.turtlepaw.shared.database.Reflection
 import java.time.Duration

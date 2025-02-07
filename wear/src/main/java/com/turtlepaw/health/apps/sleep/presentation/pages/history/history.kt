@@ -46,7 +46,7 @@ import com.patrykandpatrick.vico.core.component.text.textComponent
 import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
 import com.patrykandpatrick.vico.core.entry.entryOf
 import com.turtlepaw.health.apps.sleep.presentation.Routes
-import com.turtlepaw.health.components.Page
+import com.turtlepaw.shared.components.Page
 import com.turtlepaw.shared.database.BedtimeSensor
 import com.turtlepaw.shared.database.SleepDay
 import com.turtlepaw.sleeptools.utils.TimeManager

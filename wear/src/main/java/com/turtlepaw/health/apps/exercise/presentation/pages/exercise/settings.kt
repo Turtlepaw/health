@@ -25,8 +25,8 @@ import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.exercise.manager.ExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.HeartRateSource
 import com.turtlepaw.health.apps.exercise.presentation.Routes
-import com.turtlepaw.health.components.Page
 import com.turtlepaw.heart_connection.HeartConnection
+import com.turtlepaw.shared.components.Page
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)

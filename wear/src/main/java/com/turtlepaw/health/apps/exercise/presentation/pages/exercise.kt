@@ -268,7 +268,7 @@ fun Exercise(
     ExerciseTheme {
         //val focusRequester = rememberActiveFocusRequester()
         val scalingLazyListState = rememberScalingLazyListState()
-        var maxPages = listOf<Pages>(Pages.Music, Pages.Overview, Pages.Controls)
+        var maxPages = listOf<Pages>(Pages.Overview, Pages.Controls)
         val supportsMaps = exercise.useGps
         if (supportsMaps) {
             maxPages = maxPages + Pages.Maps

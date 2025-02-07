@@ -32,7 +32,7 @@ import androidx.wear.compose.material.ToggleChip
 import androidx.wear.compose.material.ToggleChipDefaults
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.apps.sleep.presentation.Routes
-import com.turtlepaw.health.components.Page
+import com.turtlepaw.shared.components.Page
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 

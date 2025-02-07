@@ -59,7 +59,6 @@ import com.turtlepaw.health.apps.exercise.presentation.pages.summary.stepsArg
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.totalCaloriesArg
 import com.turtlepaw.health.apps.exercise.presentation.pages.summary.totalDistanceArg
 import com.turtlepaw.health.apps.sunlight.presentation.pages.isServiceRunning
-import com.turtlepaw.health.components.ErrorPage
 import com.turtlepaw.health.services.LightWorker
 import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.HeartConnection
@@ -74,6 +73,7 @@ import com.turtlepaw.heartconnect.presentation.pages.PermissionsIntroduction
 import com.turtlepaw.heartconnect.presentation.theme.ExerciseTheme
 import com.turtlepaw.shared.Settings
 import com.turtlepaw.shared.SettingsBasics
+import com.turtlepaw.shared.components.ErrorPage
 import com.turtlepaw.shared.database.AppDatabase
 import com.turtlepaw.shared.database.ServiceType
 import com.turtlepaw.shared.database.exercise.Preference

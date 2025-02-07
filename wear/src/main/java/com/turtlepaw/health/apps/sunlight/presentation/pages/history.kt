@@ -21,7 +21,7 @@ import androidx.wear.compose.material.TitleCard
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
-import com.turtlepaw.health.components.Page
+import com.turtlepaw.shared.components.Page
 import com.turtlepaw.shared.database.SunlightDay
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter

@@ -1,0 +1,121 @@
+<resources>
+    <string name="app_name">Smart Alarm</string>
+    <!--
+    This string is used for square devices and overridden by hello_world in
+    values-round/strings.xml for round devices.
+    -->
+    <string name="hello_world">Hello Square World!</string>
+
+    <!-- Main Activity -->
+
+    <string name="button_stop">Pause</string>
+    <string name="button_start">Start</string>
+    <string name="button_reset">Reset</string>
+    <string name="button_export">Export</string>
+
+    <!-- Settings Activity -->
+
+    <string name="title_activity_settings">Settings</string>
+    <string name="button_settings">Settings</string>
+
+    <string name="hrm_settings_title">Record Heart Rate</string>
+    <string name="hrm_summary_on">On</string>
+    <string name="hrm_summary_off">Off</string>
+    <string name="hrm_polling_rate_title">HRM Polling Rate</string>
+    <string name="acc_polling_rate_title">Accelerometer Polling Rate</string>
+    <string name="datapoint_rate_title">Datapoint Frequency (minutes)</string>
+    <string name="title_activity_number_input">NumberInput</string>
+    <string name="number_input_text">Input Number:</string>
+    <string name="form_done">Done</string>
+    <string name="smartalarm_summary_off">Disabled</string>
+    <string name="smartalarm_summary_on">Enabled</string>
+    <string name="smartalarm_settings_title">Smart Alarm</string>
+    <string name="smartalarm_settings_window">Alarm Window (mins)</string>
+    <string name="smartalarm_settings_min">Alarm Minute</string>
+    <string name="smartalarm_settings_snooze">Snooze (mins)</string>
+    <string name="title_activity_alarm">AlarmActivity</string>
+
+    <string name="autostart_title">Auto Start?</string>
+    <string name="autostart_summary_on">On</string>
+    <string name="autostart_summary_off">Off</string>
+    <string name="autostart_time">Start Time</string>
+
+    <!-- Alarm Activity -->
+    <string name="alarm_title">Smart Alarm!</string>
+    <string name="alarm_done">✓</string>
+    <string name="title_activity_text_input">TextInputActivity</string>
+    <string name="text_input_text">Input Text</string>
+    <string name="welcome">Click \"play\" to start recording!</string>
+    <string name="auto_export_title">Auto Export</string>
+    <string name="auto_export_summary_on">Export with Smart Alarm</string>
+    <string name="auto_export_summary_off">Export manually</string>
+    <string name="graph_no_data">No data yet - go to sleep!</string>
+    <string name="title_activity_time_input">Time Input</string>
+    <string name="alarm_snooze">Snooze</string>
+    <string name="title_activity_sleep_summary">SleepSummaryActivity</string>
+    <string name="detectedsleeptime">Detected Sleep Time</string>
+    <string name="sleepefficiencytotal">Sleep Efficiency (Total Tracked)</string>
+    <string name="sleepefficiencysmart"><![CDATA[Sleep Efficiency (Sleep->Wake)]]></string>
+    <string name="detectedwaketime">Detected Wake Time</string>
+    <string name="legend_sleep">Deep Sleep</string>
+    <string name="legend_wakefulness">Wakefulness</string>
+    <string name="summary_delete">Delete</string>
+    <string name="hrm_smart_title">Smart Monitoring</string>
+
+    <string name="title_activity_privacy_policy">Privacy Policy</string>
+    <string name="privacy_policy_html">
+        Available at <a href='https://www.fridgecow.com/smartalarm/privacy.html'>fridgecow.com/smartalarm/privacy</a>\n\n
+        The app is completely open source. The information it sends and receives can be viewed and audited directly, and, if so desired, removed. That doesn\'t and will never prevent your use of the app as a whole.\n\n
+
+        As guidance, here\'s what the app sends in various circumstances:\n
+          	• <b>Email Export:</b> Your email address and full CSV of the sleep recording is sent, along with your timezone so the server can interpret the CSV correctly.\n
+          	• <b>IFTTT integration:</b> Only the documented events are sent, using your IFTTT maker key.\n
+        \n
+        <i>All data is sent over HTTPS</i>\n\n
+        Here\'s what I store in my database (literally just transcribing the fields):\n
+        <i>NB: When I say "user", I mean "email address", since that is the only identifying information stored.</i>\n
+
+        • A unique numeric ID for each user.\n
+        • The date this user was registered <i>(NB: for users before v1.5.1a, this is when I imported the email into the database).</i>\n
+        • <b>The user\'s email address.</b>\n
+        • Whether the user has confirmed their email address, or unsubscribed from all emails.\n
+        • The number of times this email has been used (number of exports, also inaccurate before v1.5.1a).\n
+        • The date this address was last used or updated.\n
+
+        The CSV of your sleep is not saved, however the graph output is stored temporarily as a by-product of the graphing library used. It is deleted as soon as the export email is sent.\n
+        General notes: your data is yours. If you contact me at <a href='mailto:tom@fridgecow.com'>tom@fridgecow.com</a>, I will delete any data I hold and attempt to provide you proof of that. I will not knowingly provide your data to anyone else, and if I find out someone got your data from me, I will attempt to notify you. I will also attempt to notify you if the policy in this last paragraph changes.\n
+        If you would like a fullproof method of getting notified on update, I recommend IFTTT or a similar service that can periodically check this page for changes.\n
+        I hope this is satisfactory. If not, I have an email address.\n
+           Cheers,\n
+           Tom
+    </string>
+    <string name="legend_rem">REM (Estimate)</string>
+    <string name="changelog_html">
+        New in this version:\n
+        &#8226; App name catches up with 2018!\n
+        &#8226; New export email!\n
+        &#8226; Tracking notifications are back!\n
+        &#8226; All backgrounds are now black!\n
+        &#8226; Time picker has "Done" button\n
+        &#8226; Accurate timings enabled by default - disable it in settings to improve battery.\n
+        &#8226; New setting to edit export server URL\n
+        &#8226; Dependency bump, code clean up, small bug fixes\n
+    </string>
+    <string name="changelog_donetext">Let\'s Go!</string>
+
+    <string name="onboarding_text">
+        Welcome to Smart Alarm!\n\n
+        This app can track motion and heart rate, and intelligently estimate sleep stage cycles based on that.\n\n
+        To get started with tracking, press the play button!\n\n
+        Be sure to go into to settings to configure the alarm and tracking.\n\n
+    </string>
+    <string name="smartalarm_settings_dismiss_action">Dismiss Action</string>
+    <string name="smartalarm_snooze">Snooze</string>
+    <string name="smartalarm_done">Done</string>
+    <string name="datapoint_forceaccurate_title">Force Accurate Timing</string>
+    <string name="datapoint_forceaccurate_on">Enabled</string>
+    <string name="datapoint_forceaccurate_off">Disabled</string>
+    <string name="confirmation_resend">Resend Confirmation Email</string>
+    <string name="channel_name">Sleep Tracking</string>
+    <string name="channel_description">Ongoing notifications while tracking is running</string>
+</resources>

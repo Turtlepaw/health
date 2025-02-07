@@ -18,8 +18,7 @@ appcompat = "1.7.0"
 kotlinxCoroutinesPlayServices = "1.8.1"
 lifecycleViewmodelCompose = "2.8.7"
 lottieCompose = "6.6.2"
-mapsforgeMapAndroid = "0.22.0"
-mapsforgeThemes = "0.22.0"
+mapsforge = "0.23.0"
 playServicesPal = "21.0.0"
 playServicesWearable = "19.0.0"
 material = "1.12.0"
@@ -69,8 +68,8 @@ compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottieCompose" }
-mapsforge-map-android = { module = "com.github.mapsforge.mapsforge:mapsforge-map-android", version.ref = "mapsforgeMapAndroid" }
-mapsforge-themes = { module = "com.github.mapsforge.mapsforge:mapsforge-themes", version.ref = "mapsforgeMapAndroid" }
+mapsforge-map-android = { module = "com.github.mapsforge.mapsforge:mapsforge-map-android", version.ref = "mapsforge" }
+mapsforge-themes = { module = "com.github.mapsforge.mapsforge:mapsforge-themes", version.ref = "mapsforge" }
 material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 runtime-livedata = { module = "androidx.compose.runtime:runtime-livedata" }
 ui = { module = "androidx.compose.ui:ui" }

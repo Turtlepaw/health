@@ -1,4 +1,4 @@
-package com.turtlepaw.health.components
+package com.turtlepaw.shared.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.Composable
@@ -43,7 +43,7 @@ fun Page(
     Scaffold(timeText = if (showTimeText) {
         {
             ResponsiveTimeText(
-                modifier = Modifier.scrollAway(columnState),
+                modifier = Modifier.Companion.scrollAway(columnState),
                 startCurvedContent = startTimeTextCurved,
                 startLinearContent = startTimeTextLinear
             )

@@ -38,8 +38,9 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.apps.health.presentation.Routes
-import com.turtlepaw.health.components.Page
 import com.turtlepaw.health.services.scheduleHealthWorker
+import com.turtlepaw.heart_connection.R
+import com.turtlepaw.shared.components.Page
 import com.turtlepaw.shared.database.AppDatabase
 import com.turtlepaw.shared.database.CoachingType
 import kotlinx.coroutines.delay
@@ -95,7 +96,7 @@ fun WearHome(context: Context, database: AppDatabase, navController: NavControll
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
-                        painter = painterResource(com.turtlepaw.heart_connection.R.drawable.steps),
+                        painter = painterResource(R.drawable.steps),
                         contentDescription = "Step",
                     )
 
