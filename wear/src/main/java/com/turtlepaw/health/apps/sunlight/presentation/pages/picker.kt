@@ -3,7 +3,6 @@ package com.turtlepaw.health.apps.sunlight.presentation.pages
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -15,13 +14,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Picker
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.rememberPickerState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Picker
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.rememberPickerState
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
@@ -39,7 +38,7 @@ fun StatePicker(
     val initialIndex = options.indexOf(currentState)
     val state = rememberPickerState(
         initialNumberOfOptions = options.size,
-        initiallySelectedOption = if (initialIndex != -1) initialIndex else 0
+        initiallySelectedIndex = if (initialIndex != -1) initialIndex else 0
     )
 
     Column(
@@ -68,13 +67,13 @@ fun StatePicker(
                 Text(
                     text = "${options[it]}$unitOfMeasurement",
                     style = with(LocalDensity.current) {
-                        MaterialTheme.typography.display1.copy(
+                        MaterialTheme.typography.displayLarge.copy(
                             fontWeight = FontWeight.Medium,
                             // Ignore text scaling
-                            fontSize = MaterialTheme.typography.display1.fontSize.value.dp.toSp()
+                            fontSize = MaterialTheme.typography.displayLarge.fontSize.value.dp.toSp()
                         )
                     },
-                    color = MaterialTheme.colors.primary,
+                    color = MaterialTheme.colorScheme.primary,
                     // In case of overflow, minimize weird layout behavior
                     textAlign = TextAlign.Center,
                     overflow = TextOverflow.Ellipsis,
@@ -85,13 +84,13 @@ fun StatePicker(
                     Text(
                         text = "(recommended)",
                         style = with(LocalDensity.current) {
-                            MaterialTheme.typography.caption1.copy(
+                            MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Medium,
                                 // Ignore text scaling
-                                fontSize = MaterialTheme.typography.caption1.fontSize.value.dp.toSp()
+                                fontSize = MaterialTheme.typography.labelSmall.fontSize.value.dp.toSp()
                             )
                         },
-                        color = MaterialTheme.colors.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         // In case of overflow, minimize weird layout behavior
                         textAlign = TextAlign.Center,
                         overflow = TextOverflow.Ellipsis,
@@ -102,17 +101,16 @@ fun StatePicker(
         }
         Button(
             onClick = {
-                onSelect(options[state.selectedOption])
+                onSelect(options[state.selectedOptionIndex])
             },
-            colors = ButtonDefaults.secondaryButtonColors(),
+            colors = ButtonDefaults.filledTonalButtonColors(),
             modifier = Modifier
-                .size(ButtonDefaults.DefaultButtonSize)
             //.wrapContentSize(align = Alignment.Center)
         ) {
             // Icon for history button
             Icon(
                 painter = painterResource(id = R.drawable.check),
-                tint = MaterialTheme.colors.primary,
+                tint = MaterialTheme.colorScheme.primary,
                 contentDescription = "Settings",
                 modifier = Modifier
                     .padding(2.dp)

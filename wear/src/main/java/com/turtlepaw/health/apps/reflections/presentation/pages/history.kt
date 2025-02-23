@@ -18,7 +18,7 @@ import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
 import com.turtlepaw.shared.components.Page
 import com.turtlepaw.shared.database.AppDatabase
-import com.turtlepaw.shared.database.Reflection
+import com.turtlepaw.shared.database.reflect.Reflection
 
 @OptIn(ExperimentalHorologistApi::class)
 @Composable

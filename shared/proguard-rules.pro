@@ -19,3 +19,13 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep class com.turtlepaw.shared.network.*
+-keepattributes *Annotation*
+-keepattributes SourceFile,LineNumberTable
+# Keep all class, method, and field names
+-keepnames class **
+-keepclassmembers,allowshrinking class * { *; }
+
+# Disable obfuscation (renaming)
+-dontobfuscate

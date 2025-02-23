@@ -44,6 +44,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.compose.ambient.AmbientAware
+import com.turtlepaw.health.HealthActivity
 import com.turtlepaw.health.apps.exercise.manager.ExerciseViewModel
 import com.turtlepaw.health.apps.exercise.manager.HeartRateModel
 import com.turtlepaw.health.apps.exercise.presentation.pages.BluetoothSearch
@@ -75,8 +76,8 @@ import com.turtlepaw.shared.Settings
 import com.turtlepaw.shared.SettingsBasics
 import com.turtlepaw.shared.components.ErrorPage
 import com.turtlepaw.shared.database.AppDatabase
-import com.turtlepaw.shared.database.ServiceType
 import com.turtlepaw.shared.database.exercise.Preference
+import com.turtlepaw.shared.database.services.ServiceType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -99,7 +100,7 @@ enum class Routes(private val route: String) {
     }
 }
 
-class MainActivity : ComponentActivity() {
+class MainActivity : HealthActivity() {
 
     // ViewModel and essential managers
     private val exerciseViewModel: ExerciseViewModel by viewModels()
@@ -356,7 +357,7 @@ fun WearPages(
                         coroutineScope.launch {
                             launch {
                                 val isEnabled = dao.serviceDao()
-                                    .getService(ServiceType.SUNLIGHT.serviceName)?.isEnabled == true
+                                    .getService(ServiceType.Sunlight)?.isEnabled == true
 
                                 if (isEnabled && !isServiceRunning(
                                         LightWorker::class.java,

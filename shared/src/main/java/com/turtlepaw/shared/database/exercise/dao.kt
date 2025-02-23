@@ -7,6 +7,8 @@ import androidx.room.Query
 import com.turtlepaw.heart_connection.Exercises
 import com.turtlepaw.heart_connection.Metric
 import com.turtlepaw.shared.database.Day
+import com.turtlepaw.shared.database.RoomSyncableDao
+import java.time.LocalDateTime
 
 @Dao
 interface PreferenceDao {
@@ -45,15 +47,20 @@ interface PreferenceDao {
 }
 
 @Dao
-interface ExerciseDao {
+abstract class ExerciseDao : RoomSyncableDao<Exercise, LocalDateTime>() {
     @Insert
-    suspend fun insertExercise(exercise: Exercise)
+    abstract suspend fun insertExercise(exercise: Exercise)
 
     @Query("SELECT * FROM exercise ORDER BY timestamp DESC")
-    suspend fun getExercises(): List<Exercise>
+    abstract suspend fun getExercises(): List<Exercise>
 
-//    @Query("DELETE FROM exercise WHERE id = :favoriteId")
-//    suspend fun deleteFavoriteById(favoriteId: Int)
+    @Query("SELECT * FROM exercise WHERE synced = 0")
+    @JvmSuppressWildcards
+    abstract override suspend fun getUnsyncedInternal(): List<Exercise>
+
+    @Query("UPDATE exercise SET synced = 1 WHERE timestamp IN (:ids)")
+    @JvmSuppressWildcards
+    abstract override suspend fun markSyncedInternal(ids: List<LocalDateTime>)
 }
 
 @Dao

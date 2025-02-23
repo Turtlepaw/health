@@ -14,19 +14,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.Card
-import androidx.wear.compose.material.CardDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Card
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.turtlepaw.shared.components.Page
+import com.turtlepaw.shared.components.Material3Page
 
 @Composable
 @OptIn(ExperimentalHorologistApi::class)
@@ -36,17 +34,17 @@ fun Introduction(
     features: List<Triple<ImageVector, String, String>>,
     onButtonClick: () -> Unit,
 ) {
-    Page {
+    Material3Page {
         item {
             Text(
                 text = appName,
-                style = MaterialTheme.typography.title3
+                style = MaterialTheme.typography.titleSmall
             )
         }
         item {
             Text(
                 text = description,
-                style = MaterialTheme.typography.body2,
+                style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
         }
@@ -59,10 +57,6 @@ fun Introduction(
             Card(
                 enabled = false,
                 onClick = {},
-                backgroundPainter = CardDefaults.cardBackgroundPainter(
-                    MaterialTheme.colors.onSurfaceVariant.copy(alpha = 0.20f)
-                        .compositeOver(MaterialTheme.colors.background)
-                ),
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
@@ -92,12 +86,12 @@ fun Introduction(
                             Spacer(Modifier.width(10.dp))
                             Text(
                                 it.second,
-                                style = MaterialTheme.typography.title3
+                                style = MaterialTheme.typography.titleSmall
                             )
                         }
                         Text(
                             it.third,
-                            style = MaterialTheme.typography.body2
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
                 }
@@ -114,10 +108,13 @@ fun Introduction(
             }
         }
         item {
+            Spacer(modifier = Modifier.height(2.dp))
+        }
+        item {
             Text(
                 "$appName tracking may slightly decrease your battery life.",
-                style = MaterialTheme.typography.body2.copy(
-                    color = MaterialTheme.colors.onSurfaceVariant.copy(0.8f)
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.8f)
                 ),
                 textAlign = TextAlign.Center
             )

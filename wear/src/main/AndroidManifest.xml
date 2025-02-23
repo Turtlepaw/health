@@ -5,19 +5,27 @@
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove"/>
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <!--    <uses-permission android:name="android.permission.WAKE_LOCK" />-->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+
+    <!-- Health -->
     <uses-permission android:name="android.permission.BODY_SENSORS" />
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
+
+    <!-- Required for Wear OS communication -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
         android:name=".HealthApplication"
@@ -26,24 +34,6 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault">
-        <!-- Wearable Sync Service -->
-        <service
-            android:name="com.turtlepaw.shared.WearableSettingsSyncService"
-            android:exported="true">
-            <intent-filter>
-                <!-- listeners receive events that match the action and data filters -->
-                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
-                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
-                <action android:name="com.google.android.gms.wearable.REQUEST_RECEIVED" />
-                <action android:name="com.google.android.gms.wearable.CAPABILITY_CHANGED" />
-                <action android:name="com.google.android.gms.wearable.CHANNEL_EVENT" />
-
-                <data
-                    android:host="*"
-                    android:scheme="wear" />
-            </intent-filter>
-        </service>
-
         <provider
             android:name=".apps.sunlight.provider.SunlightContentProvider"
             android:authorities="com.turtlepaw.health.provider"
@@ -170,12 +160,27 @@
             android:exported="true"
             android:taskAffinity=""
             android:launchMode="singleInstance"
-            android:theme="@style/MainActivityTheme.Sunlight.Starting">
+            android:theme="@style/MainActivityTheme.Sleep.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".apps.sleep.AlarmActivity"
+            android:exported="true"
+            android:icon="@mipmap/sleep_ic_launcher"
+            android:label="@string/sleep_alarm_app_name"
+            android:launchMode="singleInstance"
+            android:taskAffinity=""
+            android:theme="@style/MainActivityTheme.Sleep.Starting"></activity>
+
+        <service
+            android:name=".apps.sleep.SleepTrackerService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync|health" />
 
         <!-- Reflections -->
         <activity
@@ -218,6 +223,33 @@
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- Shared -->
+        <service
+            android:name=".services.WearableSyncService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/sync_data"
+                    android:scheme="wear" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/shared_preferences"
+                    android:scheme="wear" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/services"
+                    android:scheme="wear" />
             </intent-filter>
         </service>
 

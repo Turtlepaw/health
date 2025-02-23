@@ -3,6 +3,7 @@ package com.turtlepaw.health.services
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -38,8 +39,8 @@ import com.turtlepaw.shared.SUNLIGHT_VALUE_NAME
 import com.turtlepaw.shared.Settings
 import com.turtlepaw.shared.SettingsBasics
 import com.turtlepaw.shared.database.AppDatabase
-import com.turtlepaw.shared.database.ServiceType
-import com.turtlepaw.shared.database.SunlightDay
+import com.turtlepaw.shared.database.services.ServiceType
+import com.turtlepaw.shared.database.sunlight.SunlightDay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -156,23 +157,38 @@ class LightWorker : Service(), SensorEventListener {
 
         val notification =
             NotificationCompat.Builder(this, HealthNotifications.NOTIFICATION_CHANNEL)
-            .setSmallIcon(
-                IconCompat.createFromIcon(
-                    this,
+                .setSmallIcon(
+                    IconCompat.createFromIcon(
+                        this,
+                        android.graphics.drawable.Icon.createWithResource(
+                            this,
+                            com.turtlepaw.health.R.drawable.sunlight,
+                        )
+                    )!!
+                )
+                .setLargeIcon(
                     android.graphics.drawable.Icon.createWithResource(
                         this,
                         com.turtlepaw.health.R.drawable.sunlight,
                     )
-                )!!
-            )
-            .setLargeIcon(
-                android.graphics.drawable.Icon.createWithResource(
-                    this,
-                    com.turtlepaw.health.R.drawable.sunlight,
                 )
-            )
-            .setContentTitle("Listening for light")
-            .setContentText("Listening for changes in light from your device").build()
+                .setContentTitle("Listening for light")
+                .setContentText("Listening for changes in light from your device")
+                .addAction(
+                    android.R.drawable.ic_menu_close_clear_cancel,
+                    "Hide this",
+                    PendingIntent.getActivity(
+                        this,
+                        0,
+                        Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                            .putExtra(
+                                android.provider.Settings.EXTRA_APP_PACKAGE,
+                                context.packageName
+                            ),
+                        PendingIntent.FLAG_IMMUTABLE
+                    )
+                )
+                .build()
 
         startForeground(1, notification)
         database = AppDatabase.getDatabase(this)
@@ -240,7 +256,7 @@ class LightWorker : Service(), SensorEventListener {
         Log.d(TAG, "Waiting for light changes")
         coroutineScope.launch {
             delay(1000)
-            val service = database.serviceDao().getService(ServiceType.SUNLIGHT.serviceName)
+            val service = database.serviceDao().getService(ServiceType.Sunlight)
             if (service?.isEnabled != true) {
                 Log.d("LightWorker", "Service is not enabled, stopping")
                 withContext(Dispatchers.Main) {
@@ -334,7 +350,8 @@ class LightWorker : Service(), SensorEventListener {
             dao.insertDay(
                 SunlightDay(
                     timestamp = LocalDate.now(),
-                    value = value
+                    value = value,
+                    synced = false
                 )
             )
         }

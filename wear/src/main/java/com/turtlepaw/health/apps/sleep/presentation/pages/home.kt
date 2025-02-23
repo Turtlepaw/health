@@ -7,14 +7,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,26 +25,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.material3.AppCard
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.IconButton
+import androidx.wear.compose.material3.IconButtonDefaults
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
+import com.turtlepaw.health.apps.sleep.SleepTrackerHints
+import com.turtlepaw.health.apps.sleep.SleepTrackerViewModel
 import com.turtlepaw.health.apps.sleep.presentation.Routes
-import com.turtlepaw.shared.components.Page
+import com.turtlepaw.health.apps.sleep.presentation.theme.SleepTheme
+import com.turtlepaw.shared.components.Material3Page
 import com.turtlepaw.sleeptools.utils.AlarmType
 import com.turtlepaw.sleeptools.utils.TimeManager
 import kotlinx.coroutines.delay
@@ -54,9 +62,16 @@ fun WearHome(
     wakeTime: Pair<LocalTime, AlarmType>,
     nextAlarm: LocalTime,
     timeManager: TimeManager,
-    bedtimeGoal: LocalTime?
+    bedtimeGoal: LocalTime?,
+    viewModel: SleepTrackerViewModel = viewModel()
 ) {
-    val formatter = timeManager.getTimeFormatter(false)
+    val isTracking by viewModel.isTracking.observeAsState()
+    val isPaused by viewModel.isPaused.observeAsState()
+    val isSleeping by viewModel.isSleeping.observeAsState()
+    val hints by viewModel.hints.observeAsState()
+    val context = LocalContext.current
+
+    timeManager.getTimeFormatter(false)
     timeManager.getTimeFormatter()
     var timeDifference by remember {
         mutableStateOf(timeManager.calculateTimeDifference(wakeTime.first))
@@ -94,7 +109,7 @@ fun WearHome(
         }
     }
 
-    Page {
+    Material3Page {
         item {
             Image(
                 painter = painterResource(id = R.drawable.sleep),
@@ -106,56 +121,100 @@ fun WearHome(
         }
         item {
             Text(
-                text = "Sleep Prediction",
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-        }
-        item {
-            Text(
-                text = buildAnnotatedString {
-                    withStyle(style = SpanStyle(fontSize = 36.sp)) {
-                        append("${timeDifference.hours}")
-                    }
-                    append("hr ")
-                    withStyle(style = SpanStyle(fontSize = 36.sp)) {
-                        append("${timeDifference.minutes}")
-                    }
-                    append("min")
-                },
+                text = if (isTracking == true) {
+                    if (isPaused == true) "Paused"
+                    else if (isSleeping == true) "You're sleeping"
+                    else "Tracking"
+                } else "Not Tracking",
                 color = Color(0xFFE4C6FF),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Medium
             )
         }
-        item {
-            Text(
-                text = "${sleepQuality.getTitle()} • ${nextAlarm.format(formatter)} wake up${if (wakeTime.second === AlarmType.SYSTEM_ALARM) " (alarm)" else ""}",
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-        if (bedtimeGoal != null) {
+        if (hints?.isNotEmpty() == true) {
             item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(top = 5.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.AutoAwesome,
-                        contentDescription = "Auto Awesome",
-                        tint = MaterialTheme.colors.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.padding(3.dp))
-                    Text(
-                        text = "New tips available",
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 4.dp),
-                        color = MaterialTheme.colors.primary
-                    )
-                }
+                Spacer(modifier = Modifier.padding(vertical = 3.dp))
             }
         }
+        items((hints ?: emptyMap()).toList()) {
+            AppCard(
+                onClick = {},
+                enabled = false,
+                title = {},
+                appName = {
+                    Text(
+                        text = when (it.first) {
+                            SleepTrackerHints.MotionLow -> "Low Motion"
+                            SleepTrackerHints.HeartRateLow -> "Low Heart Rate"
+                        }
+                    )
+                },
+                appImage = {
+                    Icon(
+                        painterResource(
+                            id = when (it.first) {
+                                SleepTrackerHints.MotionLow -> R.drawable.ic_waves
+                                SleepTrackerHints.HeartRateLow -> R.drawable.ic_vital_signs
+                            }
+                        ),
+                        contentDescription = when (it.first) {
+                            SleepTrackerHints.MotionLow -> "Waves"
+                            SleepTrackerHints.HeartRateLow -> "Vital Signs"
+                        },
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.height(18.dp)
+                    )
+                },
+
+                ) {
+                Text(
+                    text = when (it.first) {
+                        SleepTrackerHints.MotionLow -> "You haven't moved for a while. Your average motion is ${it.second}."
+                        SleepTrackerHints.HeartRateLow -> "Your heart rate is low. Your heart rate was ${it.second}."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+//        item {
+//            Text(
+//                text = "${sleepQuality.getTitle()} • ${nextAlarm.format(formatter)} wake up${if (wakeTime.second === AlarmType.SYSTEM_ALARM) " (alarm)" else ""}",
+//                modifier = Modifier.padding(top = 4.dp)
+//            )
+//        }
+
+        item {
+            Spacer(modifier = Modifier.padding(vertical = 3.dp))
+        }
+
+        item {
+            Button(
+                onClick = {
+                    if (isTracking == true) {
+                        viewModel.stopTracking(context)
+                    } else {
+                        viewModel.startTracking(context)
+                        viewModel.bindService()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(
+                        text = "${if (isTracking == true) "Stop" else "Start"} Tracking",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                icon = {
+                    Icon(
+                        if (isTracking == true) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
+                        contentDescription = "${if (isTracking == true) "Stop" else "Start"} Tracking",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            )
+        }
+
         item {
             Spacer(modifier = Modifier.padding(vertical = 5.dp))
         }
@@ -165,16 +224,13 @@ fun WearHome(
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             ) {
-                Button(
+                IconButton(
                     onClick = {
                         navigate(
                             Routes.HISTORY.getRoute()
                         )
                     },
-                    colors = ButtonDefaults.secondaryButtonColors(),
-                    modifier = Modifier
-                        .size(ButtonDefaults.DefaultButtonSize)
-                    //.wrapContentSize(align = Alignment.Center)
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(),
                 ) {
                     // Icon for history button
                     Icon(
@@ -186,16 +242,13 @@ fun WearHome(
                     )
                 }
 
-                Button(
+                IconButton(
                     onClick = {
                         navigate(
                             Routes.TIPS.getRoute()
                         )
                     },
-                    colors = ButtonDefaults.secondaryButtonColors(),
-                    modifier = Modifier
-                        .size(ButtonDefaults.DefaultButtonSize)
-                    //.wrapContentSize(align = Alignment.Center)
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(),
                 ) {
                     // Icon for history button
                     Icon(
@@ -207,16 +260,13 @@ fun WearHome(
                     )
                 }
 
-                Button(
+                IconButton(
                     onClick = {
                         navigate(
                             Routes.SETTINGS.getRoute()
                         )
                     },
-                    colors = ButtonDefaults.secondaryButtonColors(),
-                    modifier = Modifier
-                        .size(ButtonDefaults.DefaultButtonSize)
-                    //.wrapContentSize(align = Alignment.Center)
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(),
                 ) {
                     // Icon for history button
                     Icon(
@@ -229,31 +279,22 @@ fun WearHome(
                 }
             }
         }
-        item {
-            Text(
-                text = "Made with 💤 by turtlepaw",
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .padding(
-                        top = 10.dp
-                    )
-            )
-        }
     }
 }
 
 @Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
 @Composable
 fun DefaultPreview() {
-    WearHome(
-        navigate = {},
-        wakeTime = Pair(
-            LocalTime.of(10, 30),
-            AlarmType.SYSTEM_ALARM
-        ),
-        nextAlarm = LocalTime.of(7, 30),
-        timeManager = TimeManager(),
-        null
-    )
+    SleepTheme {
+        WearHome(
+            navigate = {},
+            wakeTime = Pair(
+                LocalTime.of(10, 30),
+                AlarmType.SYSTEM_ALARM
+            ),
+            nextAlarm = LocalTime.of(7, 30),
+            timeManager = TimeManager(),
+            null
+        )
+    }
 }

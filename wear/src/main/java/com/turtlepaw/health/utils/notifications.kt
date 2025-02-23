@@ -13,6 +13,8 @@ class HealthNotifications {
         const val EXERCISE_NOTIFICATION_CHANNEL =
             "EXERCISE_FOREGROUND"
         private const val EXERCISE_NOTIFICATION_CHANNEL_DISPLAY = "Exercises"
+        const val SLEEP_NOTIFICATION_CHANNEL = "SLEEP_TRACKING"
+        private const val SLEEP_NOTIFICATION_CHANNEL_DISPLAY = "Sleep Tracking"
     }
 
     /**
@@ -41,6 +43,19 @@ class HealthNotifications {
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             description = "Channel for exercise foreground service notifications."
+        }
+
+        val notificationManager = context.getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    fun createSleepChannel(context: Context) {
+        val channel = NotificationChannel(
+            SLEEP_NOTIFICATION_CHANNEL,
+            SLEEP_NOTIFICATION_CHANNEL_DISPLAY,
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Channel for sleep tracking notifications."
         }
 
         val notificationManager = context.getSystemService(NotificationManager::class.java)

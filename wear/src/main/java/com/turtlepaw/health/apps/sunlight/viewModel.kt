@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.turtlepaw.shared.database.AppDatabase
-import com.turtlepaw.shared.database.ServiceType
+import com.turtlepaw.shared.database.services.ServiceType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -27,7 +27,7 @@ class SunlightViewModel(application: Application) : AndroidViewModel(application
                 }
 
             _isSunlightEnabled.value =
-                database.serviceDao().getService(ServiceType.SUNLIGHT.serviceName)?.isEnabled == true
+                database.serviceDao().getService(ServiceType.Sunlight)?.isEnabled == true
         }
     }
 }

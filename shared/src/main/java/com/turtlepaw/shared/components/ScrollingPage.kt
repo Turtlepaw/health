@@ -1,19 +1,22 @@
 package com.turtlepaw.shared.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.CurvedScope
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
+import androidx.wear.compose.material3.ScreenScaffold
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.compose.layout.ResponsiveTimeText
-import com.google.android.horologist.compose.layout.ScalingLazyColumn
 import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
 import com.google.android.horologist.compose.layout.ScalingLazyColumnState
 import com.google.android.horologist.compose.layout.rememberColumnState
@@ -53,8 +56,23 @@ fun Page(
     }, vignette = {
         Vignette(vignettePosition = VignettePosition.TopAndBottom)
     }) {
-        ScalingLazyColumn(
+        com.google.android.horologist.compose.layout.ScalingLazyColumn(
             columnState = columnState, content = content
+        )
+    }
+}
+
+@Composable
+fun Material3Page(
+    content: ScalingLazyListScope.() -> Unit
+) {
+    val listState = rememberScalingLazyListState()
+    ScreenScaffold(scrollState = listState) { contentPadding ->
+        ScalingLazyColumn(
+            state = listState,
+            contentPadding = contentPadding,
+            modifier = Modifier.fillMaxSize(),
+            content = content
         )
     }
 }

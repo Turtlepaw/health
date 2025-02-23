@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinAndroid)
     id("com.google.devtools.ksp")
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -33,9 +34,6 @@ android {
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.12"
     }
     packaging {
         resources {
@@ -89,6 +87,9 @@ dependencies {
 
     // Icons
     implementation(libs.material.icons.extended)
+
+    implementation(kotlin("reflect"))
+    implementation(libs.kotlinx.coroutines.play.services)
 }
 
 ksp {

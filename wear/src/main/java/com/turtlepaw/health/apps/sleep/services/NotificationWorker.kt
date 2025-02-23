@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.turtlepaw.health.R
-import com.turtlepaw.sleeptools.presentation.theme.PRIMARY_COLOR
+import com.turtlepaw.shared.theming.SleepColors
 import kotlinx.coroutines.runBlocking
 
 class NotificationWorker(
@@ -41,7 +41,7 @@ class NotificationWorker(
             val builder = Notification.Builder(appContext, CHANNEL_ID)
                 .setContentTitle("Bedtime")
                 .setContentText("Time to wind down and prepare for a restful night.")
-                .setColor(PRIMARY_COLOR.toArgb())
+                .setColor(SleepColors.primary.toArgb())
                 .setSmallIcon(R.drawable.sleep_white)
                 .build()
 

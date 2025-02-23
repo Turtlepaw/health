@@ -8,7 +8,6 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Dao
 interface SunlightDao {
@@ -29,30 +28,6 @@ interface SunlightDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDay(sunlightDay: SunlightDay)
-}
-
-@Dao
-interface SleepDao {
-    @Insert
-    suspend fun insertDay(day: SleepDay)
-
-    @Query("UPDATE sleep_day SET wakeup = :wakeup WHERE bedtime = :bedtime")
-    suspend fun updateWakeup(bedtime: LocalDateTime, wakeup: LocalDateTime)
-
-    @Query("UPDATE sleep_day SET asleepAt = :asleepAt WHERE bedtime = :bedtime")
-    suspend fun updateAsleepAt(bedtime: LocalDateTime, asleepAt: LocalDateTime)
-
-    @Query("SELECT * FROM sleep_day WHERE date(bedtime) = date('now')")
-    suspend fun getToday(): List<SleepDay>
-
-    @Query("SELECT * FROM sleep_day WHERE substr(bedtime, 1, 10) = :day LIMIT 1")
-    suspend fun getDay(day: String): SleepDay?
-
-    @Query("SELECT * FROM sleep_day ORDER BY bedtime DESC")
-    suspend fun getHistory(): List<SleepDay>
-
-    @Query("DELETE FROM sleep_day")
-    suspend fun deleteAll()
 }
 
 @Dao

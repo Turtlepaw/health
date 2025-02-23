@@ -13,16 +13,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.material.CardDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TitleCard
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TitleCard
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
-import com.turtlepaw.shared.components.Page
-import com.turtlepaw.shared.database.SunlightDay
+import com.turtlepaw.shared.components.Material3Page
+import com.turtlepaw.shared.database.sunlight.SunlightDay
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -31,7 +30,7 @@ import java.time.format.DateTimeFormatter
 fun History(
     history: List<SunlightDay>
 ) {
-    Page {
+    Material3Page {
         item {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -41,13 +40,13 @@ fun History(
                 Icon(
                     painter = painterResource(id = R.drawable.history),
                     contentDescription = "History",
-                    tint = MaterialTheme.colors.primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
 
                 Text(
                     text = "History",
-                    style = MaterialTheme.typography.title3
+                    style = MaterialTheme.typography.titleSmall
                 )
             }
         }
@@ -64,9 +63,6 @@ fun History(
             TitleCard(
                 enabled = false,
                 onClick = { /*TODO*/ },
-                backgroundPainter = CardDefaults.cardBackgroundPainter(
-                    startBackgroundColor = MaterialTheme.colors.surface
-                ),
                 title = {
                     val formattedDate = if (item.timestamp == today) "Today"
                     else if (item.timestamp == today.minusDays(1)) "Yesterday"

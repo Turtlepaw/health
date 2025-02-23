@@ -3,6 +3,7 @@ package com.turtlepaw.shared.database.exercise
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.turtlepaw.heart_connection.Metric
+import com.turtlepaw.shared.database.SyncableEntity
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -26,5 +27,6 @@ data class Exercise(
     val heartRateSimilarity: Double? = null,
     val heartRateHistory: List<Pair<LocalTime, Int>>,
     val sunlight: Int,
-    val location: List<Pair<Double, Double>>
-)
+    val location: List<Pair<Double, Double>>,
+    override val synced: Boolean = false
+) : SyncableEntity

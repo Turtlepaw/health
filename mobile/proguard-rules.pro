@@ -19,3 +19,16 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep class com.google.gson.reflect.TypeToken
+-keep class * extends com.google.gson.reflect.TypeToken
+-keep public class * implements java.lang.reflect.Type
+
+-keepattributes *Annotation*
+-keepattributes SourceFile,LineNumberTable
+# Keep all class, method, and field names
+-keepnames class **
+-keepclassmembers,allowshrinking class * { *; }
+
+# Disable obfuscation (renaming)
+-dontobfuscate

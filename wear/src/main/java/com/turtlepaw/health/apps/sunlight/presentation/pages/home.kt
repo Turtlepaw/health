@@ -41,19 +41,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.health.presentation.Routes
 import com.turtlepaw.health.apps.sunlight.presentation.theme.SunlightTheme
 import com.turtlepaw.shared.Settings
-import com.turtlepaw.shared.components.Page
+import com.turtlepaw.shared.components.Material3Page
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.defaultShimmerTheme
 import com.valentinilk.shimmer.rememberShimmer
@@ -108,7 +108,7 @@ fun ExplodingRotatingIcon() {
         Icon(
             painter = painterResource(id = R.drawable.sunlight_gold),
             contentDescription = "sunlight",
-            tint = MaterialTheme.colors.onPrimary,
+            tint = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier
                 .align(Alignment.Center)
                 .size(35.dp)
@@ -156,9 +156,7 @@ fun WearHome(
         }
     }
 
-    Page(
-        applyPadding = false
-    ) {
+    Material3Page {
         item {
             val size = 69.dp
 
@@ -174,14 +172,17 @@ fun WearHome(
                             //top = 35.dp,
                         )
                 ) {
+                    val progress by animateFloatAsState(
+                        targetValue = animatedGoal.value / goal.toFloat(),
+                        label = "GoalProgress"
+                    )
+
                     CircularProgressIndicator(
-                        trackColor = MaterialTheme.colors.surface,
-                        progress = animateFloatAsState(
-                            targetValue = animatedGoal.value / goal.toFloat(),
-                            label = "GoalProgress"
-                        ).value, // Adjust this value to change the progress
+                        progress = { progress }, // Adjust this value to change the progress
                         modifier = Modifier
-                            .size(size)
+                            .size(size),
+                        strokeWidth = 5.5.dp,
+                        allowProgressOverflow = true,
                     )
                     Icon(
                         painter = painterResource(
@@ -194,7 +195,7 @@ fun WearHome(
 //                                today == 0 -> MaterialTheme.colors.primary.copy(0.6f)
 //                                    .compositeOver(Color.Gray)
 
-                            else -> MaterialTheme.colors.primary
+                            else -> MaterialTheme.colorScheme.primary
                         },
                         modifier = Modifier
                             .size(iconSize)
@@ -218,7 +219,7 @@ fun WearHome(
                     "Earning Minutes"
                 else "Today",
                 //modifier = Modifier.padding(bottom = 2.dp),
-                color = MaterialTheme.colors.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 //fontWeight = FontWeight.W400
             )
         }
@@ -273,8 +274,8 @@ fun WearHome(
                     },
                     color = when {
                         //today == 0 -> Color.Gray
-                        sunlightLx >= threshold -> MaterialTheme.colors.primary
-                        else -> MaterialTheme.colors.primary
+                        sunlightLx >= threshold -> MaterialTheme.colorScheme.primary
+                        else -> MaterialTheme.colorScheme.primary
                     },
                     fontSize = 22.sp,
                     fontWeight = FontWeight.W500,
@@ -337,7 +338,7 @@ fun WearHome(
                             Routes.SETTINGS.getRoute()
                         )
                     },
-                    colors = ButtonDefaults.secondaryButtonColors(),
+                    colors = ButtonDefaults.filledTonalButtonColors(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 10.dp)
@@ -351,14 +352,14 @@ fun WearHome(
                         ) {
                         Icon(
                             painter = painterResource(id = R.drawable.settings),
-                            tint = MaterialTheme.colors.primary,
+                            tint = MaterialTheme.colorScheme.primary,
                             contentDescription = "Settings",
                         )
                         Spacer(modifier = Modifier.padding(5.dp))
                         Text(
                             text = "Settings",
-                            color = MaterialTheme.colors.primary,
-                            style = MaterialTheme.typography.title3
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.titleSmall
                         )
                     }
                 }
@@ -369,7 +370,7 @@ fun WearHome(
                             Routes.HISTORY.getRoute()
                         )
                     },
-                    colors = ButtonDefaults.secondaryButtonColors(),
+                    colors = ButtonDefaults.filledTonalButtonColors(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 10.dp)
@@ -383,14 +384,14 @@ fun WearHome(
                         ) {
                         Icon(
                             painter = painterResource(id = R.drawable.history),
-                            tint = MaterialTheme.colors.primary,
+                            tint = MaterialTheme.colorScheme.primary,
                             contentDescription = "History",
                         )
                         Spacer(modifier = Modifier.padding(5.dp))
                         Text(
                             text = "History",
-                            color = MaterialTheme.colors.primary,
-                            style = MaterialTheme.typography.title3
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.titleSmall
                         )
                     }
                 }

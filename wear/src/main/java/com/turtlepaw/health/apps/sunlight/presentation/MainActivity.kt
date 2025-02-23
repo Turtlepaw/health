@@ -15,7 +15,6 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BeachAccess
@@ -38,10 +37,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.TimeText
+import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.google.android.gms.wearable.Wearable
+import com.turtlepaw.health.HealthActivity
 import com.turtlepaw.health.apps.sunlight.SunlightViewModel
 import com.turtlepaw.health.apps.sunlight.presentation.pages.ClockworkToolkit
 import com.turtlepaw.health.apps.sunlight.presentation.pages.History
@@ -58,9 +59,9 @@ import com.turtlepaw.health.services.scheduleResetWorker
 import com.turtlepaw.shared.Settings
 import com.turtlepaw.shared.SettingsBasics
 import com.turtlepaw.shared.database.AppDatabase
-import com.turtlepaw.shared.database.Service
-import com.turtlepaw.shared.database.ServiceType
-import com.turtlepaw.shared.database.SunlightDay
+import com.turtlepaw.shared.database.services.Service
+import com.turtlepaw.shared.database.services.ServiceType
+import com.turtlepaw.shared.database.sunlight.SunlightDay
 import kotlinx.coroutines.launch
 
 
@@ -85,7 +86,7 @@ enum class Routes(private val route: String) {
 // At the top level of your kotlin file:
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = SettingsBasics.HISTORY_STORAGE_BASE.getKey())
 
-class MainActivity : ComponentActivity(), SensorEventListener {
+class MainActivity : HealthActivity(), SensorEventListener {
     private lateinit var sunlightViewModel: SunlightViewModel
 
     private lateinit var database: AppDatabase
@@ -122,20 +123,22 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         )
 
         val receiver = SensorReceiver()
-        // Start the alarm
-        Log.d(tag, "Starting sunlight alarm")
+        // Start the service
+        Log.d(tag, "Starting sunlight service")
         receiver.startService(this)
 
         setContent {
             sunlightViewModel = ViewModelProvider(this).get(SunlightViewModel::class.java)
 
-            WearPages(
-                sharedPreferences,
-                database,
-                this,
-                sunlightLx.floatValue,
-                sunlightViewModel
-            )
+            AppScaffold {
+                WearPages(
+                    sharedPreferences,
+                    database,
+                    this@MainActivity,
+                    sunlightLx.floatValue,
+                    sunlightViewModel
+                )
+            }
         }
     }
 
@@ -223,7 +226,7 @@ fun WearPages(
             //sunlightToday = database.sunlightDao().getDay(LocalDate.now())?.value ?: 0
             sunlightHistory = database.sunlightDao().getHistory()
 
-            val service = database.serviceDao().getService(ServiceType.SUNLIGHT.serviceName)
+            val service = database.serviceDao().getService(ServiceType.Sunlight)
             if (service?.isEnabled != true) {
                 navController.navigate(Routes.INTRO.getRoute()) {
                     // Clear the back stack
@@ -387,7 +390,7 @@ fun WearPages(
                     coroutineScope.launch {
                         database.serviceDao().insertService(
                             Service(
-                                name = ServiceType.SUNLIGHT.serviceName,
+                                name = ServiceType.Sunlight,
                                 isEnabled = true
                             )
                         )

@@ -1,6 +1,5 @@
 package com.turtlepaw.health.apps.sleep
 
-import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
@@ -29,13 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
 import androidx.wear.compose.ui.tooling.preview.WearPreviewSmallRound
+import com.turtlepaw.health.apps.sleep.presentation.theme.SleepTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -59,10 +60,20 @@ class AlarmActivity : ComponentActivity() {
         startAlarm()
 
         setContent {
-            AlarmScreen(
-                onDismiss = { dismissAlarm() },
-                onSnooze = { snoozeAlarm() }
-            )
+            SleepTheme {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Color.Black
+                        )
+                ) {
+                    AlarmScreen(
+                        onDismiss = { dismissAlarm() },
+                        onSnooze = { snoozeAlarm() }
+                    )
+                }
+            }
         }
     }
 
@@ -140,7 +151,7 @@ class AlarmActivity : ComponentActivity() {
 
     private fun snoozeAlarm() {
         // Schedule new alarm for 10 minutes later
-        val intent = Intent(this, ModernSleepTrackerService::class.java).apply {
+        val intent = Intent(this, SleepTrackerService::class.java).apply {
             action = "START"
             putExtra("snooze", true)
             putExtra("snoozeMinutes", 10)
@@ -180,19 +191,19 @@ fun AlarmScreen(
             .background(
                 Brush.radialGradient(
                     colors = listOf(
-                        MaterialTheme.colors.primary.copy(.2f),
-                        MaterialTheme.colors.primary.copy(.20f),
-                        MaterialTheme.colors.primary.copy(.15f),
-                        MaterialTheme.colors.primary.copy(.1f),
-                        MaterialTheme.colors.primary.copy(.08f),
-                        MaterialTheme.colors.primary.copy(.04f),
-                        MaterialTheme.colors.primary.copy(.02f),
-                        MaterialTheme.colors.background,
+                        MaterialTheme.colorScheme.primary.copy(.18f),
+                        MaterialTheme.colorScheme.primary.copy(.18f),
+                        MaterialTheme.colorScheme.primary.copy(.15f),
+                        MaterialTheme.colorScheme.primary.copy(.1f),
+                        MaterialTheme.colorScheme.primary.copy(.08f),
+                        MaterialTheme.colorScheme.primary.copy(.04f),
+                        MaterialTheme.colorScheme.primary.copy(.02f),
+                        MaterialTheme.colorScheme.background,
                     ),
                 )
             )
-            .blur(150.dp)
-            .alpha(0.1f)
+            .blur(1050.dp)
+            .alpha(0.05f)
     )
     Column(
         modifier = Modifier
@@ -203,12 +214,12 @@ fun AlarmScreen(
     ) {
         Text(
             text = "Alarm",
-            style = MaterialTheme.typography.title2
+            style = MaterialTheme.typography.titleMedium
         )
 
         Text(
             text = "It's time to wake up",
-            style = MaterialTheme.typography.body1
+            style = MaterialTheme.typography.bodyLarge
         )
 
         Row(
@@ -217,7 +228,7 @@ fun AlarmScreen(
         ) {
             Button(
                 onClick = onSnooze,
-                colors = ButtonDefaults.secondaryButtonColors()
+                colors = ButtonDefaults.filledTonalButtonColors()
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Snooze,
@@ -227,7 +238,6 @@ fun AlarmScreen(
 
             Button(
                 onClick = onDismiss,
-                colors = ButtonDefaults.primaryButtonColors()
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Close,
@@ -241,8 +251,10 @@ fun AlarmScreen(
 @WearPreviewSmallRound
 @Composable
 fun AlarmScreenPreview() {
-    AlarmScreen(
-        onDismiss = {},
-        onSnooze = {}
-    )
+    SleepTheme {
+        AlarmScreen(
+            onDismiss = {},
+            onSnooze = {}
+        )
+    }
 }

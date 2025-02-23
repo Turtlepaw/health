@@ -2,6 +2,7 @@
     <string name="app_name">Health</string>
     <string name="sunlight_app_name">Sunlight</string>
     <string name="sleep_app_name">Sleep</string>
+    <string name="sleep_alarm_app_name">Alarm</string>
     <string name="reflections_app_name">Reflections</string>
     <string name="exercise_app_name">Heart Connect</string>
     <!--

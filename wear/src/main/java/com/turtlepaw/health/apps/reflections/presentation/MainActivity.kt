@@ -10,7 +10,6 @@ import ReflectAsCircularIcons
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -18,14 +17,15 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import com.turtlepaw.health.HealthActivity
 import com.turtlepaw.health.apps.reflections.presentation.pages.History
 import com.turtlepaw.health.apps.reflections.presentation.pages.Reflect
 import com.turtlepaw.health.apps.reflections.presentation.pages.WearHome
 import com.turtlepaw.health.apps.reflections.presentation.theme.ReflectionTheme
 import com.turtlepaw.shared.SettingsBasics
 import com.turtlepaw.shared.database.AppDatabase
-import com.turtlepaw.shared.database.Reflection
-import com.turtlepaw.shared.database.ReflectionType
+import com.turtlepaw.shared.database.reflect.Reflection
+import com.turtlepaw.shared.database.reflect.ReflectionType
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
@@ -43,7 +43,7 @@ enum class Routes(private val route: String) {
     }
 }
 
-class MainActivity : ComponentActivity() {
+class MainActivity : HealthActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
 

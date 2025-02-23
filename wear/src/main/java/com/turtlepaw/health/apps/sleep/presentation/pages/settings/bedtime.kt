@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EditCalendar
+import androidx.compose.material.icons.rounded.Sensors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,23 +14,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Switch
-import androidx.wear.compose.material.SwitchDefaults
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.ToggleChip
-import androidx.wear.compose.material.ToggleChipDefaults
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.SwitchButton
+import androidx.wear.compose.material3.Text
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.apps.sleep.presentation.Routes
 import com.turtlepaw.shared.components.Page
@@ -66,18 +59,23 @@ fun WearBedtimeSettings(
                     },
                     modifier = Modifier
                         .fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Color(0xFFE4C6FF)
-                    )
+                    colors = ButtonDefaults.filledVariantButtonColors(),
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Sensors,
+                            contentDescription = "Sensor",
+                            modifier = Modifier
+                                .size(24.dp)
+                        )
+                    },
                 ) {
                     Text(
                         text = "Sensor Source",
-                        color = MaterialTheme.colors.onPrimary
                     )
                 }
             }
             item {
-                ToggleChip(
+                SwitchButton(
                     modifier = Modifier
                         .fillMaxWidth(),
                     checked = state,
@@ -88,7 +86,7 @@ fun WearBedtimeSettings(
                     label = {
                         Text("Timeframe", maxLines = 1, overflow = TextOverflow.Ellipsis)
                     },
-                    appIcon = {
+                    icon = {
                         Icon(
                             imageVector = Icons.Default.EditCalendar,
                             //painter = painterResource(id = R.drawable.rounded_calendar_clock_24),
@@ -98,27 +96,11 @@ fun WearBedtimeSettings(
                                 .wrapContentSize(align = Alignment.Center),
                         )
                     },
-                    toggleControl = {
-                        Switch(
-                            checked = state,
-                            enabled = true,
-                            modifier = Modifier.semantics {
-                                this.contentDescription =
-                                    if (state) "On" else "Off"
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color(0xFFE4C6FF)
-                            )
-                        )
-                    },
                     enabled = true,
-                    colors = ToggleChipDefaults.toggleChipColors(
-                        checkedEndBackgroundColor = Color(0x80E4C6FF)
-                    )
                 )
             }
             item {
-                Chip(
+                Button(
                     enabled = state,
                     onClick = {
                         navigator.navigate(Routes.SETTINGS_TIMEFRAME_START.getRoute())
@@ -128,19 +110,18 @@ fun WearBedtimeSettings(
                     label = {
                         Text(
                             text = "Timeframe Start",
-                            color = MaterialTheme.colors.onPrimary
                         )
                     },
                     secondaryLabel = {
                         Text(
                             text = formatter.format(startTime),
-                            color = MaterialTheme.colors.onPrimary
                         )
-                    }
+                    },
+                    colors = ButtonDefaults.filledTonalButtonColors()
                 )
             }
             item {
-                Chip(
+                Button(
                     enabled = state,
                     onClick = {
                         navigator.navigate(Routes.SETTINGS_TIMEFRAME_END.getRoute())
@@ -150,15 +131,14 @@ fun WearBedtimeSettings(
                     label = {
                         Text(
                             text = "Timeframe End",
-                            color = MaterialTheme.colors.onPrimary
                         )
                     },
                     secondaryLabel = {
                         Text(
                             text = formatter.format(endTime),
-                            color = MaterialTheme.colors.onPrimary
                         )
-                    }
+                    },
+                    colors = ButtonDefaults.filledTonalButtonColors()
                 )
             }
     }

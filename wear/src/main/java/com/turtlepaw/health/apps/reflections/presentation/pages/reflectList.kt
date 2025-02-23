@@ -31,7 +31,7 @@ import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.reflections.presentation.pages.iconMappings
-import com.turtlepaw.shared.database.ReflectionType
+import com.turtlepaw.shared.database.reflect.ReflectionType
 import kotlin.math.cos
 import kotlin.math.sin
 

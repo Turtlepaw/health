@@ -195,6 +195,7 @@ class HeartConnection(
                     BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
                 )
             } else {
+                @Suppress("DEPRECATION") // only used for sdk versions lower than tiramisu
                 it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
                 bluetoothGatt?.writeDescriptor(it)
             }

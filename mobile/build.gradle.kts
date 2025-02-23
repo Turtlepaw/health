@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
     id("com.google.devtools.ksp")
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -18,7 +19,19 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("debugging") {
+            storeFile = file("../debug.keystore")
+            keyAlias = "androiddebugkey"
+            storePassword = "android"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debugging")
+        }
         getByName("release") {
             isMinifyEnabled = true
             proguardFiles(
@@ -29,17 +42,14 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.11" // Replace with your Compose version
     }
 }
 
@@ -49,11 +59,11 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.kotlinx.coroutines.play.services)
 
-    implementation("io.github.raamcosta.compose-destinations:core:2.1.0-beta14")
-    ksp("io.github.raamcosta.compose-destinations:ksp:2.1.0-beta14")
+    implementation(libs.core)
+    ksp(libs.ksp)
 
     // for bottom sheet destination support, also add
-    implementation("io.github.raamcosta.compose-destinations:bottom-sheet:2.1.0-beta14")
+    implementation(libs.bottom.sheet)
 
     // AndroidX and core libraries
     implementation(libs.androidx.core.ktx)
@@ -68,8 +78,8 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     // Compose BOM and related libraries
-    implementation(platform("androidx.compose:compose-bom:2024.09.02"))
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.02"))
+    implementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(platform(libs.androidx.compose.bom))
 
     // Jetpack Compose dependencies
     implementation("androidx.compose.runtime:runtime")
@@ -91,10 +101,16 @@ dependencies {
 
     implementation("androidx.compose.runtime:runtime:1.7.5") // Replace with the latest version
     implementation("androidx.compose.runtime:runtime-livedata:1.7.5")
+
+    // Gson
+    implementation(libs.gson)
+
+    // Work
+    implementation(libs.androidx.work.runtime.ktx)
 }
 
 ksp {
     arg("compose-destinations.generateNavGraphs", "true") // Enable NavGraphs generation
     arg("compose-destinations.navGraph.visibility", "internal") // Set visibility (optional)
-    arg("compose-destinations.navGraph.moduleName", "app") // Set module name (optional)
+    arg("compose-destinations.navGraph.moduleName", "mobile") // Set module name (optional)
 }

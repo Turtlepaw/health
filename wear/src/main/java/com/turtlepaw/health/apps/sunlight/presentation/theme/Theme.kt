@@ -1,7 +1,8 @@
 package com.turtlepaw.health.apps.sunlight.presentation.theme
 
 import androidx.compose.runtime.Composable
-import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material3.MaterialTheme
+import com.turtlepaw.shared.theming.SunlightColors
 
 @Composable
 fun SunlightTheme(
@@ -13,6 +14,6 @@ fun SunlightTheme(
      */
     MaterialTheme(
         content = content,
-        colors = Colors
+        colorScheme = SunlightColors.colorScheme
     )
 }

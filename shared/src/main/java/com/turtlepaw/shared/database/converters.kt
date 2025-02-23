@@ -5,6 +5,8 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.turtlepaw.heart_connection.Metric
 import com.turtlepaw.heart_connection.Metrics
+import com.turtlepaw.shared.database.reflect.ReflectionType
+import com.turtlepaw.shared.database.services.ServiceType
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -43,6 +45,16 @@ class Converters {
     @TypeConverter
     fun toBedtimeSensor(value: String?): BedtimeSensor? {
         return value?.let { BedtimeSensor.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun fromServiceType(value: ServiceType?): String? {
+        return value?.name
+    }
+
+    @TypeConverter
+    fun toServiceType(value: String?): ServiceType? {
+        return value?.let { ServiceType.valueOf(it) }
     }
 
     @TypeConverter

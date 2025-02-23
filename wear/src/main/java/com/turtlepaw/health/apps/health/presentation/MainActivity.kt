@@ -25,6 +25,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import com.turtlepaw.health.HealthActivity
 import com.turtlepaw.health.apps.health.presentation.pages.WearHome
 import com.turtlepaw.health.apps.health.presentation.pages.coaching.StartCoaching
 import com.turtlepaw.health.apps.health.presentation.pages.settings.WearSettings
@@ -58,7 +59,7 @@ enum class Routes(private val route: String) {
 // At the top level of your kotlin file:
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = SettingsBasics.HISTORY_STORAGE_BASE.getKey())
 
-class MainActivity : ComponentActivity() {
+class MainActivity : HealthActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
 

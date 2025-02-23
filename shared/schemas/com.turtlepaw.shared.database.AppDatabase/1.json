@@ -2,41 +2,115 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "27fa6b2e6ae2674896806bf768d63850",
+    "identityHash": "6961940271353577094820c10a819a85",
     "entities": [
       {
-        "tableName": "sleep_day",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`bedtime` TEXT NOT NULL, `asleepAt` TEXT, `wakeup` TEXT, `type` TEXT NOT NULL, PRIMARY KEY(`bedtime`))",
+        "tableName": "sleep_data_points",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` TEXT NOT NULL, `timestamp` TEXT NOT NULL, `motion` REAL NOT NULL, `heartRate` REAL, `isSleeping` INTEGER NOT NULL, `synced` INTEGER NOT NULL)",
         "fields": [
           {
-            "fieldPath": "bedtime",
-            "columnName": "bedtime",
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "asleepAt",
-            "columnName": "asleepAt",
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "motion",
+            "columnName": "motion",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "heartRate",
+            "columnName": "heartRate",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isSleeping",
+            "columnName": "isSleeping",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "synced",
+            "columnName": "synced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "sleep_sessions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `startTime` TEXT NOT NULL, `endTime` TEXT, `totalSleepMinutes` INTEGER, `baselineHeartRate` REAL, `averageMotion` REAL, `synced` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTime",
+            "columnName": "startTime",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endTime",
+            "columnName": "endTime",
             "affinity": "TEXT",
             "notNull": false
           },
           {
-            "fieldPath": "wakeup",
-            "columnName": "wakeup",
-            "affinity": "TEXT",
+            "fieldPath": "totalSleepMinutes",
+            "columnName": "totalSleepMinutes",
+            "affinity": "INTEGER",
             "notNull": false
           },
           {
-            "fieldPath": "type",
-            "columnName": "type",
-            "affinity": "TEXT",
+            "fieldPath": "baselineHeartRate",
+            "columnName": "baselineHeartRate",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "averageMotion",
+            "columnName": "averageMotion",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "synced",
+            "columnName": "synced",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "bedtime"
+            "id"
           ]
         },
         "indices": [],
@@ -44,7 +118,7 @@
       },
       {
         "tableName": "sunlight_day",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` TEXT NOT NULL, `value` INTEGER NOT NULL, PRIMARY KEY(`timestamp`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` TEXT NOT NULL, `value` INTEGER NOT NULL, `synced` INTEGER NOT NULL, PRIMARY KEY(`timestamp`))",
         "fields": [
           {
             "fieldPath": "timestamp",
@@ -55,6 +129,12 @@
           {
             "fieldPath": "value",
             "columnName": "value",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "synced",
+            "columnName": "synced",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -70,7 +150,7 @@
       },
       {
         "tableName": "services",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `isEnabled` INTEGER NOT NULL, PRIMARY KEY(`name`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `isEnabled` INTEGER NOT NULL, `synced` INTEGER NOT NULL, PRIMARY KEY(`name`))",
         "fields": [
           {
             "fieldPath": "name",
@@ -81,6 +161,12 @@
           {
             "fieldPath": "isEnabled",
             "columnName": "isEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "synced",
+            "columnName": "synced",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -96,7 +182,7 @@
       },
       {
         "tableName": "reflection",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`date` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`date`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`date` TEXT NOT NULL, `value` TEXT NOT NULL, `synced` INTEGER NOT NULL, PRIMARY KEY(`date`))",
         "fields": [
           {
             "fieldPath": "date",
@@ -108,6 +194,12 @@
             "fieldPath": "value",
             "columnName": "value",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "synced",
+            "columnName": "synced",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -180,7 +272,7 @@
       },
       {
         "tableName": "exercise",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` TEXT NOT NULL, `exercise` INTEGER NOT NULL, `averageHeartRate` REAL, `totalDistance` REAL, `totalCalories` REAL, `elapsedTime` INTEGER NOT NULL, `maxHeartRate` INTEGER, `steps` INTEGER, `heartRateSimilarity` REAL, `heartRateHistory` TEXT NOT NULL, `sunlight` INTEGER NOT NULL, `location` TEXT NOT NULL, PRIMARY KEY(`timestamp`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` TEXT NOT NULL, `exercise` INTEGER NOT NULL, `averageHeartRate` REAL, `totalDistance` REAL, `totalCalories` REAL, `elapsedTime` INTEGER NOT NULL, `maxHeartRate` INTEGER, `steps` INTEGER, `heartRateSimilarity` REAL, `heartRateHistory` TEXT NOT NULL, `sunlight` INTEGER NOT NULL, `location` TEXT NOT NULL, `synced` INTEGER NOT NULL, PRIMARY KEY(`timestamp`))",
         "fields": [
           {
             "fieldPath": "timestamp",
@@ -253,6 +345,12 @@
             "columnName": "location",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "synced",
+            "columnName": "synced",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -295,12 +393,44 @@
         },
         "indices": [],
         "foreignKeys": []
+      },
+      {
+        "tableName": "sunlight_goal",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `goal` INTEGER NOT NULL, `synced` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "goal",
+            "columnName": "goal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "synced",
+            "columnName": "synced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '27fa6b2e6ae2674896806bf768d63850')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6961940271353577094820c10a819a85')"
     ]
   }
 }

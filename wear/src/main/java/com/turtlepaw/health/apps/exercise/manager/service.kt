@@ -48,8 +48,8 @@ import com.turtlepaw.heart_connection.getId
 import com.turtlepaw.shared.Settings
 import com.turtlepaw.shared.SettingsBasics
 import com.turtlepaw.shared.database.AppDatabase
-import com.turtlepaw.shared.database.ServiceType
 import com.turtlepaw.shared.database.exercise.Preference
+import com.turtlepaw.shared.database.services.ServiceType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -139,7 +139,7 @@ class ExerciseService : Service() {
 
     suspend fun collectSunlight() {
         val isEnabled =
-            database.serviceDao().getService(ServiceType.SUNLIGHT.serviceName)?.isEnabled == true
+            database.serviceDao().getService(ServiceType.Sunlight)?.isEnabled == true
         if (!isEnabled) return sunlightLiveData.postValue(-1)
 
         database.sunlightDao().getLiveDay(LocalDate.now())

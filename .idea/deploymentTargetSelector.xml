@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="mobile">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-01-12T00:31:43.808710Z">
+        <DropdownSelection timestamp="2025-02-22T05:32:15.243996300Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=28121FDH300912" />
@@ -15,7 +15,7 @@
       </SelectionState>
       <SelectionState runConfigName="wear">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-10-25T04:06:36.874520800Z">
+        <DropdownSelection timestamp="2025-02-21T05:14:26.754674200Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\olivi\.android\avd\Wear_OS.avd" />
@@ -64,6 +64,9 @@
         <DialogSelection />
       </SelectionState>
       <SelectionState runConfigName="smartalarm">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="sleep (alarm)">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

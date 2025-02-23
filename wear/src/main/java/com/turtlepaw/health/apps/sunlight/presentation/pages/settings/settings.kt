@@ -19,29 +19,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Switch
-import androidx.wear.compose.material.SwitchDefaults
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.ToggleChip
-import androidx.wear.compose.material.ToggleChipDefaults
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.SwitchButton
+import androidx.wear.compose.material3.Text
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.sunlight.presentation.Routes
 import com.turtlepaw.shared.Settings
-import com.turtlepaw.shared.components.Page
+import com.turtlepaw.shared.components.Material3Page
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
 @Composable
@@ -55,7 +49,7 @@ fun WearSettings(
     setGoalNotifications: (state: Boolean) -> Unit,
     setBatterySaver: (state: Boolean) -> Unit
 ){
-    Page {
+    Material3Page {
                 item {
                     Text(
                         text = "Settings",
@@ -69,9 +63,6 @@ fun WearSettings(
                         },
                         modifier = Modifier
                             .fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = MaterialTheme.colors.primary
-                        )
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically
@@ -79,14 +70,14 @@ fun WearSettings(
                             Icon(
                                 painter = painterResource(id = R.drawable.flag),
                                 contentDescription = "Flag",
-                                tint = MaterialTheme.colors.onPrimary,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier
                                     .padding(2.dp)
                             )
                             Spacer(modifier = Modifier.padding(2.dp))
                             Text(
                                 text = "Goal",
-                                color = MaterialTheme.colors.onPrimary
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
@@ -98,9 +89,6 @@ fun WearSettings(
                         },
                         modifier = Modifier
                             .fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = MaterialTheme.colors.primary
-                        )
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically
@@ -108,14 +96,14 @@ fun WearSettings(
                             Icon(
                                 painter = painterResource(id = R.drawable.sunlight),
                                 contentDescription = "Sunlight",
-                                tint = MaterialTheme.colors.onPrimary,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier
                                     .padding(2.dp)
                             )
                             Spacer(modifier = Modifier.padding(2.dp))
                             Text(
                                 text = "Threshold",
-                                color = MaterialTheme.colors.onPrimary
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
@@ -127,9 +115,6 @@ fun WearSettings(
                         },
                         modifier = Modifier
                             .fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = MaterialTheme.colors.primary
-                        )
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically
@@ -137,14 +122,14 @@ fun WearSettings(
                             Icon(
                                 painter = painterResource(id = R.drawable.build),
                                 contentDescription = "Build",
-                                tint = MaterialTheme.colors.onPrimary,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier
                                     .padding(2.dp)
                             )
                             Spacer(modifier = Modifier.padding(2.dp))
                             Text(
                                 text = "Toolkit",
-                                color = MaterialTheme.colors.onPrimary
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
@@ -156,9 +141,6 @@ fun WearSettings(
                         },
                         modifier = Modifier
                             .fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = MaterialTheme.colors.primary
-                        )
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically
@@ -166,14 +148,14 @@ fun WearSettings(
                             Icon(
                                 painter = painterResource(id = R.drawable.bar_chart),
                                 contentDescription = "Bar Chart",
-                                tint = MaterialTheme.colors.onPrimary,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier
                                     .padding(2.dp)
                             )
                             Spacer(modifier = Modifier.padding(2.dp))
                             Text(
                                 text = "Stats",
-                                color = MaterialTheme.colors.onPrimary
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
@@ -197,12 +179,12 @@ fun WearSettings(
 //                    }
 //                }
                 item {
-                    ToggleChip(
+                    SwitchButton(
                         modifier = Modifier
                             .fillMaxWidth(),
                         checked = goalNotifications,
                         onCheckedChange = { isEnabled ->
-                            if(Build.VERSION.SDK_INT == Build.VERSION_CODES.TIRAMISU) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                 val status = ActivityCompat.checkSelfPermission(
                                     context,
                                     Manifest.permission.POST_NOTIFICATIONS
@@ -211,7 +193,7 @@ fun WearSettings(
                                 if (status == PackageManager.PERMISSION_DENIED) {
                                     if (Build.VERSION.SDK_INT >= 33) {
                                         val activity = context.getActivity()
-                                            ?: return@ToggleChip
+                                            ?: return@SwitchButton
                                         ActivityCompat.requestPermissions(
                                             activity,
                                             arrayOf(Manifest.permission.POST_NOTIFICATIONS),
@@ -233,7 +215,7 @@ fun WearSettings(
                         label = {
                             Text("Goal alerts", overflow = TextOverflow.Visible)
                         },
-                        appIcon = {
+                        icon = {
                             Icon(
                                 painter = painterResource(id = R.drawable.alert),
                                 contentDescription = "goal notifications",
@@ -242,23 +224,7 @@ fun WearSettings(
                                     .wrapContentSize(align = Alignment.Center),
                             )
                         },
-                        toggleControl = {
-                            Switch(
-                                checked = goalNotifications,
-                                enabled = true,
-                                modifier = Modifier.semantics {
-                                    contentDescription =
-                                        if (goalNotifications) "On" else "Off"
-                                },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colors.primary
-                                )
-                            )
-                        },
                         enabled = true,
-                        colors = ToggleChipDefaults.toggleChipColors(
-                            checkedEndBackgroundColor = MaterialTheme.colors.secondary
-                        )
                     )
                 }
                 item {

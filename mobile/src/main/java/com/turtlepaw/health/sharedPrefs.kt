@@ -2,13 +2,18 @@ package com.turtlepaw.health
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.turtlepaw.shared.Settings
+import com.turtlepaw.shared.SettingsBasics
 import java.time.LocalTime
 
 class SharedPrefs(val context: Context) {
     private val sharedPrefs = getSharedPrefs()
 
     fun getSharedPrefs(): SharedPreferences {
-        return context.getSharedPreferences("prefs", Context.MODE_PRIVATE)
+        return context.getSharedPreferences(
+            SettingsBasics.SHARED_PREFERENCES.getKey(),
+            SettingsBasics.SHARED_PREFERENCES.getMode()
+        )
     }
 
     fun setLastSynced() {
@@ -28,7 +33,7 @@ class SharedPrefs(val context: Context) {
     }
 
     fun getSunlightGoal(): Int {
-        return sharedPrefs.getInt(SUNLIGHT_GOAL, 15)
+        return sharedPrefs.getInt(Settings.GOAL.getKey(), Settings.GOAL.getDefaultAsInt())
     }
 
     companion object {

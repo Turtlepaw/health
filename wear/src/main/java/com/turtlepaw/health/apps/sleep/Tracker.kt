@@ -1,21 +1,31 @@
 package com.turtlepaw.health.apps.sleep
 
 import android.Manifest
-import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Context
+import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
+import android.hardware.SensorDirectChannel
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Binder
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
+import androidx.wear.ongoing.OngoingActivity
+import androidx.wear.ongoing.Status
+import com.turtlepaw.health.R
+import com.turtlepaw.health.apps.exercise.manager.ExerciseService
+import com.turtlepaw.health.apps.sleep.presentation.MainActivity
+import com.turtlepaw.health.utils.HealthNotifications
+import com.turtlepaw.shared.database.AppDatabase
+import com.turtlepaw.shared.database.sleep.SleepDataPointEntity
+import com.turtlepaw.shared.database.sleep.SleepSession
+import com.turtlepaw.shared.getDefaultSharedSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,15 +34,22 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
+import java.util.UUID
 
-class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
+enum class SleepTrackerHints {
+    MotionLow,
+    HeartRateLow,
+}
 
+class SleepTrackerService : LifecycleService(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
     private var isTracking = MutableLiveData(false)
+    private var isSleeping = MutableLiveData(false)
     private var isPaused = MutableLiveData(false)
+    private var hints = MutableLiveData<Map<SleepTrackerHints, Double>>(emptyMap())
 
     private var sleepData = SleepData()
-    private var lastAccelValues = DoubleArray(3) { 0.0 }
+    private var lastAccelValues = DoubleArray(3)
     private var hasAccelData = false
 
     private val serviceScope = CoroutineScope(Dispatchers.Default + Job())
@@ -40,24 +57,22 @@ class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
 
     // Smart alarm configuration
     private var smartAlarmTime: LocalDateTime? = null
-    private var isSleeping = false
+    private lateinit var sleepCalibration: SleepCalibration
+
 
     // Sleep detection thresholds
     companion object {
         private const val NOTIFICATION_ID = 10
-        private const val CHANNEL_ID = "sleep_tracker"
-        private const val CHANNEL_NAME = "Sleep Tracking"
 
         // Sleep detection constants
         private const val MOTION_THRESHOLD = 0.3
-        private const val HEART_RATE_SLEEP_THRESHOLD = 7.0 // BPM decrease from baseline
         private const val MOTION_WINDOW_MINUTES = 10
     }
 
     override fun onCreate() {
         super.onCreate()
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        createNotificationChannel()
+        sleepCalibration = SleepCalibration(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -83,6 +98,16 @@ class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
 
         isTracking.value = true
         isPaused.value = false
+        SleepTrackerState.run {
+            updateTrackingState(true)
+            updatePausedState(true)
+        }
+
+        if (sleepCalibration.calibrationState == SleepCalibration.CalibrationState.NOT_STARTED) {
+            serviceScope.launch {
+                sleepCalibration.calculateBaselines()
+            }
+        }
 
         // Register sensors
         registerSensors()
@@ -91,7 +116,9 @@ class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
         startPeriodicDataCollection()
 
         // Start foreground service
-        startForeground(NOTIFICATION_ID, createNotification())
+        updateNotification(
+            "Tracking sleep"
+        )
     }
 
     private fun registerSensors() {
@@ -105,7 +132,8 @@ class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
         val accelerometerRegistered = sensorManager.registerListener(
             this,
             accelerometer,
-            SensorManager.SENSOR_DELAY_NORMAL
+            SensorManager.SENSOR_DELAY_NORMAL,
+            SensorDirectChannel.TYPE_HARDWARE_BUFFER
         )
 
         if (!accelerometerRegistered) {
@@ -122,22 +150,6 @@ class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
         }
     }
 
-    private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = "Used for sleep tracking notifications"
-            enableLights(false)
-            enableVibration(false)
-            setShowBadge(false)
-        }
-
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.createNotificationChannel(channel)
-    }
-
     private fun stopTracking() {
         isTracking.value = false
         isPaused.value = false
@@ -151,6 +163,11 @@ class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
         // Save data if needed
         saveSleepData()
 
+        SleepTrackerState.run {
+            updateTrackingState(false)
+            updatePausedState(false)
+        }
+
         // Stop foreground service
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -160,19 +177,72 @@ class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
         isPaused.value = true
         sensorManager.unregisterListener(this)
         updateNotification("Sleep tracking paused")
+        SleepTrackerState.run {
+            updateTrackingState(true)
+            updatePausedState(true)
+        }
     }
 
     private fun resumeTracking() {
         isPaused.value = false
         registerSensors()
         updateNotification("Sleep tracking active")
+        SleepTrackerState.run {
+            updateTrackingState(true)
+            updatePausedState(false)
+        }
     }
 
     private fun updateNotification(message: String) {
-        val notification = createNotification(message)
-        val notificationManager =
-            getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        // Make an intent that will take the user straight to the exercise UI.
+        val notificationIntent = Intent(applicationContext, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            0,
+            notificationIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        HealthNotifications().createSleepChannel(this)
+
+        // Build the notification.
+        val notificationBuilder =
+            NotificationCompat.Builder(
+                applicationContext,
+                HealthNotifications.SLEEP_NOTIFICATION_CHANNEL
+            )
+                .setContentTitle("Sleep Tracking")
+                .setContentText(message)
+                .setSmallIcon(
+                    R.drawable.sleep_white
+                )
+                .setContentIntent(pendingIntent)
+                .addAction(
+                    R.drawable.sleep_white, "Open App", pendingIntent
+                )
+                .setOngoing(true)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setPriority(NotificationManager.IMPORTANCE_LOW)
+
+        //val startMillis = SystemClock.elapsedRealtime() - duration.toMillis()
+        val ongoingActivityStatus = Status.Builder()
+            .addTemplate("Tracking Sleep")
+            .build()
+        val ongoingActivity = OngoingActivity.Builder(
+            applicationContext,
+            ExerciseService.Companion.NOTIFICATION_ID, notificationBuilder
+        )
+            .setStaticIcon(
+                R.drawable.sleep_white
+            )
+            .setTouchIntent(pendingIntent)
+            .setStatus(ongoingActivityStatus)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .build()
+
+        ongoingActivity.apply(applicationContext)
+        startForeground(NOTIFICATION_ID, notificationBuilder.build())
     }
 
     private fun hasBodySensorPermission(): Boolean {
@@ -187,43 +257,46 @@ class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
     }
 
     private fun detectSleeping(currentMotion: Double, currentHeartRate: Double?): Boolean {
-        // Get recent motion data
+        // Use calibrated thresholds if available
+        val prefs = getDefaultSharedSettings()
+        val motionThreshold =
+            prefs.getFloat("motion_threshold", MOTION_THRESHOLD.toFloat()).toDouble()
+        val restingHr = prefs.getFloat("resting_hr", 0f).toDouble()
+
         val recentMotion = sleepData.getRecentMotion(MOTION_WINDOW_MINUTES)
+        val avgMotion = recentMotion.map { it.motion }.average()
 
-        // Calculate average motion
-        val averageMotion = recentMotion
-            .map { it.motion }
-            .average()
+        val isMotionLow = avgMotion < motionThreshold
 
-        // Check if motion is below threshold
-        val isMotionLow = averageMotion < MOTION_THRESHOLD
+        if (isMotionLow) addHint(
+            SleepTrackerHints.MotionLow, avgMotion
+        )
+        else removeHint(SleepTrackerHints.MotionLow)
 
-        // Check heart rate if available
-        val isHeartRateLow = if (currentHeartRate != null) {
-            // Get baseline heart rate (average from first 10 minutes of tracking)
-            val baselineHR = sleepData.getBaselineHeartRate()
-            baselineHR?.let {
-                currentHeartRate < (it - HEART_RATE_SLEEP_THRESHOLD)
-            } == true
-        } else {
-            false
+        val isHrLow = currentHeartRate?.let { it < restingHr } == true
+
+        if (isHrLow) addHint(SleepTrackerHints.HeartRateLow, currentHeartRate)
+        else removeHint(SleepTrackerHints.HeartRateLow)
+
+        return when {
+            sleepCalibration.calibrationState == SleepCalibration.CalibrationState.COMPLETED -> isMotionLow && isHrLow
+            else -> avgMotion < MOTION_THRESHOLD // Fallback to default thresholds
         }
+    }
 
-        // Detect sleep based on available signals
-        return if (currentHeartRate != null) {
-            // If we have heart rate data, require both signals
-            isMotionLow && isHeartRateLow
-        } else {
-            // Otherwise use just motion
-            isMotionLow
-        }
+    private fun addHint(hint: SleepTrackerHints, value: Double) {
+        hints.postValue(hints.value?.plus(hint to value))
+    }
+
+    private fun removeHint(hint: SleepTrackerHints) {
+        hints.postValue(hints.value?.filterNot { it.key == hint } ?: emptyMap())
     }
 
     private fun checkSmartAlarm() {
         val now = LocalDateTime.now()
         smartAlarmTime?.let { alarmTime ->
             if (now >= alarmTime) {
-                if (!isSleeping) {
+                if (!isSleeping.value!!) {
                     // User is in light sleep or awake, trigger alarm
                     triggerAlarm()
                 }
@@ -244,19 +317,43 @@ class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
 
     private fun saveSleepData() {
         serviceScope.launch(Dispatchers.IO) {
-            // Here you would save to Room database or other storage
-            // For example:
-            // database.sleepDao().insertSleepSession(sleepData.toSleepSession())
-        }
-    }
+            val averageMotion = sleepData.getDataPoints()
+                .map { it.motion }
+                .average()
 
-    private fun createNotification(message: String = "Monitoring your sleep patterns"): Notification {
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Sleep Tracking Active")
-            .setContentText(message)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .build()
+            val sessionId = UUID.randomUUID().toString()
+            val dataPoints = sleepData.getDataPoints()
+            val totalSleepMinutes = dataPoints
+                .filter { it.isSleeping }
+                .size
+
+            AppDatabase.getDatabase(this@SleepTrackerService).run {
+                sleepDao().insertSession(
+                    SleepSession(
+                        id = sessionId,
+                        startTime = dataPoints.first().timestamp,
+                        endTime = dataPoints.lastOrNull()?.timestamp,
+                        totalSleepMinutes = totalSleepMinutes,
+                        baselineHeartRate = sleepData.getBaselineHeartRate(),
+                        averageMotion = averageMotion,
+                        synced = false
+                    )
+                )
+
+                sleepDataPointDao().insertDataPoints(
+                    sleepData.getDataPoints().map {
+                        SleepDataPointEntity(
+                            sessionId = sessionId,
+                            timestamp = it.timestamp,
+                            motion = it.motion,
+                            heartRate = it.heartRate,
+                            isSleeping = it.isSleeping,
+                            synced = false
+                        )
+                    }
+                )
+            }
+        }
     }
 
     private fun startPeriodicDataCollection() {
@@ -277,11 +374,11 @@ class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
                             currentHeartRate = getCurrentHeartRate()
                         )
 
-                        if (newSleepState != isSleeping) {
-                            isSleeping = newSleepState
+                        if (newSleepState != isSleeping.value) {
+                            isSleeping.postValue(newSleepState)
                             withContext(Dispatchers.Main) {
                                 updateNotification(
-                                    if (isSleeping) "You're sleeping"
+                                    if (isSleeping.value!!) "You're sleeping"
                                     else "Monitoring sleep"
                                 )
                             }
@@ -364,7 +461,7 @@ class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
             timestamp = LocalDateTime.now(),
             motion = currentMotion,
             heartRate = getCurrentHeartRate(),
-            isSleeping = isSleeping // Use the current sleep state
+            isSleeping = isSleeping.value!! // Use the current sleep state
         )
 
         // Add the new data point to our sleep data
@@ -376,11 +473,20 @@ class ModernSleepTrackerService : LifecycleService(), SensorEventListener {
         // Not used in this implementation
     }
 
-    // Required but unused Service method
-    override fun onBind(intent: Intent): IBinder? {
+    private val binder = LocalBinder()
+    override fun onBind(intent: Intent): IBinder {
         super.onBind(intent)
-        return null
+        return binder
     }
+
+    inner class LocalBinder : Binder() {
+        fun getService(): SleepTrackerService = this@SleepTrackerService
+    }
+
+    fun getTrackingState() = isTracking
+    fun getPausedState() = isPaused
+    fun getHints() = hints
+    fun getSleepState() = isSleeping
 }
 
 // Extended data classes

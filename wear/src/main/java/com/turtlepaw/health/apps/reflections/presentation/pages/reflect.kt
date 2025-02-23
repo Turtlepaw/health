@@ -46,7 +46,7 @@ import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.turtlepaw.health.R
-import com.turtlepaw.shared.database.ReflectionType
+import com.turtlepaw.shared.database.reflect.ReflectionType
 
 val iconMappings = mapOf(
     ReflectionType.Content to R.drawable.sentiment_neutral,
