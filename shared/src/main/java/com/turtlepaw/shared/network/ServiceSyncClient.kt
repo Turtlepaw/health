@@ -23,6 +23,25 @@ class ServiceSyncClient(
 
         const val APP_INSTALLED_CAPABILITY_NAME = "installed"
         const val WEAR_SYNC_DATA_PATH = "/services"
+
+        suspend fun editService(db: AppDatabase, name: ServiceType, isEnabled: Boolean) {
+            val service = db.serviceDao().getService(name)
+            if (service == null) {
+                db.serviceDao().insertService(
+                    Service(
+                        name = name,
+                        isEnabled = isEnabled,
+                        synced = false
+                    )
+                )
+            } else {
+                db.serviceDao().updateService(
+                    serviceName = name,
+                    isEnabled = isEnabled,
+                    synced = false
+                )
+            }
+        }
     }
 
     suspend fun onDataReceived(data: DataMap) {
@@ -35,31 +54,12 @@ class ServiceSyncClient(
                 continue
             }
 
-            editService(ServiceType.valueOf(key), isEnabled)
-        }
-    }
-
-    private suspend fun editService(name: ServiceType, isEnabled: Boolean) {
-        val service = db.serviceDao().getService(name)
-        if (service == null) {
-            db.serviceDao().insertService(
-                Service(
-                    name = name,
-                    isEnabled = isEnabled,
-                    synced = false
-                )
-            )
-        } else {
-            db.serviceDao().updateService(
-                serviceName = name,
-                isEnabled = isEnabled,
-                synced = false
-            )
+            editService(db, ServiceType.valueOf(key), isEnabled)
         }
     }
 
     suspend fun setService(name: ServiceType, isEnabled: Boolean) {
-        editService(name, isEnabled)
+        editService(db, name, isEnabled)
         performSync()
     }
 

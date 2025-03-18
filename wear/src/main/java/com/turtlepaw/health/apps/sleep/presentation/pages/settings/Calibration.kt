@@ -1,231 +1,241 @@
 package com.turtlepaw.health.apps.sleep.presentation.pages.settings
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
+import android.util.Log
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Mood
+import androidx.compose.material.icons.rounded.Reviews
+import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Fill
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Card
+import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.sleep.SleepCalibration
 import com.turtlepaw.shared.components.Material3Page
 import com.turtlepaw.shared.database.AppDatabase
+import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 @Composable
 fun Calibration() {
-    var calibrationState by remember { mutableStateOf(SleepCalibration.CalibrationState.NOT_STARTED) }
-    var dayCount by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
+    val sleepCalibration = remember { SleepCalibration(context) }
+    var calibrationState by remember { mutableStateOf(sleepCalibration.calibrationState) }
+    var sessionCount by remember { mutableIntStateOf(0) }
+    var isLoading by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
     LaunchedEffect(Unit) {
-        calibrationState = SleepCalibration(context).calibrationState
-        AppDatabase.getDatabase(context).sleepDao().getAllSessions().collect {
-            dayCount = it.size
-        }
+        val sessions = AppDatabase.getDatabase(context).sleepDao().getSessionsSince(
+            LocalDateTime.now().minusDays(7)
+        )
+        sessionCount = sessions.size
+        calibrationState = sleepCalibration.calibrationState
     }
+
     Material3Page {
         item {
-            Box(
-                modifier = Modifier.size(70.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.circle),
-                    contentDescription = "Circle",
-                    tint = if (calibrationState == SleepCalibration.CalibrationState.COMPLETED)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.surfaceContainer,
+            AnimatedCalibrationIcon(calibrationState, sessionCount)
+        }
+        item {
+            Spacer(modifier = Modifier.size(12.dp))
+        }
+        item {
+            CalibrationStatusText(
+                state = calibrationState,
+                sessionCount = sessionCount
+            )
+        }
+        item {
+            CalibrationDescriptionText(calibrationState)
+        }
+
+        val list: Map<Any, String> = when (calibrationState) {
+            SleepCalibration.CalibrationState.LEARNING ->
+                mapOf(
+                    R.drawable.ic_vital_signs to "Nighttime heart rate trends",
+                    R.drawable.ic_waves to "Movement variance",
+                    R.drawable.ic_hotel to "Sleep duration patterns"
                 )
 
-                Icon(
-                    painterResource(R.drawable.ic_vital_signs),
-                    contentDescription = "Vital signs",
-                    tint = if (calibrationState == SleepCalibration.CalibrationState.COMPLETED)
-                        MaterialTheme.colorScheme.onPrimary
-                    else
-                        MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(18.dp)
+            SleepCalibration.CalibrationState.STABLE ->
+                mapOf(
+                    Icons.Rounded.Mood to "Daily feedback adjustments",
+                    Icons.Rounded.Reviews to "Weekly pattern reviews",
+                    Icons.Rounded.Spa to "Automatic lifestyle changes detection"
                 )
+
+            SleepCalibration.CalibrationState.NEEDS_REFRESH ->
+                emptyMap()
+        }
+
+        if (list.isNotEmpty()) {
+            item {
+                Spacer(modifier = Modifier.size(5.dp))
             }
         }
-        item {
-            Spacer(
-                modifier = Modifier.size(12.dp)
-            )
+
+        items(list.toList()) {
+            Card(
+                enabled = false,
+                onClick = { }
+            ) {
+                Row {
+                    Icon(
+                        painterResource(it.first as Int),
+                        contentDescription = "",
+                        modifier = Modifier.size(25.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.size(10.dp))
+                    Text(
+                        it.second,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
-        item {
-            Text(
-                text = "Calibration " + when (calibrationState) {
-                    SleepCalibration.CalibrationState.NOT_STARTED -> "Not started"
-                    SleepCalibration.CalibrationState.IN_PROGRESS -> "In progress"
-                    SleepCalibration.CalibrationState.COMPLETED -> "Completed"
-                },
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center
-            )
-        }
-        item {
-            Text(
-                text = when (calibrationState) {
-                    SleepCalibration.CalibrationState.NOT_STARTED -> "Start tracking sleep to calculate your motion and heart rate baselines."
-                    SleepCalibration.CalibrationState.IN_PROGRESS -> "We're still calculating your motion and heart rate baselines.\n\n${dayCount} of 3 days completed."
-                    SleepCalibration.CalibrationState.COMPLETED -> "Your baselines for motion and heart rate for sleep tracking have been calculated.\n\nSleep tracking can now track your sleep more accurately and will continue to automatically adjust thresholds.\n\n"
-                },
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
-            )
+
+        if (calibrationState == SleepCalibration.CalibrationState.NEEDS_REFRESH) {
+            item {
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            isLoading = true
+                            sleepCalibration.calculateBaselines()
+                            calibrationState = sleepCalibration.calibrationState
+                            Log.d("Calibration", "Calibration state: $calibrationState")
+                            isLoading = false
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(top = 10.dp)
+                        .fillMaxWidth(),
+                    enabled = !isLoading
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator()
+                    }
+                    Text("Improve Accuracy")
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun CalibrationAnimation(
-    modifier: Modifier = Modifier
-) {
-    val colors = MaterialTheme.colorScheme
+private fun AnimatedCalibrationIcon(state: SleepCalibration.CalibrationState, sessionCount: Int) {
+    val transition = updateTransition(state, label = "calibrationIcon")
+    val color by transition.animateColor(label = "iconColor") { state ->
+        when (state) {
+            SleepCalibration.CalibrationState.LEARNING -> MaterialTheme.colorScheme.primaryContainer
+            SleepCalibration.CalibrationState.STABLE -> MaterialTheme.colorScheme.primary
+            SleepCalibration.CalibrationState.NEEDS_REFRESH -> MaterialTheme.colorScheme.error
+        }
+    }
+    val onColor by transition.animateColor(label = "onIconColor") { state ->
+        when (state) {
+            SleepCalibration.CalibrationState.LEARNING -> MaterialTheme.colorScheme.primary
+            SleepCalibration.CalibrationState.STABLE -> MaterialTheme.colorScheme.onPrimary
+            SleepCalibration.CalibrationState.NEEDS_REFRESH -> MaterialTheme.colorScheme.onError
+        }
+    }
 
-    // Primary rotation for the outer ring
-    val infiniteTransition = rememberInfiniteTransition()
-    val rotationAngle by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        )
-    )
-
-    // Shape morphing animation
-    val morphProgress by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-
-    // Scale breathing animation
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
-        targetValue = 1.1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-
-    // Dot rotation animation
-
-    Canvas(
-        modifier = modifier
-            .size(160.dp)
-            .padding(12.dp)
+    Box(
+        modifier = Modifier.size(70.dp),
+        contentAlignment = Alignment.Center
     ) {
-        val center = Offset(size.width / 2f, size.height / 2f)
-        val radius = size.minDimension / 2.5f
-
-        // Draw outer ring with material shape transformation
-        withTransform({
-            rotate(rotationAngle, center)
-            scale(scale, scale, center)
-        }) {
-            // Draw main circular track
-            drawCircle(
-                color = colors.surfaceContainerHigh.copy(alpha = 0.3f),
-                radius = radius,
-                center = center,
-                style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round)
-            )
-
-            // Draw progress arc with material shape
-            val sweepAngle = 120f
-            drawArc(
-                color = colors.primary,
-                startAngle = -90f,
-                sweepAngle = sweepAngle,
-                useCenter = false,
-                topLeft = Offset(
-                    center.x - radius,
-                    center.y - radius
-                ),
-                size = Size(radius * 2, radius * 2),
-                style = Stroke(
-                    width = 8.dp.toPx(),
-                    cap = StrokeCap.Round,
-                    pathEffect = PathEffect.cornerPathEffect(8.dp.toPx())
-                )
-            )
-        }
-
-        // Draw inner material shape
-        val innerRadius = radius * 0.4f
-        withTransform({
-            rotate(-rotationAngle * 0.5f, center)
-            scale(1f + morphProgress * 0.15f, 1f + morphProgress * 0.15f, center)
-        }) {
-            // Inner circle with dynamic shape
-            drawCircle(
-                color = colors.tertiary.copy(alpha = 0.2f),
-                radius = innerRadius,
-                center = center,
-                style = Stroke(
-                    width = 4.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(
-                        floatArrayOf(8f, 8f),
-                        phase = rotationAngle
-                    )
-                )
-            )
-        }
-
-        // Central material point
-        drawCircle(
-            color = colors.primary,
-            radius = 6.dp.toPx() * scale,
-            center = center,
-            style = Fill
+//        CircularProgressIndicator(
+//            progress = { sessionCount / 7f },
+//            colors = ProgressIndicatorDefaults.colors(
+//                trackColor = color,
+//                indicatorColor = color
+//            ),
+//            modifier = Modifier.fillMaxSize()
+//        )
+        Icon(
+            painterResource(R.drawable.circle),
+            contentDescription = "Circle",
+            tint = color,
+            modifier = Modifier.fillMaxSize()
+        )
+        Icon(
+            painterResource(R.drawable.ic_vital_signs),
+            contentDescription = "Calibration status",
+            tint = onColor,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(18.dp)
         )
     }
+}
+
+@Composable
+private fun CalibrationStatusText(
+    state: SleepCalibration.CalibrationState,
+    sessionCount: Int
+) {
+    Text(
+        text = when (state) {
+            SleepCalibration.CalibrationState.LEARNING -> "Calibration Learning (${sessionCount}/7 days)"
+            SleepCalibration.CalibrationState.STABLE -> "Calibration Stable"
+            SleepCalibration.CalibrationState.NEEDS_REFRESH -> "Accuracy Improvement Available"
+        },
+        style = MaterialTheme.typography.titleLarge,
+        textAlign = TextAlign.Center
+    )
+}
+
+@Composable
+private fun CalibrationDescriptionText(state: SleepCalibration.CalibrationState) {
+    Text(
+        text = when (state) {
+            SleepCalibration.CalibrationState.LEARNING ->
+                "We're analyzing your sleep patterns using"
+
+            SleepCalibration.CalibrationState.STABLE ->
+                "Your baseline is established but keeps adapting"
+
+            SleepCalibration.CalibrationState.NEEDS_REFRESH ->
+                "New sleep patterns have been detected."
+        },
+        style = MaterialTheme.typography.bodyLarge,
+        textAlign = TextAlign.Center
+    )
 }
 
 @Preview(showBackground = true)
 @Composable
-fun CalibrationAnimationPreview() {
+fun CalibrationPreview() {
     MaterialTheme {
-        CalibrationAnimation()
+        Calibration()
     }
 }

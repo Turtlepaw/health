@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.Query
 import com.turtlepaw.shared.database.RoomSyncableDao
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDateTime
 
 @Dao
 abstract class SleepSessionDao : RoomSyncableDao<SleepSession, String>() {
@@ -27,4 +28,7 @@ abstract class SleepSessionDao : RoomSyncableDao<SleepSession, String>() {
 
     @Query("DELETE FROM sleep_sessions WHERE id = :id")
     abstract suspend fun deleteSession(id: String)
+
+    @Query("SELECT * FROM sleep_sessions WHERE startTime > :cutoff")
+    abstract suspend fun getSessionsSince(cutoff: LocalDateTime): List<SleepSession>
 }

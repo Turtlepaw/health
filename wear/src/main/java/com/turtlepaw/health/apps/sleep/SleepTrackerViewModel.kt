@@ -15,34 +15,44 @@ class SleepTrackerViewModel(application: Application) : AndroidViewModel(applica
     val _isTracking = MutableLiveData<Boolean>(false)
     val _isPaused = MutableLiveData<Boolean>(false)
     val _isSleeping = MutableLiveData<Boolean>(false)
-    val _hints = MutableLiveData<Map<SleepTrackerHints, Double>>(emptyMap())
+    val _hints = MutableLiveData<Map<SleepTrackerHints, Any>>(emptyMap())
 
 
     val isTracking: LiveData<Boolean> get() = _isTracking
     val isPaused: LiveData<Boolean> get() = _isPaused
     val isSleeping: LiveData<Boolean> get() = _isSleeping
-    val hints: LiveData<Map<SleepTrackerHints, Double>> get() = _hints
+    val hints: LiveData<Map<SleepTrackerHints, Any>> get() = _hints
 
     private val _isBound = MutableLiveData<Boolean>(false)
     private var isBound = false
+    private var sleepService: SleepTrackerService? = null
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as SleepTrackerService.LocalBinder
-            val sleepService = binder.getService()
+            sleepService = binder.getService()
             isBound = true
 
             sleepService?.let { service ->
+                // Update with current values immediately
+                _isTracking.postValue(service.getTrackingState().value)
+                _isPaused.postValue(service.getPausedState().value)
+                _isSleeping.postValue(service.getSleepState().value)
+                _hints.postValue(service.getActiveHints().value)
+
+                // Then observe for future changes
                 service.getTrackingState().observeForever { _isTracking.postValue(it) }
                 service.getPausedState().observeForever { _isPaused.postValue(it) }
                 service.getSleepState().observeForever { _isSleeping.postValue(it) }
-                service.getHints().observeForever { _hints.postValue(it) }
+                service.getActiveHints().observeForever { _hints.postValue(it) }
             }
 
             _isBound.postValue(true)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
+            sleepService = null
+            isBound = false
             _isBound.postValue(false)
         }
     }
@@ -65,6 +75,14 @@ class SleepTrackerViewModel(application: Application) : AndroidViewModel(applica
         super.onCleared()
         if (_isBound.value == true) {
             try {
+                // Remove observers to prevent memory leaks
+                sleepService?.let { service ->
+                    service.getTrackingState().removeObserver { _isTracking.postValue(it) }
+                    service.getPausedState().removeObserver { _isPaused.postValue(it) }
+                    service.getSleepState().removeObserver { _isSleeping.postValue(it) }
+                    service.getActiveHints().removeObserver { _hints.postValue(it) }
+                }
+
                 getApplication<Application>().unbindService(serviceConnection)
                 _isBound.postValue(false)
             } catch (e: Exception) {

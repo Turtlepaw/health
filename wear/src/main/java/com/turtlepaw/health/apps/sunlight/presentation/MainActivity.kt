@@ -59,9 +59,9 @@ import com.turtlepaw.health.services.scheduleResetWorker
 import com.turtlepaw.shared.Settings
 import com.turtlepaw.shared.SettingsBasics
 import com.turtlepaw.shared.database.AppDatabase
-import com.turtlepaw.shared.database.services.Service
 import com.turtlepaw.shared.database.services.ServiceType
 import com.turtlepaw.shared.database.sunlight.SunlightDay
+import com.turtlepaw.shared.network.ServiceSyncClient
 import kotlinx.coroutines.launch
 
 
@@ -388,11 +388,10 @@ fun WearPages(
                     )
                 ) {
                     coroutineScope.launch {
-                        database.serviceDao().insertService(
-                            Service(
-                                name = ServiceType.Sunlight,
-                                isEnabled = true
-                            )
+                        ServiceSyncClient.editService(
+                            database,
+                            ServiceType.Sunlight,
+                            true
                         )
 
                         context.startForegroundService(Intent(context, LightWorker::class.java))

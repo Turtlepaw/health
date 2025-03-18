@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter
 enum class Settings(private val key: String, private val default: Any?) {
     WAKE_TIME("wake_time", LocalTime.of(10, 30)),
     BEDTIME_SYNC("bedtime_sync", false),
-    ALARM("use_system_alarm", true),
+    ALARM("wake_alarm", null),
     ALERTS("use_notifications", false),
     BEDTIME_SENSOR("bedtime_sensor", BedtimeSensor.BEDTIME),
     BEDTIME_ENABLED("bedtime_enabled", true),

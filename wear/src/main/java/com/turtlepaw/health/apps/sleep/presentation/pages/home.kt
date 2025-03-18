@@ -146,6 +146,7 @@ fun WearHome(
                         text = when (it.first) {
                             SleepTrackerHints.MotionLow -> "Low Motion"
                             SleepTrackerHints.HeartRateLow -> "Low Heart Rate"
+                            SleepTrackerHints.LightSleepDetected -> "Light Sleep"
                         }
                     )
                 },
@@ -155,11 +156,13 @@ fun WearHome(
                             id = when (it.first) {
                                 SleepTrackerHints.MotionLow -> R.drawable.ic_waves
                                 SleepTrackerHints.HeartRateLow -> R.drawable.ic_vital_signs
+                                SleepTrackerHints.LightSleepDetected -> R.drawable.ic_hotel
                             }
                         ),
                         contentDescription = when (it.first) {
                             SleepTrackerHints.MotionLow -> "Waves"
                             SleepTrackerHints.HeartRateLow -> "Vital Signs"
+                            SleepTrackerHints.LightSleepDetected -> "Bed"
                         },
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.height(18.dp)
@@ -171,6 +174,7 @@ fun WearHome(
                     text = when (it.first) {
                         SleepTrackerHints.MotionLow -> "You haven't moved for a while. Your average motion is ${it.second}."
                         SleepTrackerHints.HeartRateLow -> "Your heart rate is low. Your heart rate was ${it.second}."
+                        SleepTrackerHints.LightSleepDetected -> "Light sleep detected."
                     },
                     style = MaterialTheme.typography.bodyMedium,
                 )

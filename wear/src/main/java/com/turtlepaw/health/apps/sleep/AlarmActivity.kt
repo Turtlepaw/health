@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.core.content.getSystemService
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Icon
@@ -46,7 +47,7 @@ import kotlinx.coroutines.launch
 class AlarmActivity : ComponentActivity() {
     private lateinit var wakeLock: PowerManager.WakeLock
     private lateinit var mediaPlayer: MediaPlayer
-    private lateinit var vibrator: Vibrator
+    private var vibrator: Vibrator? = null
     private var isPlaying = false
 
     private val alarmJob = Job()
@@ -98,7 +99,7 @@ class AlarmActivity : ComponentActivity() {
 
     private fun initializeHardware() {
         // Initialize vibrator
-        vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+        vibrator = getSystemService<Vibrator>()
 
         // Initialize media player with alarm sound
         mediaPlayer = MediaPlayer().apply {
@@ -112,27 +113,53 @@ class AlarmActivity : ComponentActivity() {
             )
             isLooping = true
             prepare()
+            // Start with zero volume
+            setVolume(0f, 0f)
         }
     }
 
     private fun startAlarm() {
         isPlaying = true
 
-        // Start playing alarm
-        mediaPlayer.start()
-
-        // Start vibration pattern
+        // Start soft vibration first
         alarmScope.launch {
-            val vibrationPattern =
-                longArrayOf(0, 500, 500) // Pattern: wait 0ms, vibrate 500ms, sleep 500ms
-            while (isPlaying) {
-                vibrator.vibrate(
+            // Soft, gradually intensifying vibration
+            val softVibrationPattern = longArrayOf(0, 200, 200)
+            val hardVibrationPattern = longArrayOf(0, 500, 500)
+
+            // Start with soft vibrations
+            repeat(5) {
+                vibrator?.vibrate(
                     VibrationEffect.createWaveform(
-                        vibrationPattern,
+                        softVibrationPattern,
                         0 // Repeat from index 0
                     )
                 )
-                delay(1500) // Wait for pattern to complete
+                delay(1000) // Soft vibration interval
+            }
+
+            // Transition to harder vibrations
+            repeat(5) {
+                vibrator?.vibrate(
+                    VibrationEffect.createWaveform(
+                        hardVibrationPattern,
+                        0 // Repeat from index 0
+                    )
+                )
+                delay(1500) // Harder vibration interval
+            }
+        }
+
+        // Gradually increase volume of alarm sound
+        alarmScope.launch {
+            // Start playing sound at 0 volume
+            mediaPlayer.start()
+
+            // Gradually increase volume over 30 seconds
+            for (i in 1..30) {
+                val volume = i.toFloat() / 30f
+                mediaPlayer.setVolume(volume, volume)
+                delay(1000) // Increment every second
             }
         }
 
@@ -164,7 +191,7 @@ class AlarmActivity : ComponentActivity() {
     private fun stopAlarmAndCleanup() {
         // Stop sound and vibration
         mediaPlayer.stop()
-        vibrator.cancel()
+        vibrator?.cancel()
 
         // Release resources
         mediaPlayer.release()

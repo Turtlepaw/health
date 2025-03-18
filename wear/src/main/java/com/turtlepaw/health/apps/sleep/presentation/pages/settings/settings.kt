@@ -2,15 +2,18 @@ package com.turtlepaw.health.apps.sleep.presentation.pages.settings
 
 import android.Manifest
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.BedtimeOff
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +47,6 @@ import com.turtlepaw.health.apps.sleep.services.NotificationWorker
 import com.turtlepaw.health.apps.sleep.utils.Settings
 import com.turtlepaw.shared.components.Material3Page
 import com.turtlepaw.shared.getDefaultSharedSettings
-import com.turtlepaw.sleeptools.utils.AlarmType
 import java.time.Duration
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -58,23 +60,43 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun WearSettings(
     navigate: (route: String) -> Unit,
-    openWakeTimePicker: () -> Unit,
-    wakeTime: Pair<LocalTime, AlarmType>,
-    userWakeTime: LocalTime,
-    setAlarm: (value: Boolean) -> Unit,
-    useAlarm: Boolean,
+    openAlarmSettings: () -> Unit,
     setAlerts: (value: Boolean) -> Unit,
     alerts: Boolean,
     context: Context,
     targetBedtime: LocalTime?
 ) {
     val sharedPrefs = context.getDefaultSharedSettings()
-    DateTimeFormatter.ofPattern("hh:mm a")
+    val formatter = DateTimeFormatter.ofPattern("hh:mm a")
     val permission = rememberPermissionState(Manifest.permission.POST_NOTIFICATIONS) {
         WorkManager.getInstance(context)
             .enqueueBedtimeNotification(targetBedtime)
 
         setAlerts(false)
+    }
+
+    var alarm by remember {
+        mutableStateOf<LocalTime?>(null)
+    }
+    var bedtimeSync by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(Unit) {
+        alarm = sharedPrefs.getString(Settings.ALARM.getKey(), null).run {
+            Log.d("AlarmSettings", "Alarm: $this")
+            if (this == null) null
+            else try {
+                LocalTime.parse(this)
+            } catch (e: Exception) {
+                Log.e("AlarmSettings", "Error parsing alarm time: $this", e)
+                null
+            }
+        }
+        bedtimeSync = sharedPrefs.getBoolean(
+            Settings.BEDTIME_SYNC.getKey(),
+            Settings.BEDTIME_SYNC.getDefaultAsBoolean()
+        )
     }
 
     Material3Page {
@@ -84,31 +106,32 @@ fun WearSettings(
                 modifier = Modifier.padding(bottom = 10.dp)
             )
         }
-//        item {
-//            Button(
-//                onClick = {
-//                    openWakeTimePicker()
-//                },
-//                modifier = Modifier
-//                    .fillMaxWidth(),
-//                label = {
-//                    Text(
-//                        text = "Wake Up",
-//                    )
-//                },
-//                secondaryLabel = {
-//                    Text(
-//                        text = userWakeTime.format(formatter),
-//                    )
-//                },
-//                icon = {
-//                    Icon(
-//                        imageVector = Icons.Rounded.Schedule,
-//                        contentDescription = "schedule",
-//                    )
-//                },
-//            )
-//        }
+        item {
+            Button(
+                onClick = {
+                    openAlarmSettings()
+                },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                label = {
+                    Text(
+                        text = "Alarm",
+                    )
+                },
+                secondaryLabel = {
+                    if (alarm == null) Text("Off")
+                    else Text(
+                        text = alarm!!.format(formatter),
+                    )
+                },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Rounded.Alarm,
+                        contentDescription = "schedule",
+                    )
+                },
+            )
+        }
 //        item {
 //            Button(
 //                onClick = {
@@ -148,20 +171,12 @@ fun WearSettings(
             }
         }
         item {
-            var isEnabled by remember {
-                mutableStateOf(
-                    sharedPrefs.getBoolean(
-                        Settings.BEDTIME_SYNC.name,
-                        Settings.BEDTIME_SYNC.getDefaultAsBoolean()
-                    )
-                )
-            }
             SwitchButton(
                 modifier = Modifier
                     .fillMaxWidth(),
-                checked = isEnabled,
+                checked = bedtimeSync,
                 onCheckedChange = { _isEnabled ->
-                    isEnabled = _isEnabled
+                    bedtimeSync = _isEnabled
                     sharedPrefs.edit {
                         putBoolean(Settings.BEDTIME_SYNC.name, _isEnabled)
                     }
@@ -174,7 +189,7 @@ fun WearSettings(
                 },
                 icon = {
                     Icon(
-                        imageVector = if (useAlarm) Icons.Rounded.Bedtime else Icons.Rounded.BedtimeOff,
+                        imageVector = if (bedtimeSync) Icons.Rounded.Bedtime else Icons.Rounded.BedtimeOff,
                         contentDescription = "Bedtime",
                         modifier = Modifier
                             .wrapContentSize(align = Alignment.Center),
@@ -263,14 +278,7 @@ fun WorkManager.enqueueBedtimeNotification(targetBedtime: LocalTime?) {
 fun SettingsPreview() {
     WearSettings(
         navigate = {},
-        openWakeTimePicker = {},
-        wakeTime = Pair(
-            Settings.WAKE_TIME.getDefaultAsLocalTime(),
-            AlarmType.SYSTEM_ALARM
-        ),
-        userWakeTime = Settings.WAKE_TIME.getDefaultAsLocalTime(),
-        setAlarm = {},
-        useAlarm = Settings.ALARM.getDefaultAsBoolean(),
+        openAlarmSettings = {},
         setAlerts = {},
         alerts = Settings.ALERTS.getDefaultAsBoolean(),
         context = LocalContext.current,

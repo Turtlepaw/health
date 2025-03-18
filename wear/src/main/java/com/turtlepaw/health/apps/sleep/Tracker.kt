@@ -1,7 +1,6 @@
 package com.turtlepaw.health.apps.sleep
 
 import android.Manifest
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,6 +11,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Binder
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
@@ -21,6 +21,7 @@ import androidx.wear.ongoing.Status
 import com.turtlepaw.health.R
 import com.turtlepaw.health.apps.exercise.manager.ExerciseService
 import com.turtlepaw.health.apps.sleep.presentation.MainActivity
+import com.turtlepaw.health.apps.sleep.utils.Settings
 import com.turtlepaw.health.utils.HealthNotifications
 import com.turtlepaw.shared.database.AppDatabase
 import com.turtlepaw.shared.database.sleep.SleepDataPointEntity
@@ -34,11 +35,15 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 import java.util.UUID
+import kotlin.math.pow
 
 enum class SleepTrackerHints {
     MotionLow,
     HeartRateLow,
+    LightSleepDetected
 }
 
 class SleepTrackerService : LifecycleService(), SensorEventListener {
@@ -46,7 +51,7 @@ class SleepTrackerService : LifecycleService(), SensorEventListener {
     private var isTracking = MutableLiveData(false)
     private var isSleeping = MutableLiveData(false)
     private var isPaused = MutableLiveData(false)
-    private var hints = MutableLiveData<Map<SleepTrackerHints, Double>>(emptyMap())
+    private var activeHints = MutableLiveData(mapOf<SleepTrackerHints, Any>())
 
     private var sleepData = SleepData()
     private var lastAccelValues = DoubleArray(3)
@@ -56,7 +61,7 @@ class SleepTrackerService : LifecycleService(), SensorEventListener {
     private var trackingJob: Job? = null
 
     // Smart alarm configuration
-    private var smartAlarmTime: LocalDateTime? = null
+    private var smartAlarmTime: LocalTime? = null
     private lateinit var sleepCalibration: SleepCalibration
 
 
@@ -85,7 +90,22 @@ class SleepTrackerService : LifecycleService(), SensorEventListener {
             "RESUME" -> resumeTracking()
         }
 
+        smartAlarmTime = getDefaultSharedSettings().getString(Settings.ALARM.getKey(), null).run {
+            if (this == null) null
+            else try {
+                LocalTime.parse(this)
+            } catch (e: Exception) {
+                Log.e("AlarmSettings", "Error parsing alarm time: $this", e)
+                null
+            }
+        }
+
         return START_STICKY
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopTracking()
     }
 
     private fun startTracking() {
@@ -103,7 +123,10 @@ class SleepTrackerService : LifecycleService(), SensorEventListener {
             updatePausedState(true)
         }
 
-        if (sleepCalibration.calibrationState == SleepCalibration.CalibrationState.NOT_STARTED) {
+        // Auto-start calibration if needed
+        if (sleepCalibration.calibrationState == SleepCalibration.CalibrationState.LEARNING ||
+            sleepCalibration.calibrationState == SleepCalibration.CalibrationState.NEEDS_REFRESH
+        ) {
             serviceScope.launch {
                 sleepCalibration.calculateBaselines()
             }
@@ -115,10 +138,13 @@ class SleepTrackerService : LifecycleService(), SensorEventListener {
         // Start periodic data collection
         startPeriodicDataCollection()
 
-        // Start foreground service
-        updateNotification(
-            "Tracking sleep"
-        )
+        // Update notification with calibration status
+        val statusMessage = when (sleepCalibration.calibrationState) {
+            SleepCalibration.CalibrationState.LEARNING -> "Learning your patterns"
+            SleepCalibration.CalibrationState.STABLE -> "Sleep tracking active"
+            SleepCalibration.CalibrationState.NEEDS_REFRESH -> "Needs recalibration"
+        }
+        updateNotification(statusMessage)
     }
 
     private fun registerSensors() {
@@ -223,7 +249,8 @@ class SleepTrackerService : LifecycleService(), SensorEventListener {
                 .setOngoing(true)
                 .setCategory(NotificationCompat.CATEGORY_SERVICE)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setPriority(NotificationManager.IMPORTANCE_LOW)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
 
         //val startMillis = SystemClock.elapsedRealtime() - duration.toMillis()
         val ongoingActivityStatus = Status.Builder()
@@ -261,7 +288,9 @@ class SleepTrackerService : LifecycleService(), SensorEventListener {
         val prefs = getDefaultSharedSettings()
         val motionThreshold =
             prefs.getFloat("motion_threshold", MOTION_THRESHOLD.toFloat()).toDouble()
-        val restingHr = prefs.getFloat("resting_hr", 0f).toDouble()
+
+        // Use night HR for sleep detection instead of generic "resting_hr"
+        val restingHr = prefs.getFloat("resting_hr_night", 0f).toDouble()
 
         val recentMotion = sleepData.getRecentMotion(MOTION_WINDOW_MINUTES)
         val avgMotion = recentMotion.map { it.motion }.average()
@@ -275,33 +304,96 @@ class SleepTrackerService : LifecycleService(), SensorEventListener {
 
         val isHrLow = currentHeartRate?.let { it < restingHr } == true
 
-        if (isHrLow) addHint(SleepTrackerHints.HeartRateLow, currentHeartRate)
+        if (isHrLow) addHint(SleepTrackerHints.HeartRateLow, currentHeartRate ?: 0.0)
         else removeHint(SleepTrackerHints.HeartRateLow)
 
         return when {
-            sleepCalibration.calibrationState == SleepCalibration.CalibrationState.COMPLETED -> isMotionLow && isHrLow
+            // Change COMPLETED to STABLE to match the enum in SleepCalibration
+            sleepCalibration.calibrationState == SleepCalibration.CalibrationState.STABLE -> isMotionLow && isHrLow
             else -> avgMotion < MOTION_THRESHOLD // Fallback to default thresholds
         }
     }
 
-    private fun addHint(hint: SleepTrackerHints, value: Double) {
-        hints.postValue(hints.value?.plus(hint to value))
+    private fun detectLightSleepPhase(): Boolean {
+        val recentData = sleepData.getRecentMotion(5)
+        val hrTrend = recentData.heartRateTrend()
+        val motionVariance = recentData.motionVariance()
+
+        val isLightSleep = hrTrend between (0.88..0.95) &&
+                motionVariance between (0.02..0.15)
+
+        if (isLightSleep) {
+            addHint(SleepTrackerHints.LightSleepDetected, hrTrend to motionVariance)
+        } else {
+            removeHint(SleepTrackerHints.LightSleepDetected)
+        }
+
+        return isLightSleep
+    }
+
+    private fun addHint(hint: SleepTrackerHints, value: Any) {
+        activeHints.postValue(
+            activeHints.value?.plus(hint to value)
+        )
     }
 
     private fun removeHint(hint: SleepTrackerHints) {
-        hints.postValue(hints.value?.filterNot { it.key == hint } ?: emptyMap())
+        activeHints.postValue(
+            activeHints.value?.minus(hint)
+        )
     }
 
-    private fun checkSmartAlarm() {
-        val now = LocalDateTime.now()
-        smartAlarmTime?.let { alarmTime ->
-            if (now >= alarmTime) {
-                if (!isSleeping.value!!) {
-                    // User is in light sleep or awake, trigger alarm
-                    triggerAlarm()
-                }
-            }
+    fun getActiveHints(): MutableLiveData<Map<SleepTrackerHints, Any>> = activeHints
+
+    // Function to process new sensor data
+    fun processSensorData(motion: Double, heartRate: Double?) {
+        // Update data
+        sleepData.addMotionSample(motion)
+        heartRate?.let { sleepData.updateHeartRate(it) }
+
+        // Process accumulated samples
+        sleepData.processMotionSamples()
+
+        // Run detection algorithms
+        val isSleeping = detectSleeping(motion, heartRate)
+        val isLightSleep = if (isSleeping) detectLightSleepPhase() else false
+
+        // Update the latest data point with sleep state
+        val dataPoints = sleepData.getDataPoints()
+        if (dataPoints.isNotEmpty()) {
+            dataPoints.last().isSleeping = isSleeping
         }
+    }
+
+    // Function to get sleep quality report
+    fun getSleepQualityReport(): Map<String, Any> {
+        val dataPoints = sleepData.getDataPoints()
+        val sleepPoints = dataPoints.filter { it.isSleeping }
+
+        if (sleepPoints.isEmpty()) {
+            return mapOf("status" to "No sleep detected")
+        }
+
+        val totalSleepMinutes = sleepPoints.size // Assuming one data point per minute
+        val avgHeartRate = sleepPoints.mapNotNull { it.heartRate }.average()
+        val avgMotion = sleepPoints.map { it.motion }.average()
+
+        return mapOf(
+            "totalSleepMinutes" to totalSleepMinutes,
+            "averageHeartRate" to avgHeartRate,
+            "averageMotion" to avgMotion,
+            "calibrationState" to sleepCalibration.calibrationState.name
+        )
+    }
+
+    // Function to handle user feedback on wake quality
+    fun provideWakeFeedback(feelingGood: Boolean) {
+        sleepCalibration.handleWakeFeedback(feelingGood)
+    }
+
+    // Function to initiate calibration
+    suspend fun calibrateSleepAlgorithm() {
+        sleepCalibration.calculateBaselines()
     }
 
     private fun triggerAlarm() {
@@ -309,10 +401,72 @@ class SleepTrackerService : LifecycleService(), SensorEventListener {
         val alarmIntent = Intent(this, AlarmActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
+
         startActivity(alarmIntent)
 
-        // Stop tracking
-        stopTracking()
+        //        startActivity(Intent(this, WakeFeedbackActivity::class.java).apply {
+//            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+//        })
+    }
+
+    /**
+     * Checks if the smart alarm should be triggered and handles it accordingly
+     *
+     * For a 10am alarm:
+     * - 10:01am → alarm should trigger (within 15min after alarm time)
+     * - 10:00am → alarm should trigger (exact alarm time)
+     * - 11:00pm → alarm should NOT trigger (outside of alarm window)
+     */
+    private fun checkSmartAlarm() {
+        val alarmTime = smartAlarmTime ?: return
+        val now = LocalTime.now()
+        val currentDateTime = LocalDateTime.now()
+
+        // Calculate if current time is within the wake window
+        // For a 10am alarm, wake window is 9:30am to 10:15am
+        val inWakeWindow = now.isAfter(alarmTime.minusMinutes(30)) &&
+                now.isBefore(alarmTime.plusMinutes(15))
+
+        // For a 10am alarm:
+        // - At 10:01am, this is true (within 15min after alarm time)
+        // - At 10:00am, this is true (exact alarm time)
+        // - At 11:00pm, this is false (after alarm time but not within 15min window)
+        val isAlarmTriggerable = now.equals(alarmTime) ||
+                (now.isAfter(alarmTime) && now.isBefore(alarmTime.plusMinutes(15)))
+
+        // For a 10am alarm, this should be:
+        // - At 10:01am → trigger alarm
+        // - At 10:00am → trigger alarm
+        // - At 11:00pm → do not trigger alarm
+        if (isAlarmTriggerable || (inWakeWindow && isOptimalWakeTime())) {
+            triggerAlarm()
+        }
+    }
+
+    private fun isOptimalWakeTime(): Boolean {
+        val prefs = getDefaultSharedSettings()
+        val restingHr = prefs.getFloat("resting_hr_night", 60f).toDouble()
+
+        return detectLightSleepPhase() &&
+                hoursSlept() >= 3 &&
+                isLowMovementVariance()
+    }
+
+    private fun hoursSlept(): Long {
+        return sleepData.getDataPoints().firstOrNull()?.let {
+            ChronoUnit.HOURS.between(it.timestamp, LocalDateTime.now())
+        } ?: 0
+    }
+
+    private fun isLowMovementVariance(): Boolean {
+        val motions = sleepData.getRecentMotion(30).map { it.motion }
+        val variance = calculateVariance(motions)
+        return variance < 0.1
+    }
+
+    private fun calculateVariance(data: List<Double>): Double {
+        val mean = data.average()
+        return data.map { (it - mean).pow(2) }.average()
     }
 
     private fun saveSleepData() {
@@ -485,8 +639,33 @@ class SleepTrackerService : LifecycleService(), SensorEventListener {
 
     fun getTrackingState() = isTracking
     fun getPausedState() = isPaused
-    fun getHints() = hints
+    fun getHints() = activeHints
     fun getSleepState() = isSleeping
+}
+
+// Extension function for range checks
+infix fun <T : Comparable<T>> T.between(range: ClosedRange<T>): Boolean {
+    return this in range
+}
+
+// Extension functions for lists of SleepDataPoint
+fun List<SleepDataPoint>.heartRateTrend(): Double {
+    if (this.size < 3) return 1.0
+    val hrValues = this.mapNotNull { it.heartRate }
+    if (hrValues.size < 3) return 1.0
+
+    // Calculate the trend as ratio of latest HR to average of previous values
+    val latestHr = hrValues.last()
+    val previousAvg = hrValues.dropLast(1).average()
+    return if (previousAvg > 0) latestHr / previousAvg else 1.0
+}
+
+fun List<SleepDataPoint>.motionVariance(): Double {
+    if (this.size < 3) return 0.0
+    val motionValues = this.map { it.motion }
+    val mean = motionValues.average()
+    val variance = motionValues.map { (it - mean).pow(2) }.average()
+    return variance
 }
 
 // Extended data classes
@@ -494,78 +673,6 @@ data class SleepDataPoint(
     val timestamp: LocalDateTime,
     val motion: Double,
     val heartRate: Double?,
-    val isSleeping: Boolean
+    var isSleeping: Boolean
 )
 
-class SleepData {
-    private val dataPoints = mutableListOf<SleepDataPoint>()
-    private var currentHeartRate: Double? = null
-    private var baselineHeartRate: Double? = null
-    private var baselineMotion: Double? = null
-
-    private val motionSamples = mutableListOf<Double>()
-    private var lastProcessedTime = LocalDateTime.now()
-
-    fun addMotionSample(motion: Double) {
-        motionSamples.add(motion)
-    }
-
-    fun processMotionSamples() {
-        if (motionSamples.isNotEmpty()) {
-            val averageMotion = motionSamples.average()
-            addDataPoint(
-                SleepDataPoint(
-                    timestamp = lastProcessedTime,
-                    motion = averageMotion,
-                    heartRate = currentHeartRate,
-                    isSleeping = false // Will be updated by sleep detection
-                )
-            )
-            motionSamples.clear()
-            lastProcessedTime = LocalDateTime.now()
-        }
-    }
-
-    fun updateBaselineMotion(motion: Double) {
-        if (baselineMotion == null) {
-            baselineMotion = motion
-        } else {
-            baselineMotion = (baselineMotion!! * 0.8 + motion * 0.2) // Weighted average
-        }
-    }
-
-    fun updateBaselineHeartRate(hr: Double) {
-        if (baselineHeartRate == null) {
-            baselineHeartRate = hr
-        } else {
-            baselineHeartRate = (baselineHeartRate!! * 0.8 + hr * 0.2) // Weighted average
-        }
-    }
-
-    fun getDataPoints(): List<SleepDataPoint> = dataPoints.toList()
-
-    fun addDataPoint(point: SleepDataPoint) {
-        dataPoints.add(point)
-
-        // Calculate baseline heart rate from first 10 minutes if not set
-        if (baselineHeartRate == null && dataPoints.size >= 10) {
-            baselineHeartRate = dataPoints
-                .take(10)
-                .mapNotNull { it.heartRate }
-                .average()
-        }
-    }
-
-    fun updateHeartRate(hr: Double) {
-        currentHeartRate = hr
-    }
-
-    fun getCurrentHeartRate() = currentHeartRate
-
-    fun getBaselineHeartRate() = baselineHeartRate
-
-    fun getRecentMotion(minutes: Int): List<SleepDataPoint> {
-        val cutoff = LocalDateTime.now().minusMinutes(minutes.toLong())
-        return dataPoints.filter { it.timestamp.isAfter(cutoff) }
-    }
-}

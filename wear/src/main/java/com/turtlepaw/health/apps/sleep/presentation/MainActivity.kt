@@ -44,6 +44,7 @@ import com.turtlepaw.health.apps.sleep.presentation.pages.Sessions
 import com.turtlepaw.health.apps.sleep.presentation.pages.TimePicker
 import com.turtlepaw.health.apps.sleep.presentation.pages.Tips
 import com.turtlepaw.health.apps.sleep.presentation.pages.WearHome
+import com.turtlepaw.health.apps.sleep.presentation.pages.settings.AlarmSettings
 import com.turtlepaw.health.apps.sleep.presentation.pages.settings.Calibration
 import com.turtlepaw.health.apps.sleep.presentation.pages.settings.WearBedtimeSensorSetting
 import com.turtlepaw.health.apps.sleep.presentation.pages.settings.WearBedtimeSettings
@@ -56,6 +57,7 @@ import com.turtlepaw.health.apps.sleep.utils.SettingsBasics
 import com.turtlepaw.shared.database.AppDatabase
 import com.turtlepaw.shared.database.BedtimeSensor
 import com.turtlepaw.shared.database.SleepDay
+import com.turtlepaw.shared.getDefaultSharedSettings
 import com.turtlepaw.sleeptools.utils.AlarmType
 import com.turtlepaw.sleeptools.utils.AlarmsManager
 import com.turtlepaw.sleeptools.utils.TimeManager
@@ -69,6 +71,7 @@ enum class Routes(private val route: String) {
     SETTINGS_TIMEFRAME_END("/settings/bedtime/end"),
     SETTINGS_BEDTIME_SENSOR("/settings/bedtime/sensor"),
     TIME_PICKER("/time-picker"),
+    ALARM_SETTINGS("/alarm-settings"),
     HISTORY("/history"),
     SESSION_DETAILS("/session-details/{id}"),
     TIPS("/tips"),
@@ -97,10 +100,7 @@ class MainActivity : HealthActivity() {
         super.onCreate(savedInstanceState)
 
         setTheme(android.R.style.Theme_DeviceDefault)
-        val sharedPreferences = getSharedPreferences(
-            SettingsBasics.SHARED_PREFERENCES.getKey(),
-            SettingsBasics.SHARED_PREFERENCES.getMode()
-        )
+        val sharedPreferences = getDefaultSharedSettings()
 
         database = AppDatabase.getDatabase(this)
 
@@ -168,12 +168,6 @@ fun WearPages(
         timeManager.parseTime(timeframeStartString, Settings.BEDTIME_START.getDefaultAsLocalTime())
     var timeframeEnd =
         timeManager.parseTime(timeframeEndString, Settings.BEDTIME_END.getDefaultAsLocalTime())
-    // Use Alarm - uses system alarm as wake time
-    val useAlarmBool = sharedPreferences.getBoolean(
-        Settings.ALARM.getKey(),
-        Settings.ALARM.getDefaultAsBoolean()
-    ) // Default to on
-    var useAlarm by remember { mutableStateOf(useAlarmBool) }
     // Use Alerts - sends alerts when to go to bed
     val useAlertsBool = sharedPreferences.getBoolean(
         Settings.ALERTS.getKey(),
@@ -190,7 +184,7 @@ fun WearPages(
     // Parses the wake time and decides if it should use
     // user defined or system defined
     var wakeTime = timeManager.getWakeTime(
-        useAlarm,
+        false,
         nextAlarm,
         wakeTimeString,
         Settings.WAKE_TIME.getDefaultAsLocalTime()
@@ -211,7 +205,7 @@ fun WearPages(
         loading = false
         // Fetch the alarm
         wakeTime = timeManager.getWakeTime(
-            useAlarm,
+            false,
             nextAlarm,
             wakeTimeString,
             Settings.WAKE_TIME.getDefaultAsLocalTime()
@@ -250,27 +244,26 @@ fun WearPages(
                 navigate = { route ->
                     navController.navigate(route)
                 },
-                openWakeTimePicker = {
-                    navController.navigate(Routes.TIME_PICKER.getRoute())
+                openAlarmSettings = {
+                    navController.navigate(Routes.ALARM_SETTINGS.getRoute())
                 },
-                wakeTime,
-                userWakeTime,
-                setAlarm = { value ->
-                    useAlarm = value
-                    val editor = sharedPreferences.edit()
-                    editor.putBoolean(Settings.ALARM.getKey(), value)
-                    editor.apply()
-                },
-                useAlarm,
                 setAlerts = { value ->
                     useAlerts = value
-                    val editor = sharedPreferences.edit()
-                    editor.putBoolean(Settings.ALERTS.getKey(), value)
-                    editor.apply()
+                    sharedPreferences.edit {
+                        putBoolean(Settings.ALERTS.getKey(), value)
+                    }
                 },
                 useAlerts,
                 context,
                 bedtimeGoal
+            )
+        }
+        composable(Routes.ALARM_SETTINGS.getRoute()) {
+            AlarmSettings(
+                sharedPreferences,
+                openAlarmPicker = {
+                    navController.navigate(Routes.TIME_PICKER.getRoute())
+                }
             )
         }
         composable(Routes.SETTINGS_BEDTIME.getRoute()) {
@@ -314,20 +307,21 @@ fun WearPages(
             )
         }
         composable(Routes.TIME_PICKER.getRoute()) {
+            val defaultTime = sharedPreferences.getString(
+                Settings.ALARM.getKey(),
+                null
+            ).run {
+                if (this == null) null
+                else timeManager.parseTime(this, null)
+            }
             TimePicker(
                 close = {
                     navController.popBackStack()
                 },
-                userWakeTime,
+                defaultTime ?: LocalTime.of(10, 30),
                 setTime = { value ->
-                    // Set the wake time ONLY if
-                    // it's user defined
-                    if (wakeTime.second === AlarmType.USER_DEFINED)
-                        wakeTime = Pair(value, AlarmType.USER_DEFINED)
-
-                    userWakeTime = value
                     sharedPreferences.edit {
-                        putString(Settings.WAKE_TIME.getKey(), value.toString())
+                        putString(Settings.ALARM.getKey(), value.toString())
                     }
                 }
             )
